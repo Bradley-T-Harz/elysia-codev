@@ -1,0 +1,9 @@
+:root {
+  --elysia-safe-ok: #7ed7d1;
+  --elysia-safe-warn: #d8bd83;
+  --elysia-safe-stop: #d8a5a5;
+}
+.icon-dot::before { content: "•"; }
+.icon-lock::before { content: "◼"; }
+.icon-check::before { content: "✓"; }
+.icon-warning::before { content: "!"; }

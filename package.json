@@ -1,0 +1,136 @@
+{
+  "name": "elysia-vscode",
+  "displayName": "Elysia VS Code Companion",
+  "description": "Local-first Elysia coding-room companion for VS Code. Plan-only by default; patch apply and command execution are disabled placeholders.",
+  "version": "0.1.0",
+  "publisher": "ecosyneva-commons",
+  "license": "Apache-2.0",
+  "private": true,
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Other",
+    "Machine Learning",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "elysia",
+    "local-first",
+    "coding assistant",
+    "governance",
+    "developer tools"
+  ],
+  "activationEvents": [
+    "onView:elysia.codingRoom",
+    "onCommand:elysia.openCodingRoom",
+    "onCommand:elysia.newSession",
+    "onCommand:elysia.refreshConnection",
+    "onCommand:elysia.trustWorkspace",
+    "onCommand:elysia.clearSessions"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Elysia",
+      "properties": {
+        "elysia.apiUrl": {
+          "type": "string",
+          "default": "http://127.0.0.1:8000",
+          "description": "Local Elysia API bridge URL. Defaults to local loopback."
+        },
+        "elysia.approvalMode": {
+          "type": "string",
+          "enum": ["read_only", "plan_only", "patch_preview", "apply_with_approval", "test_with_approval"],
+          "default": "plan_only",
+          "description": "Default approval posture for the companion. Patch and command execution remain disabled in this scaffold."
+        },
+        "elysia.allowPatchPreview": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show patch preview placeholders. Real patch apply is not implemented in v0.1.0."
+        },
+        "elysia.allowCommandExecution": {
+          "type": "boolean",
+          "default": false,
+          "description": "Reserved for future exact approved test commands. No command execution is implemented in v0.1.0."
+        },
+        "elysia.workspaceTrustMode": {
+          "type": "string",
+          "enum": ["vscode_workspace_trust", "read_only", "blocked"],
+          "default": "vscode_workspace_trust",
+          "description": "How the extension interprets workspace trust before repo-aware actions."
+        }
+      }
+    },
+    "commands": [
+      { "command": "elysia.openCodingRoom", "title": "Elysia: Open Coding Room", "category": "Elysia" },
+      { "command": "elysia.newSession", "title": "Elysia: New Session", "category": "Elysia" },
+      { "command": "elysia.refreshConnection", "title": "Elysia: Refresh Connection", "category": "Elysia" },
+      { "command": "elysia.trustWorkspace", "title": "Elysia: Trust Workspace", "category": "Elysia" },
+      { "command": "elysia.clearSessions", "title": "Elysia: Clear Local Sessions", "category": "Elysia" }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "elysia",
+          "title": "Elysia",
+          "icon": "media/elysia-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "elysia": [
+        {
+          "id": "elysia.codingRoom",
+          "name": "Coding Room",
+          "type": "webview"
+        }
+      ]
+    },
+    "menus": {
+      "commandPalette": [
+        { "command": "elysia.openCodingRoom" },
+        { "command": "elysia.newSession" },
+        { "command": "elysia.refreshConnection" },
+        { "command": "elysia.trustWorkspace" },
+        { "command": "elysia.clearSessions" }
+      ],
+      "view/title": [
+        {
+          "command": "elysia.refreshConnection",
+          "when": "view == elysia.codingRoom",
+          "group": "navigation"
+        },
+        {
+          "command": "elysia.newSession",
+          "when": "view == elysia.codingRoom",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "clean": "node scripts/clean.mjs",
+    "build:extension": "tsc -p ./tsconfig.json",
+    "build:webview": "esbuild webview/main.tsx --bundle --format=iife --outfile=dist/webview.js --loader:.tsx=tsx --loader:.ts=ts --platform=browser",
+    "compile": "npm run clean && npm run build:extension && npm run build:webview",
+    "check": "npm run compile",
+    "watch": "tsc -watch -p ./tsconfig.json",
+    "package": "vsce package",
+    "vscode:package": "vsce package"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "@types/vscode": "^1.96.0",
+    "@vscode/vsce": "^3.2.2",
+    "esbuild": "^0.24.2",
+    "typescript": "^5.7.2"
+  }
+}
