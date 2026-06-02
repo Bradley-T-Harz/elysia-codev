@@ -27,6 +27,7 @@ h1 { margin: 0; font-size: 1.3rem; }
 .message { border: 1px solid var(--vscode-panel-border); border-radius: 7px; padding: 0.65rem; }
 .message--elysia { border-color: color-mix(in srgb, #7ed7d1 52%, var(--vscode-panel-border)); }
 .message p { margin: 0.35rem 0 0; line-height: 1.45; }
+.error-note { color: #d8a5a5; border: 1px solid color-mix(in srgb, #d8a5a5 35%, transparent); border-radius: 6px; padding: 0.45rem; }
 .empty-state { color: var(--vscode-descriptionForeground); border: 1px dashed var(--vscode-panel-border); border-radius: 7px; padding: 1rem; }
 .composer { display: grid; gap: 0.5rem; margin-top: 0.7rem; }
 .facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; margin: 0; }
@@ -36,4 +37,5 @@ dd { margin: 0.18rem 0 0; }
 .pill--warn { color: #d8bd83; border-color: color-mix(in srgb, #d8bd83 35%, transparent); }
 .file-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.35rem; }
 .file-list li { display: grid; gap: 0.12rem; }
+.repo-preview { display: grid; gap: 0.45rem; margin-top: 0.65rem; }
 @media (max-width: 980px) { .layout, .status-strip { grid-template-columns: 1fr; } .chat-panel { min-height: 48vh; } }

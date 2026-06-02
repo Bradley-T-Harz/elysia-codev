@@ -8,15 +8,29 @@ import { SessionStore } from "./SessionStore";
 import { WorkspaceTrust } from "./WorkspaceTrust";
 
 export function activate(context: vscode.ExtensionContext): void {
-  const api = new ElysiaApiClient();
-  const sessions = new SessionStore(context);
-  const approvals = new ApprovalController();
-  const workspaceTrust = new WorkspaceTrust(approvals);
-  const diffs = new FileDiffProvider();
-  const provider = new ElysiaSidebarProvider(context, api, sessions, approvals, workspaceTrust, diffs);
+  let provider: ElysiaSidebarProvider;
 
-  context.subscriptions.push(vscode.window.registerWebviewViewProvider("elysia.codingRoom", provider));
+  try {
+    const api = new ElysiaApiClient();
+    const sessions = new SessionStore(context);
+    const approvals = new ApprovalController();
+    const workspaceTrust = new WorkspaceTrust(approvals);
+    const diffs = new FileDiffProvider();
+    provider = new ElysiaSidebarProvider(context, api, sessions, approvals, workspaceTrust, diffs);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    void vscode.window.showErrorMessage(`Elysia failed to initialize its local coding room provider: ${detail}`);
+    throw error;
+  }
+
   registerCommands(context, provider);
+
+  try {
+    context.subscriptions.push(vscode.window.registerWebviewViewProvider("elysia.codingRoom", provider));
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    void vscode.window.showErrorMessage(`Elysia commands are registered, but the Coding Room view could not register: ${detail}`);
+  }
 }
 
 export function deactivate(): void {

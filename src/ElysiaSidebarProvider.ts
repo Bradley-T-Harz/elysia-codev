@@ -4,11 +4,14 @@ import { ElysiaApiClient } from "./ElysiaApiClient";
 import { FileDiffProvider } from "./FileDiffProvider";
 import { SessionStore } from "./SessionStore";
 import { WorkspaceTrust } from "./WorkspaceTrust";
-import type { ApprovalMode, ElysiaMessage, ExtensionToWebviewMessage, WebviewState, WebviewToExtensionMessage } from "./types";
+import type { ApprovalMode, CodingBridgeStatus, ElysiaMessage, ExtensionToWebviewMessage, RepoInspectPreview, WebviewState, WebviewToExtensionMessage } from "./types";
 
 export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   private view: vscode.WebviewView | undefined;
   private activeSessionId: string | null = null;
+  private codingBridge: CodingBridgeStatus | null = null;
+  private repoPreview: RepoInspectPreview | null = null;
+  private codingError: string | undefined;
 
   public constructor(
     private readonly context: vscode.ExtensionContext,
@@ -39,7 +42,19 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
 
   public async createSession(): Promise<void> {
     const workspace = this.workspaceTrust.getStatus();
-    const session = await this.sessions.newSession(workspace.workspaceLabel, this.approvals.getMode());
+    const workspaceRoot = this.getWorkspaceRoot();
+    let backendSessionId: string | undefined;
+    try {
+      backendSessionId = await this.api.startCodingSession({
+        workspace_label: workspace.workspaceLabel,
+        workspace_root: workspaceRoot,
+        approval_mode: this.approvals.getMode()
+      });
+      this.codingError = undefined;
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Unable to start local Elysia coding session.";
+    }
+    const session = await this.sessions.newSession(workspace.workspaceLabel, this.approvals.getMode(), backendSessionId);
     this.activeSessionId = session.id;
     await this.postState();
   }
@@ -70,6 +85,10 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     }
     if (message.type === "sendChatMessage") {
       await this.sendChatMessage(message.text);
+      return;
+    }
+    if (message.type === "inspectRepoPreview") {
+      await this.inspectRepoPreview();
     }
   }
 
@@ -82,9 +101,44 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     if (!sessionId) return;
     const userMessage: ElysiaMessage = { id: `msg_${Date.now()}_u`, role: "user", text: text.trim(), createdAt: new Date().toISOString() };
     await this.sessions.appendMessage(sessionId, userMessage);
-    const reply = await this.api.sendPlaceholderMessage(text.trim());
+    const session = this.sessions.getSessions().find((item) => item.id === sessionId);
+    let reply: string;
+    try {
+      reply = await this.api.sendCodingChat({
+        session_id: session?.backendSessionId,
+        message: text.trim(),
+        workspace_label: session?.workspaceLabel,
+        approval_mode: this.approvals.getMode()
+      });
+      this.codingError = undefined;
+    } catch (error) {
+      reply = `Local Elysia coding bridge unavailable. Your message stayed inside the VS Code companion shell: ${error instanceof Error ? error.message : text.trim()}`;
+      this.codingError = error instanceof Error ? error.message : "Local Elysia coding bridge unavailable.";
+    }
     const elysiaMessage: ElysiaMessage = { id: `msg_${Date.now()}_e`, role: "elysia", text: reply, createdAt: new Date().toISOString() };
     await this.sessions.appendMessage(sessionId, elysiaMessage);
+    await this.postState();
+  }
+
+  private async inspectRepoPreview(): Promise<void> {
+    const workspaceRoot = this.getWorkspaceRoot();
+    if (!workspaceRoot) {
+      this.codingError = "No trusted workspace folder is available for repo preview.";
+      await this.postState();
+      return;
+    }
+    const session = this.sessions.getSessions().find((item) => item.id === this.activeSessionId);
+    try {
+      this.repoPreview = await this.api.inspectRepoPreview({
+        workspace_root: workspaceRoot,
+        session_id: session?.backendSessionId,
+        max_depth: 3,
+        max_entries: 80
+      });
+      this.codingError = undefined;
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Repo preview failed.";
+    }
     await this.postState();
   }
 
@@ -94,6 +148,11 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
       this.activeSessionId = sessions[0].id;
     }
     const connection = await this.api.getStatus();
+    try {
+      this.codingBridge = await this.api.getCodingStatus();
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Local Elysia coding bridge unavailable.";
+    }
     return {
       connection,
       workspace: this.workspaceTrust.getStatus(),
@@ -103,8 +162,18 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
       approvalMode: this.approvals.getMode(),
       git: this.diffs.getGitStatusSummary(),
       changedFiles: this.diffs.getChangedFiles(),
-      patchPreview: this.diffs.getPatchPreview()
+      patchPreview: this.diffs.getPatchPreview(),
+      coding: {
+        bridge: this.codingBridge,
+        repoPreview: this.repoPreview,
+        lastError: this.codingError
+      }
     };
+  }
+
+  private getWorkspaceRoot(): string | undefined {
+    if (!vscode.workspace.isTrusted) return undefined;
+    return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
   }
 
   private async postState(): Promise<void> {

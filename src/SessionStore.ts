@@ -17,10 +17,11 @@ export class SessionStore {
     return all[sessionId] ?? [];
   }
 
-  public async newSession(workspaceLabel: string, approvalMode: ApprovalMode): Promise<ElysiaSession> {
+  public async newSession(workspaceLabel: string, approvalMode: ApprovalMode, backendSessionId?: string): Promise<ElysiaSession> {
     const now = new Date().toISOString();
     const session: ElysiaSession = {
       id: `elysia_${Date.now().toString(36)}`,
+      backendSessionId,
       title: "New coding room",
       workspaceLabel,
       createdAt: now,

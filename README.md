@@ -8,9 +8,11 @@ This extension is not Elysia core and does not require Marketplace sign-in. It c
 
 - Elysia Activity Bar container.
 - Coding Room webview shell.
-- Local Elysia API connection status.
-- Local UI sessions stored in VS Code state.
-- Chat pane with local placeholder behavior.
+- Local Elysia coding bridge connection status through `/coding/status`.
+- Local governed coding session creation through `/coding/session/start`.
+- Chat pane wired to `/coding/chat` for safe planning responses.
+- Metadata-only workspace preview through `/coding/repo/inspect-preview`.
+- Local UI sessions stored in VS Code state, with backend session IDs when available.
 - Workspace/trust status.
 - Git and changed-files placeholders.
 - Approval mode controls.
@@ -24,12 +26,23 @@ This extension is not Elysia core and does not require Marketplace sign-in. It c
 - No shell, package manager, Git mutation, or worker execution.
 - No cloud upload.
 - No Marketplace account requirement.
-- No source-code contents stored by default.
+- No source-code contents returned by the repo preview or stored by default.
 - No secrets, service-role keys, tokens, or local private data storage.
 
 ## Local-First Boundary
 
-The extension uses VS Code UI APIs and local extension state. It does not send source code to Marketplace or cloud services. Any future patch or command capability must go through explicit Elysia governance, exact approval, ledger truth, and rollback notes.
+The extension uses VS Code UI APIs, the extension host, local extension state, and the local Elysia bridge. The webview does not fetch the local API directly. It does not send source code to Marketplace or cloud services. Any future patch or command capability must go through explicit Elysia governance, exact approval, ledger truth, and rollback notes.
+
+## Local Bridge Endpoints
+
+The current MVP uses:
+
+- `GET /coding/status`
+- `POST /coding/session/start`
+- `POST /coding/chat`
+- `POST /coding/repo/inspect-preview`
+
+These endpoints are local-only and preview/planning-only. Repo preview returns bounded metadata and ignores common generated/private paths; it does not return raw source text.
 
 ## Run in Extension Development Host
 
@@ -66,7 +79,7 @@ Packaging a local VSIX does not publish the extension. Public VS Code Marketplac
 
 ## Roadmap
 
-1. Read-only repo intelligence through local Elysia governance.
+1. Richer read-only repo intelligence through local Elysia governance.
 2. Patch preview with no apply.
 3. Approved VS Code-native patch application.
 4. Approved focused test commands with allowlists/timeouts.

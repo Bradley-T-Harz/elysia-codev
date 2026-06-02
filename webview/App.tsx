@@ -2,6 +2,7 @@ import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import ApprovalBar from "./components/ApprovalBar";
 import ChangedFilesPanel from "./components/ChangedFilesPanel";
+import CodingBridgePanel from "./components/CodingBridgePanel";
 import ChatPane from "./components/ChatPane";
 import GitStatusPanel from "./components/GitStatusPanel";
 import PatchPreview from "./components/PatchPreview";
@@ -20,7 +21,8 @@ const emptyState: WebviewState = {
   approvalMode: "plan_only",
   git: { branch: "Not inspected", dirtyState: "unknown", changedCount: 0, summary: "No repo inspected." },
   changedFiles: [],
-  patchPreview: { state: "empty", summary: "No patch proposed.", files: [], canApply: false }
+  patchPreview: { state: "empty", summary: "No patch proposed.", files: [], canApply: false },
+  coding: { bridge: null, repoPreview: null }
 };
 
 export default function App({ vscode }: AppProps) {
@@ -67,6 +69,7 @@ export default function App({ vscode }: AppProps) {
         <ChatPane activeSession={activeSession} messages={state.messages} onSend={(text) => vscode.postMessage({ type: "sendChatMessage", text })} onRefresh={() => vscode.postMessage({ type: "refreshStatus" })} />
         <aside className="side-stack">
           <ApprovalBar mode={state.approvalMode} onChange={setApprovalMode} />
+          <CodingBridgePanel coding={state.coding} onInspectRepo={() => vscode.postMessage({ type: "inspectRepoPreview" })} />
           <GitStatusPanel git={state.git} />
           <ChangedFilesPanel files={state.changedFiles} />
           <PatchPreview preview={state.patchPreview} />

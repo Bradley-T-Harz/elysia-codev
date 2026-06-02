@@ -5,6 +5,7 @@ export type SessionStatus = "planning" | "active" | "waiting_for_approval" | "co
 
 export type ElysiaSession = {
   id: string;
+  backendSessionId?: string;
   title: string;
   workspaceLabel: string;
   createdAt: string;
@@ -56,6 +57,56 @@ export type PatchPreview = {
   canApply: false;
 };
 
+export type CodingBoundaryFlags = {
+  local_only: boolean;
+  marketplace_account_required: boolean;
+  cloud_upload_allowed: boolean;
+  selected_file_read_allowed: boolean;
+  patch_proposal_allowed: boolean;
+  patch_apply_allowed: boolean;
+  command_execution_allowed: boolean;
+  test_execution_allowed: boolean;
+  git_mutation_allowed: boolean;
+  package_manager_allowed: boolean;
+  autonomous_loop_allowed: boolean;
+  source_contents_included: boolean;
+};
+
+export type CodingBridgeStatus = {
+  available: boolean;
+  contract_version: string;
+  local_api_base: string;
+  boundaries: CodingBoundaryFlags;
+  enabled_endpoints: string[];
+  disabled_capabilities: string[];
+  notes: string[];
+};
+
+export type RepoPreviewEntry = {
+  relative_path: string;
+  kind: "directory" | "file";
+  depth: number;
+};
+
+export type RepoInspectPreview = {
+  workspace_label: string;
+  workspace_root_hash: string;
+  max_depth: number;
+  max_entries: number;
+  entries_returned: number;
+  ignored_entries: string[];
+  preview_entries: RepoPreviewEntry[];
+  source_contents_included: boolean;
+  files_read: string[];
+  boundaries: CodingBoundaryFlags;
+};
+
+export type CodingState = {
+  bridge: CodingBridgeStatus | null;
+  repoPreview: RepoInspectPreview | null;
+  lastError?: string;
+};
+
 export type WebviewState = {
   connection: ElysiaConnectionStatus;
   workspace: WorkspaceStatus;
@@ -66,6 +117,7 @@ export type WebviewState = {
   git: GitStatusSummary;
   changedFiles: ChangedFile[];
   patchPreview: PatchPreview;
+  coding: CodingState;
 };
 
 export type WebviewToExtensionMessage =
@@ -74,7 +126,8 @@ export type WebviewToExtensionMessage =
   | { type: "refreshStatus" }
   | { type: "clearSessions" }
   | { type: "setApprovalMode"; mode: ApprovalMode }
-  | { type: "sendChatMessage"; text: string };
+  | { type: "sendChatMessage"; text: string }
+  | { type: "inspectRepoPreview" };
 
 export type ExtensionToWebviewMessage =
   | { type: "state"; state: WebviewState }
