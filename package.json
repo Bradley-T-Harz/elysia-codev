@@ -1,7 +1,7 @@
 {
-  "name": "elysia-vscode",
-  "displayName": "Elysia VS Code Companion",
-  "description": "Local-first Elysia coding-room companion for VS Code. Plan-only by default; patch apply and command execution are disabled placeholders.",
+  "name": "elysia-codev",
+  "displayName": "Elysia Codev",
+  "description": "Local-first Elysia coding companion for VS Code. Plan-only by default; patch apply and command execution are disabled placeholders.",
   "version": "0.1.0",
   "publisher": "ecosyneva-commons",
   "license": "Apache-2.0",

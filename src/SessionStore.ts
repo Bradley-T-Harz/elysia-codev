@@ -19,10 +19,11 @@ export class SessionStore {
 
   public async newSession(workspaceLabel: string, approvalMode: ApprovalMode, backendSessionId?: string): Promise<ElysiaSession> {
     const now = new Date().toISOString();
+    const sessionNumber = this.getSessions().length + 1;
     const session: ElysiaSession = {
       id: `elysia_${Date.now().toString(36)}`,
       backendSessionId,
-      title: "New coding room",
+      title: `Coding room ${sessionNumber}`,
       workspaceLabel,
       createdAt: now,
       updatedAt: now,
@@ -31,6 +32,14 @@ export class SessionStore {
     };
     await this.context.workspaceState.update(SESSION_KEY, [session, ...this.getSessions()].slice(0, 40));
     return session;
+  }
+
+  public async deleteSession(sessionId: string): Promise<void> {
+    const sessions = this.getSessions().filter((session) => session.id !== sessionId);
+    const allMessages = this.context.workspaceState.get<Record<string, ElysiaMessage[]>>(MESSAGE_KEY, {});
+    delete allMessages[sessionId];
+    await this.context.workspaceState.update(SESSION_KEY, sessions);
+    await this.context.workspaceState.update(MESSAGE_KEY, allMessages);
   }
 
   public async appendMessage(sessionId: string, message: ElysiaMessage): Promise<void> {

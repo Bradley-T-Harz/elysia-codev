@@ -1,6 +1,6 @@
-# Elysia VS Code Companion
+# Elysia Codev
 
-Elysia VS Code Companion is a first-party official Elysia add-on for developers. It provides a local-first coding-room shell inside VS Code while keeping Elysia core clean.
+Elysia Codev is a first-party official Elysia add-on for developers. It provides a local-first coding-room shell inside VS Code while keeping Elysia core clean.
 
 This extension is not Elysia core and does not require Marketplace sign-in. It connects to the local Elysia API bridge on `http://127.0.0.1:8000` by default.
 
@@ -49,7 +49,7 @@ These endpoints are local-only and preview/planning-only. Repo preview returns b
 ```bash
 npm install
 npm run compile
-code <workspace-root>/EcoSyneva_Commons_LLC/<coordination-root>/Add-ons/elysia-vscode
+code <workspace-root>/EcoSyneva_Commons_LLC/<coordination-root>/Add-ons/Official_Addons/elysia-codev
 ```
 
 Then press `F5` in VS Code and open the **Elysia** Activity Bar icon in the Extension Development Host.

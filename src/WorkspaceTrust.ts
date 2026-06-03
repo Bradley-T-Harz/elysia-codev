@@ -14,6 +14,7 @@ export class WorkspaceTrust {
       trustLevel,
       workspaceLabel: folders[0]?.name ?? "No workspace",
       workspaceFolders: folders.map((folder) => folder.name),
+      workspaceRoot: folders[0]?.uri.fsPath,
       canReadWorkspace: trusted && this.approvals.canReadWorkspace(approvalMode),
       canProposePatch: trusted && this.approvals.canProposePatch(approvalMode),
       canApplyPatch: false,

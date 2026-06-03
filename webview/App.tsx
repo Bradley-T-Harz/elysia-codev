@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import ApprovalBar from "./components/ApprovalBar";
+import ActiveFilePanel from "./components/ActiveFilePanel";
 import ChangedFilesPanel from "./components/ChangedFilesPanel";
 import CodingBridgePanel from "./components/CodingBridgePanel";
 import ChatPane from "./components/ChatPane";
@@ -15,6 +16,7 @@ type AppProps = { vscode: VsCodeApi };
 const emptyState: WebviewState = {
   connection: { state: "unknown", apiUrl: "http://127.0.0.1:8000", summary: "Waiting for extension host." },
   workspace: { trustLevel: "no_workspace", workspaceLabel: "No workspace", workspaceFolders: [], canReadWorkspace: false, canProposePatch: false, canApplyPatch: false, canRunCommand: false },
+  activeFile: null,
   sessions: [],
   activeSessionId: null,
   messages: [],
@@ -22,7 +24,7 @@ const emptyState: WebviewState = {
   git: { branch: "Not inspected", dirtyState: "unknown", changedCount: 0, summary: "No repo inspected." },
   changedFiles: [],
   patchPreview: { state: "empty", summary: "No patch proposed.", files: [], canApply: false },
-  coding: { bridge: null, repoPreview: null }
+  coding: { bridge: null, repoPreview: null, filePreview: null }
 };
 
 export default function App({ vscode }: AppProps) {
@@ -65,11 +67,32 @@ export default function App({ vscode }: AppProps) {
       </section>
 
       <div className="layout">
-        <SessionList sessions={state.sessions} activeSessionId={state.activeSessionId} onNewSession={() => vscode.postMessage({ type: "newSession" })} onClear={() => vscode.postMessage({ type: "clearSessions" })} />
-        <ChatPane activeSession={activeSession} messages={state.messages} onSend={(text) => vscode.postMessage({ type: "sendChatMessage", text })} onRefresh={() => vscode.postMessage({ type: "refreshStatus" })} />
+        <SessionList
+          sessions={state.sessions}
+          activeSessionId={state.activeSessionId}
+          busyAction={state.coding.busyAction}
+          onNewSession={() => vscode.postMessage({ type: "newSession" })}
+          onSelect={(sessionId) => vscode.postMessage({ type: "selectSession", sessionId })}
+          onDelete={(sessionId) => vscode.postMessage({ type: "deleteSession", sessionId })}
+          onClear={() => vscode.postMessage({ type: "clearSessions" })}
+        />
+        <ChatPane
+          activeSession={activeSession}
+          messages={state.messages}
+          busyAction={state.coding.busyAction}
+          onSend={(text) => vscode.postMessage({ type: "sendChatMessage", text })}
+          onRefresh={() => vscode.postMessage({ type: "refreshStatus" })}
+        />
         <aside className="side-stack">
           <ApprovalBar mode={state.approvalMode} onChange={setApprovalMode} />
-          <CodingBridgePanel coding={state.coding} onInspectRepo={() => vscode.postMessage({ type: "inspectRepoPreview" })} />
+          <CodingBridgePanel coding={state.coding} workspace={state.workspace} onInspectRepo={() => vscode.postMessage({ type: "inspectRepoPreview" })} onRefresh={() => vscode.postMessage({ type: "refreshStatus" })} />
+          <ActiveFilePanel
+            activeFile={state.activeFile}
+            filePreview={state.coding.filePreview}
+            busyAction={state.coding.busyAction}
+            canReadWorkspace={state.workspace.canReadWorkspace}
+            onReadPreview={() => vscode.postMessage({ type: "readActiveFilePreview" })}
+          />
           <GitStatusPanel git={state.git} />
           <ChangedFilesPanel files={state.changedFiles} />
           <PatchPreview preview={state.patchPreview} />

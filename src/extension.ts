@@ -27,6 +27,11 @@ export function activate(context: vscode.ExtensionContext): void {
 
   try {
     context.subscriptions.push(vscode.window.registerWebviewViewProvider("elysia.codingRoom", provider));
+    context.subscriptions.push(
+      vscode.workspace.onDidChangeWorkspaceFolders(() => void provider.refresh()),
+      vscode.workspace.onDidGrantWorkspaceTrust(() => void provider.refresh()),
+      vscode.window.onDidChangeActiveTextEditor(() => void provider.refreshLocalState())
+    );
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     void vscode.window.showErrorMessage(`Elysia commands are registered, but the Coding Room view could not register: ${detail}`);

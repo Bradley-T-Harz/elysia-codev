@@ -1,7 +1,10 @@
+import * as http from "node:http";
+import * as https from "node:https";
 import * as vscode from "vscode";
 import type {
   CodingBridgeStatus,
   ElysiaConnectionStatus,
+  FileReadPreview,
   RepoInspectPreview
 } from "./types";
 
@@ -15,6 +18,17 @@ type CodingStatusData = { coding_bridge?: CodingBridgeStatus };
 type SessionData = { session?: { session_id: string } };
 type ChatData = { coding_chat?: { assistant_text: string; plan?: string[]; refused_capabilities?: string[] } };
 type RepoPreviewData = { repo_preview?: RepoInspectPreview };
+type FilePreviewData = { file_preview?: FileReadPreview };
+type LocalRequestInit = {
+  method: "GET" | "POST";
+  body?: string;
+};
+
+type LocalResponse = {
+  ok: boolean;
+  status: number;
+  body: string;
+};
 
 export class ElysiaApiClient {
   public get apiUrl(): string {
@@ -77,20 +91,110 @@ export class ElysiaApiClient {
     return envelope.data.repo_preview;
   }
 
-  private async request<T>(path: string, init: RequestInit): Promise<Envelope<T>> {
-    const apiUrl = this.apiUrl.replace(/\/$/, "");
-    const response = await fetch(`${apiUrl}${path}`, {
-      ...init,
-      headers: {
-        "Content-Type": "application/json",
-        ...(init.headers ?? {})
-      }
+  public async readSelectedFilePreview(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+  }): Promise<FileReadPreview> {
+    const envelope = await this.request<FilePreviewData>("/coding/file/read-preview", {
+      method: "POST",
+      body: JSON.stringify(request)
     });
-    const envelope = await response.json() as Envelope<T>;
+    if (!envelope.data?.file_preview) {
+      throw new Error("Local Elysia did not return file preview data.");
+    }
+    return envelope.data.file_preview;
+  }
+
+  private async request<T>(path: string, init: LocalRequestInit): Promise<Envelope<T>> {
+    const target = this.buildLocalUrl(path);
+    const response = await this.localHttpRequest(target, init);
+    let envelope: Envelope<T>;
+    try {
+      envelope = JSON.parse(response.body) as Envelope<T>;
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new Error(`${init.method} ${target.toString()} returned non-JSON response (${response.status}): ${detail}`);
+    }
     if (!response.ok || envelope.status === "error" || envelope.status === "blocked") {
       const detail = envelope.errors?.join("; ") || `Local Elysia responded with ${response.status}.`;
       throw new Error(detail);
     }
     return envelope;
+  }
+
+  private buildLocalUrl(path: string): URL {
+    let parsed: URL;
+    try {
+      parsed = new URL(this.apiUrl.replace(/\/$/, ""));
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new Error(`Invalid Elysia API URL "${this.apiUrl}": ${detail}`);
+    }
+
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      throw new Error(`Rejected Elysia API URL scheme "${parsed.protocol}". Only http/https loopback URLs are allowed.`);
+    }
+
+    if (parsed.hostname === "localhost") {
+      parsed.hostname = "127.0.0.1";
+    }
+
+    if (parsed.hostname !== "127.0.0.1" && parsed.hostname !== "::1" && parsed.hostname !== "[::1]") {
+      throw new Error(`Rejected non-loopback Elysia API host "${parsed.hostname}". Use http://127.0.0.1:<port>.`);
+    }
+
+    return new URL(path, parsed.toString().replace(/\/$/, "/"));
+  }
+
+  private async localHttpRequest(target: URL, init: LocalRequestInit): Promise<LocalResponse> {
+    const client = target.protocol === "https:" ? https : http;
+    const body = init.body ?? "";
+    const method = init.method;
+
+    return new Promise((resolve, reject) => {
+      const request = client.request(
+        target,
+        {
+          method,
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Content-Length": Buffer.byteLength(body)
+          },
+          timeout: 5000
+        },
+        (response) => {
+          const chunks: Buffer[] = [];
+          response.on("data", (chunk: Buffer | string) => {
+            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+          });
+          response.on("end", () => {
+            const status = response.statusCode ?? 0;
+            resolve({
+              ok: status >= 200 && status < 300,
+              status,
+              body: Buffer.concat(chunks).toString("utf-8")
+            });
+          });
+        }
+      );
+
+      request.on("timeout", () => {
+        request.destroy(new Error(`${method} ${target.toString()} timed out after 5000ms.`));
+      });
+
+      request.on("error", (error: NodeJS.ErrnoException) => {
+        const code = error.code ? ` ${error.code}` : "";
+        reject(new Error(`${method} ${target.toString()} failed${code}: ${error.message}`));
+      });
+
+      if (body) {
+        request.write(body);
+      }
+      request.end();
+    });
   }
 }

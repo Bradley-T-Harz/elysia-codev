@@ -32,6 +32,7 @@ export type WorkspaceStatus = {
   trustLevel: WorkspaceTrustLevel;
   workspaceLabel: string;
   workspaceFolders: string[];
+  workspaceRoot?: string;
   canReadWorkspace: boolean;
   canProposePatch: boolean;
   canApplyPatch: boolean;
@@ -55,6 +56,14 @@ export type PatchPreview = {
   summary: string;
   files: string[];
   canApply: false;
+};
+
+export type ActiveFileDescriptor = {
+  fileName: string;
+  relativePath: string;
+  languageId: string;
+  scheme: string;
+  isDirty: boolean;
 };
 
 export type CodingBoundaryFlags = {
@@ -101,15 +110,36 @@ export type RepoInspectPreview = {
   boundaries: CodingBoundaryFlags;
 };
 
+export type FileReadPreview = {
+  status: string;
+  file_label: string;
+  relative_path?: string;
+  path_hash: string;
+  language_hint?: string;
+  source_contents_included: boolean;
+  content_preview?: string;
+  bytes_returned: number;
+  lines_returned: number;
+  truncated: boolean;
+  blocked_reason?: string;
+  warnings: string[];
+  secret_scan_findings: string[];
+  boundaries: CodingBoundaryFlags;
+};
+
 export type CodingState = {
   bridge: CodingBridgeStatus | null;
   repoPreview: RepoInspectPreview | null;
+  filePreview: FileReadPreview | null;
   lastError?: string;
+  busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "deleteSession" | "clearSessions";
+  lastAction?: string;
 };
 
 export type WebviewState = {
   connection: ElysiaConnectionStatus;
   workspace: WorkspaceStatus;
+  activeFile: ActiveFileDescriptor | null;
   sessions: ElysiaSession[];
   activeSessionId: string | null;
   messages: ElysiaMessage[];
@@ -125,9 +155,12 @@ export type WebviewToExtensionMessage =
   | { type: "newSession" }
   | { type: "refreshStatus" }
   | { type: "clearSessions" }
+  | { type: "selectSession"; sessionId: string }
+  | { type: "deleteSession"; sessionId: string }
   | { type: "setApprovalMode"; mode: ApprovalMode }
   | { type: "sendChatMessage"; text: string }
-  | { type: "inspectRepoPreview" };
+  | { type: "inspectRepoPreview" }
+  | { type: "readActiveFilePreview" };
 
 export type ExtensionToWebviewMessage =
   | { type: "state"; state: WebviewState }

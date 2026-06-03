@@ -3,6 +3,7 @@ body { margin: 0; background: var(--vscode-editor-background); color: var(--vsco
 button, select, textarea { font: inherit; }
 button { border: 1px solid var(--vscode-button-border, transparent); background: var(--vscode-button-background); color: var(--vscode-button-foreground); border-radius: 4px; padding: 0.42rem 0.62rem; cursor: pointer; }
 button.ghost { background: transparent; border-color: var(--vscode-panel-border); color: var(--vscode-descriptionForeground); width: 100%; margin-top: 0.75rem; }
+button:disabled, textarea:disabled { opacity: 0.58; cursor: not-allowed; }
 select, textarea { width: 100%; color: var(--vscode-input-foreground); background: var(--vscode-input-background); border: 1px solid var(--vscode-input-border, var(--vscode-panel-border)); border-radius: 4px; padding: 0.5rem; }
 .elysia-app { min-height: 100vh; padding: 0.9rem; display: grid; gap: 0.8rem; }
 .topbar, .status-strip, .panel { border: 1px solid var(--vscode-panel-border); background: color-mix(in srgb, var(--vscode-sideBar-background) 86%, transparent); border-radius: 8px; }
@@ -19,18 +20,22 @@ h1 { margin: 0; font-size: 1.3rem; }
 .panel { padding: 0.75rem; min-width: 0; }
 .panel-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem; font-weight: 700; }
 .session-panel, .side-stack { display: grid; gap: 0.65rem; }
-.session-card { border: 1px solid var(--vscode-panel-border); border-radius: 6px; padding: 0.6rem; display: grid; gap: 0.2rem; }
+.session-card { border: 1px solid var(--vscode-panel-border); border-radius: 6px; padding: 0.45rem; display: grid; gap: 0.35rem; }
 .session-card--active { border-color: #7ed7d1; }
 .session-card span, .muted, small { color: var(--vscode-descriptionForeground); }
+.session-select { width: 100%; text-align: left; display: grid; gap: 0.2rem; background: transparent; border: 0; color: inherit; padding: 0.2rem; }
+.session-delete { justify-self: end; background: transparent; border-color: var(--vscode-panel-border); color: var(--vscode-descriptionForeground); font-size: 0.75rem; padding: 0.24rem 0.42rem; }
 .chat-panel { min-height: 62vh; display: grid; grid-template-rows: auto 1fr auto; }
 .messages { display: grid; gap: 0.65rem; align-content: start; overflow: auto; min-height: 280px; }
 .message { border: 1px solid var(--vscode-panel-border); border-radius: 7px; padding: 0.65rem; }
 .message--elysia { border-color: color-mix(in srgb, #7ed7d1 52%, var(--vscode-panel-border)); }
 .message p { margin: 0.35rem 0 0; line-height: 1.45; }
 .error-note { color: #d8a5a5; border: 1px solid color-mix(in srgb, #d8a5a5 35%, transparent); border-radius: 6px; padding: 0.45rem; }
+.success-note { color: #7ed7d1; border: 1px solid color-mix(in srgb, #7ed7d1 30%, transparent); border-radius: 6px; padding: 0.45rem; }
 .empty-state { color: var(--vscode-descriptionForeground); border: 1px dashed var(--vscode-panel-border); border-radius: 7px; padding: 1rem; }
 .composer { display: grid; gap: 0.5rem; margin-top: 0.7rem; }
 .facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.55rem; margin: 0; }
+.facts--single { grid-template-columns: 1fr; }
 dt { color: var(--vscode-descriptionForeground); font-size: 0.72rem; text-transform: uppercase; }
 dd { margin: 0.18rem 0 0; }
 .pill { font-size: 0.7rem; color: #7ed7d1; border: 1px solid color-mix(in srgb, #7ed7d1 35%, transparent); border-radius: 999px; padding: 0.16rem 0.38rem; }
@@ -38,4 +43,21 @@ dd { margin: 0.18rem 0 0; }
 .file-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.35rem; }
 .file-list li { display: grid; gap: 0.12rem; }
 .repo-preview { display: grid; gap: 0.45rem; margin-top: 0.65rem; }
+.file-preview { display: grid; gap: 0.45rem; margin-top: 0.65rem; min-width: 0; }
+.source-preview {
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+  padding: 0.55rem;
+  background: color-mix(in srgb, var(--vscode-editor-background) 88%, transparent);
+  color: var(--vscode-editor-foreground);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+.button-row { display: grid; grid-template-columns: 1fr; gap: 0.45rem; margin-top: 0.65rem; }
+.button-row .ghost { margin-top: 0; }
 @media (max-width: 980px) { .layout, .status-strip { grid-template-columns: 1fr; } .chat-panel { min-height: 48vh; } }
