@@ -24,8 +24,8 @@ export default function CodingBridgePanel({ coding, workspace, onInspectRepo, on
       <dl className="facts">
         <div><dt>Local only</dt><dd>{bridge?.boundaries.local_only ? "yes" : "unknown"}</dd></div>
         <div><dt>Marketplace</dt><dd>{bridge?.boundaries.marketplace_account_required ? "required" : "not required"}</dd></div>
-        <div><dt>Patch apply</dt><dd>disabled</dd></div>
-        <div><dt>Commands</dt><dd>disabled</dd></div>
+        <div><dt>Patch apply</dt><dd>{bridge?.boundaries.patch_apply_allowed ? "approval-gated" : "disabled"}</dd></div>
+        <div><dt>Commands</dt><dd>{bridge?.boundaries.command_execution_allowed ? "allowlist + approval" : "disabled"}</dd></div>
       </dl>
       {bridge?.disabled_capabilities.length ? (
         <p className="muted">Disabled: {bridge.disabled_capabilities.join(", ")}</p>

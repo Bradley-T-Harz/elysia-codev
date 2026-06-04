@@ -6,9 +6,15 @@ import ChangedFilesPanel from "./components/ChangedFilesPanel";
 import CodingBridgePanel from "./components/CodingBridgePanel";
 import ChatPane from "./components/ChatPane";
 import GitStatusPanel from "./components/GitStatusPanel";
+import GoalWorkflowPanel from "./components/GoalWorkflowPanel";
+import IdeContextPanel from "./components/IdeContextPanel";
 import PatchPreview from "./components/PatchPreview";
+import ReviewWorkflowPanel from "./components/ReviewWorkflowPanel";
 import SessionList from "./components/SessionList";
 import SettingsPanel from "./components/SettingsPanel";
+import TestOutputPanel from "./components/TestOutputPanel";
+import ToolsPanel from "./components/ToolsPanel";
+import WorkModePanel from "./components/WorkModePanel";
 import type { ApprovalMode, VsCodeApi, WebviewState } from "./types";
 
 type AppProps = { vscode: VsCodeApi };
@@ -21,10 +27,38 @@ const emptyState: WebviewState = {
   activeSessionId: null,
   messages: [],
   approvalMode: "plan_only",
+  approvalModeCapabilities: {
+    canReadApprovedFile: true,
+    canInspectPaths: false,
+    canProposePatch: false,
+    canApplyPatch: false,
+    canRunChecks: false,
+    description: "Plan only: Elysia may reason and outline changes. No apply-ready patch, mutation, or checks."
+  },
+  workMode: {
+    mode: "local",
+    forgeConnected: false,
+    forgeStatus: "not_connected",
+    selectedContextSendAllowed: false,
+    notes: ["Work locally is the default. Developer Forge is not enabled."]
+  },
+  ideContext: {
+    workspaceMetadata: true,
+    activeFileMetadata: true,
+    approvedFilePreview: true,
+    diagnosticsSummary: false
+  },
+  goalWorkflow: {
+    status: "idle",
+    autonomyEnabled: false,
+    pursueGoalEnabled: false,
+    fullOperatorEnabled: false,
+    notes: ["Pursue Goal and Full Operator Mode are not enabled."]
+  },
   git: { branch: "Not inspected", dirtyState: "unknown", changedCount: 0, summary: "No repo inspected." },
   changedFiles: [],
   patchPreview: { state: "empty", summary: "No patch proposed.", files: [], canApply: false },
-  coding: { bridge: null, repoPreview: null, filePreview: null }
+  coding: { bridge: null, repoPreview: null, filePreview: null, patchApplyResult: null, commandResult: null }
 };
 
 export default function App({ vscode }: AppProps) {
@@ -84,7 +118,23 @@ export default function App({ vscode }: AppProps) {
           onRefresh={() => vscode.postMessage({ type: "refreshStatus" })}
         />
         <aside className="side-stack">
-          <ApprovalBar mode={state.approvalMode} onChange={setApprovalMode} />
+          <ApprovalBar mode={state.approvalMode} capabilities={state.approvalModeCapabilities} onChange={setApprovalMode} />
+          <WorkModePanel
+            workMode={state.workMode}
+            onConnectForge={() => vscode.postMessage({ type: "connectDeveloperForge" })}
+            onSendContextToForge={() => vscode.postMessage({ type: "sendSelectedContextToForge" })}
+          />
+          <IdeContextPanel
+            context={state.ideContext}
+            onChange={(settings) => vscode.postMessage({ type: "setIdeContext", settings })}
+          />
+          <GoalWorkflowPanel
+            goal={state.goalWorkflow}
+            onPlanMode={() => vscode.postMessage({ type: "startPlanMode" })}
+            onPursueGoal={() => vscode.postMessage({ type: "pursueGoal" })}
+            onStop={() => vscode.postMessage({ type: "stopGoal" })}
+            onFullOperator={() => vscode.postMessage({ type: "requestFullOperatorMode" })}
+          />
           <CodingBridgePanel coding={state.coding} workspace={state.workspace} onInspectRepo={() => vscode.postMessage({ type: "inspectRepoPreview" })} onRefresh={() => vscode.postMessage({ type: "refreshStatus" })} />
           <ActiveFilePanel
             activeFile={state.activeFile}
@@ -95,7 +145,28 @@ export default function App({ vscode }: AppProps) {
           />
           <GitStatusPanel git={state.git} />
           <ChangedFilesPanel files={state.changedFiles} />
-          <PatchPreview preview={state.patchPreview} />
+          <ReviewWorkflowPanel
+            preview={state.patchPreview}
+            applyResult={state.coding.patchApplyResult}
+            commandResult={state.coding.commandResult}
+            onReview={() => vscode.postMessage({ type: "reviewPatchProposal" })}
+            onCopyDiff={() => vscode.postMessage({ type: "copyPatchDiff" })}
+            onDiscard={() => vscode.postMessage({ type: "discardPatchProposal" })}
+          />
+          <PatchPreview
+            preview={state.patchPreview}
+            capabilities={state.approvalModeCapabilities}
+            applyResult={state.coding.patchApplyResult}
+            busyAction={state.coding.busyAction}
+            onApply={() => vscode.postMessage({ type: "applyApprovedPatch" })}
+          />
+          <TestOutputPanel
+            result={state.coding.commandResult}
+            capabilities={state.approvalModeCapabilities}
+            busyAction={state.coding.busyAction}
+            onRun={(commandId) => vscode.postMessage({ type: "runApprovedCheck", commandId })}
+          />
+          <ToolsPanel bridge={state.coding.bridge} />
           <SettingsPanel connection={state.connection} workspace={state.workspace} />
         </aside>
       </div>

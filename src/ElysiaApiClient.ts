@@ -3,6 +3,10 @@ import * as https from "node:https";
 import * as vscode from "vscode";
 import type {
   CodingBridgeStatus,
+  CodingChatReply,
+  CodingCommandRunResult,
+  CodingPatchApplyResult,
+  CodingPatchProposal,
   ElysiaConnectionStatus,
   FileReadPreview,
   RepoInspectPreview
@@ -12,13 +16,16 @@ type Envelope<T> = {
   status?: string;
   data?: T;
   errors?: string[];
+  detail?: unknown;
 };
 
 type CodingStatusData = { coding_bridge?: CodingBridgeStatus };
 type SessionData = { session?: { session_id: string } };
-type ChatData = { coding_chat?: { assistant_text: string; plan?: string[]; refused_capabilities?: string[] } };
+type ChatData = { coding_chat?: { assistant_text: string; plan?: string[]; refused_capabilities?: string[]; patch_proposal?: CodingPatchProposal } };
 type RepoPreviewData = { repo_preview?: RepoInspectPreview };
 type FilePreviewData = { file_preview?: FileReadPreview };
+type PatchApplyData = { patch_apply?: CodingPatchApplyResult };
+type CommandRunData = { command_run?: CodingCommandRunResult };
 type LocalRequestInit = {
   method: "GET" | "POST";
   body?: string;
@@ -66,18 +73,32 @@ export class ElysiaApiClient {
     return sessionId;
   }
 
-  public async sendCodingChat(request: { session_id?: string; message: string; workspace_label?: string; approval_mode: string }): Promise<string> {
+  public async sendCodingChat(request: {
+    session_id?: string;
+    message: string;
+    workspace_label?: string;
+    approval_mode: string;
+    approved_file_context?: {
+      file_label: string;
+      relative_path: string;
+      language_hint?: string;
+      path_hash: string;
+      content_preview: string;
+      source_contents_included: boolean;
+      approval_granted: boolean;
+    };
+  }): Promise<CodingChatReply> {
     const envelope = await this.request<ChatData>("/coding/chat", {
       method: "POST",
       body: JSON.stringify(request)
     });
     const result = envelope.data?.coding_chat;
     if (!result?.assistant_text) {
-      return "Local Elysia coding bridge returned no planning response.";
+      return { assistantText: "Local Elysia coding bridge returned no planning response." };
     }
     const plan = result.plan?.length ? `\n\nPlan:\n${result.plan.map((item) => `- ${item}`).join("\n")}` : "";
     const refused = result.refused_capabilities?.length ? `\n\nDisabled here: ${result.refused_capabilities.join(", ")}.` : "";
-    return `${result.assistant_text}${plan}${refused}`;
+    return { assistantText: `${result.assistant_text}${plan}${refused}`, patchProposal: result.patch_proposal };
   }
 
   public async inspectRepoPreview(request: { workspace_root: string; session_id?: string; max_depth?: number; max_entries?: number }): Promise<RepoInspectPreview> {
@@ -108,6 +129,45 @@ export class ElysiaApiClient {
     return envelope.data.file_preview;
   }
 
+  public async applyApprovedPatch(request: {
+    session_id?: string;
+    approval_mode: string;
+    workspace_root: string;
+    target_file: string;
+    proposed_diff: string;
+    expected_content_hash: string;
+    patch_hash: string;
+    operator_approved: boolean;
+    approval_phrase?: string;
+  }): Promise<CodingPatchApplyResult> {
+    const envelope = await this.request<PatchApplyData>("/coding/patch/apply-approved", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.patch_apply) {
+      throw new Error("Local Elysia did not return patch apply result data.");
+    }
+    return envelope.data.patch_apply;
+  }
+
+  public async runApprovedCommand(request: {
+    approval_id: string;
+    approval_token?: string;
+    approval_mode: string;
+    command_id: string;
+    workspace_root: string;
+    operator_approved: boolean;
+  }): Promise<CodingCommandRunResult> {
+    const envelope = await this.request<CommandRunData>("/coding/command/run-approved", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.command_run) {
+      throw new Error("Local Elysia did not return command run data.");
+    }
+    return envelope.data.command_run;
+  }
+
   private async request<T>(path: string, init: LocalRequestInit): Promise<Envelope<T>> {
     const target = this.buildLocalUrl(path);
     const response = await this.localHttpRequest(target, init);
@@ -119,7 +179,10 @@ export class ElysiaApiClient {
       throw new Error(`${init.method} ${target.toString()} returned non-JSON response (${response.status}): ${detail}`);
     }
     if (!response.ok || envelope.status === "error" || envelope.status === "blocked") {
-      const detail = envelope.errors?.join("; ") || `Local Elysia responded with ${response.status}.`;
+      const validationDetail = Array.isArray(envelope.detail)
+        ? envelope.detail.map((item) => typeof item === "object" && item !== null && "msg" in item ? String((item as { msg: unknown }).msg) : JSON.stringify(item)).join("; ")
+        : typeof envelope.detail === "string" ? envelope.detail : "";
+      const detail = envelope.errors?.join("; ") || validationDetail || `Local Elysia responded with ${response.status}.`;
       throw new Error(detail);
     }
     return envelope;

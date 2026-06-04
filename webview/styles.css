@@ -60,4 +60,27 @@ dd { margin: 0.18rem 0 0; }
 }
 .button-row { display: grid; grid-template-columns: 1fr; gap: 0.45rem; margin-top: 0.65rem; }
 .button-row .ghost { margin-top: 0; }
+.toggle-list, .tool-list { display: grid; gap: 0.45rem; margin: 0.65rem 0 0; padding: 0; }
+.toggle-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.5rem;
+  align-items: start;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+  padding: 0.45rem;
+}
+.toggle-row span { display: grid; gap: 0.1rem; min-width: 0; }
+.tool-list { list-style: none; }
+.tool-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.55rem;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+  padding: 0.42rem;
+}
+.tool-list span { min-width: 0; overflow-wrap: anywhere; }
+.tool-live { color: #7ed7d1; }
+.tool-disabled { color: var(--vscode-descriptionForeground); }
 @media (max-width: 980px) { .layout, .status-strip { grid-template-columns: 1fr; } .chat-panel { min-height: 48vh; } }

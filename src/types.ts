@@ -1,4 +1,4 @@
-export type ApprovalMode = "read_only" | "plan_only" | "patch_preview" | "apply_with_approval" | "test_with_approval";
+export type ApprovalMode = "read_only" | "plan_only" | "path_preview" | "apply_with_approval" | "test_with_approval";
 export type ConnectionState = "unknown" | "connected" | "unavailable";
 export type WorkspaceTrustLevel = "no_workspace" | "restricted" | "read_only" | "trusted";
 export type SessionStatus = "planning" | "active" | "waiting_for_approval" | "complete" | "failed";
@@ -39,6 +39,41 @@ export type WorkspaceStatus = {
   canRunCommand: boolean;
 };
 
+export type ApprovalModeCapabilities = {
+  canReadApprovedFile: boolean;
+  canInspectPaths: boolean;
+  canProposePatch: boolean;
+  canApplyPatch: boolean;
+  canRunChecks: boolean;
+  description: string;
+};
+
+export type WorkMode = "local" | "developer_forge";
+
+export type WorkModeState = {
+  mode: WorkMode;
+  forgeConnected: boolean;
+  forgeStatus: "not_connected" | "placeholder" | "disabled";
+  selectedContextSendAllowed: boolean;
+  notes: string[];
+};
+
+export type IdeContextSettings = {
+  workspaceMetadata: boolean;
+  activeFileMetadata: boolean;
+  approvedFilePreview: boolean;
+  diagnosticsSummary: boolean;
+};
+
+export type GoalWorkflowState = {
+  status: "idle" | "planning" | "preview_only" | "stopped";
+  currentGoal?: string;
+  autonomyEnabled: false;
+  pursueGoalEnabled: false;
+  fullOperatorEnabled: false;
+  notes: string[];
+};
+
 export type GitStatusSummary = {
   branch: string;
   dirtyState: "unknown" | "clean" | "dirty";
@@ -55,7 +90,10 @@ export type PatchPreview = {
   state: "empty" | "planned" | "available";
   summary: string;
   files: string[];
-  canApply: false;
+  canApply: boolean;
+  diffPreview?: string;
+  patchHash?: string;
+  warnings?: string[];
 };
 
 export type ActiveFileDescriptor = {
@@ -115,6 +153,7 @@ export type FileReadPreview = {
   file_label: string;
   relative_path?: string;
   path_hash: string;
+  content_hash?: string;
   language_hint?: string;
   source_contents_included: boolean;
   content_preview?: string;
@@ -127,12 +166,63 @@ export type FileReadPreview = {
   boundaries: CodingBoundaryFlags;
 };
 
+export type CodingPatchProposal = {
+  status: string;
+  patch_id: string;
+  patch_hash: string;
+  expected_content_hash?: string;
+  change_summary: string;
+  target_files: string[];
+  allowed_target_files: string[];
+  blocked_target_files: Array<{ path: string; reason: string }>;
+  diff_preview?: string;
+  truncated: boolean;
+  apply_allowed: boolean;
+  approval_required_for_apply: boolean;
+  rollback_note: string;
+  warnings: string[];
+};
+
+export type CodingPatchApplyResult = {
+  status: string;
+  target_relative_path?: string;
+  patch_hash: string;
+  expected_content_hash: string;
+  previous_content_hash?: string;
+  new_content_hash?: string;
+  mutation_performed: boolean;
+  audit_written: boolean;
+  blocked_reason?: string;
+  rollback_note: string;
+  warnings: string[];
+};
+
+export type CodingCommandRunResult = {
+  status: string;
+  run_id?: string;
+  command_id: string;
+  execution_performed: boolean;
+  exit_code?: number;
+  stdout_preview?: string;
+  stderr_preview?: string;
+  blocked_reason?: string;
+  audit_written: boolean;
+  warnings: string[];
+};
+
+export type CodingChatReply = {
+  assistantText: string;
+  patchProposal?: CodingPatchProposal;
+};
+
 export type CodingState = {
   bridge: CodingBridgeStatus | null;
   repoPreview: RepoInspectPreview | null;
   filePreview: FileReadPreview | null;
+  patchApplyResult: CodingPatchApplyResult | null;
+  commandResult: CodingCommandRunResult | null;
   lastError?: string;
-  busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "deleteSession" | "clearSessions";
+  busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions";
   lastAction?: string;
 };
 
@@ -144,6 +234,10 @@ export type WebviewState = {
   activeSessionId: string | null;
   messages: ElysiaMessage[];
   approvalMode: ApprovalMode;
+  approvalModeCapabilities: ApprovalModeCapabilities;
+  workMode: WorkModeState;
+  ideContext: IdeContextSettings;
+  goalWorkflow: GoalWorkflowState;
   git: GitStatusSummary;
   changedFiles: ChangedFile[];
   patchPreview: PatchPreview;
@@ -158,9 +252,21 @@ export type WebviewToExtensionMessage =
   | { type: "selectSession"; sessionId: string }
   | { type: "deleteSession"; sessionId: string }
   | { type: "setApprovalMode"; mode: ApprovalMode }
+  | { type: "setIdeContext"; settings: IdeContextSettings }
+  | { type: "connectDeveloperForge" }
+  | { type: "sendSelectedContextToForge" }
+  | { type: "requestFullOperatorMode" }
+  | { type: "startPlanMode" }
+  | { type: "pursueGoal" }
+  | { type: "stopGoal" }
+  | { type: "reviewPatchProposal" }
+  | { type: "copyPatchDiff" }
+  | { type: "discardPatchProposal" }
   | { type: "sendChatMessage"; text: string }
   | { type: "inspectRepoPreview" }
-  | { type: "readActiveFilePreview" };
+  | { type: "readActiveFilePreview" }
+  | { type: "applyApprovedPatch" }
+  | { type: "runApprovedCheck"; commandId: string };
 
 export type ExtensionToWebviewMessage =
   | { type: "state"; state: WebviewState }

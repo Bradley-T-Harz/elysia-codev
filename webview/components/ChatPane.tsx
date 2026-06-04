@@ -17,7 +17,7 @@ export default function ChatPane({ activeSession, messages, busyAction, onSend, 
     <section className="panel chat-panel">
       <div className="panel-head"><span>{activeSession?.title ?? "Current work"}</span><button disabled={busy} onClick={onRefresh}>{busyAction === "refresh" ? "Refreshing..." : "Refresh"}</button></div>
       <div className="messages">
-        {!activeSession ? <div className="empty-state">Create or select a session to bind chat messages to a coding room.</div> : messages.length === 0 ? <div className="empty-state">Ask Elysia about this session. This shell does not mutate files or run commands.</div> : messages.map((message) => (
+        {!activeSession ? <div className="empty-state">Create or select a session to bind chat messages to a coding room.</div> : messages.length === 0 ? <div className="empty-state">Ask Elysia about this session. Chat can plan and propose; apply/check actions stay in their approval-gated cards.</div> : messages.map((message) => (
           <article key={message.id} className={`message message--${message.role}`}>
             <strong>{message.role === "elysia" ? "Elysia" : message.role}</strong>
             <p>{message.text}</p>

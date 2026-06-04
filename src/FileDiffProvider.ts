@@ -2,6 +2,25 @@ import * as vscode from "vscode";
 import type { ActiveFileDescriptor, ChangedFile, GitStatusSummary, PatchPreview } from "./types";
 
 export class FileDiffProvider {
+  private activeFileUriFromEditorOrTab(): vscode.Uri | undefined {
+    const editor = vscode.window.activeTextEditor;
+    if (editor && !editor.document.isUntitled && editor.document.uri.scheme === "file") {
+      return editor.document.uri;
+    }
+
+    const activeTab = vscode.window.tabGroups.activeTabGroup.activeTab;
+    const input = activeTab?.input;
+    if (input instanceof vscode.TabInputText && input.uri.scheme === "file") {
+      return input.uri;
+    }
+
+    return undefined;
+  }
+
+  private documentForUri(uri: vscode.Uri): vscode.TextDocument | undefined {
+    return vscode.workspace.textDocuments.find((document) => document.uri.toString() === uri.toString());
+  }
+
   public getGitStatusSummary(): GitStatusSummary {
     const workspaceLabel = vscode.workspace.workspaceFolders?.[0]?.name ?? "No workspace";
     return {
@@ -22,22 +41,26 @@ export class FileDiffProvider {
   }
 
   public getActiveFile(): ActiveFileDescriptor | null {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor || editor.document.isUntitled) return null;
-    const document = editor.document;
+    const uri = this.activeFileUriFromEditorOrTab();
+    if (!uri) return null;
+    const document = this.documentForUri(uri);
     return {
-      fileName: document.uri.path.split("/").pop() ?? "active file",
-      relativePath: vscode.workspace.asRelativePath(document.uri, false),
-      languageId: document.languageId,
-      scheme: document.uri.scheme,
-      isDirty: document.isDirty
+      fileName: uri.path.split("/").pop() ?? "active file",
+      relativePath: vscode.workspace.asRelativePath(uri, false),
+      languageId: document?.languageId ?? "unknown",
+      scheme: uri.scheme,
+      isDirty: document?.isDirty ?? false
     };
   }
 
   public getActiveFilePath(): string | undefined {
-    const editor = vscode.window.activeTextEditor;
-    if (!editor || editor.document.isUntitled || editor.document.uri.scheme !== "file") return undefined;
-    return editor.document.uri.fsPath;
+    return this.activeFileUriFromEditorOrTab()?.fsPath;
+  }
+
+  public getActiveFileWorkspaceRoot(): string | undefined {
+    const uri = this.activeFileUriFromEditorOrTab();
+    if (!uri) return undefined;
+    return vscode.workspace.getWorkspaceFolder(uri)?.uri.fsPath;
   }
 
   public getPatchPreview(): PatchPreview {

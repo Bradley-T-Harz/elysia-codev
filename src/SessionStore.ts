@@ -48,6 +48,14 @@ export class SessionStore {
     await this.context.workspaceState.update(MESSAGE_KEY, all);
   }
 
+  public async updateSessionApprovalMode(sessionId: string, approvalMode: ApprovalMode): Promise<void> {
+    const now = new Date().toISOString();
+    const sessions = this.getSessions().map((session) => (
+      session.id === sessionId ? { ...session, approvalMode, updatedAt: now } : session
+    ));
+    await this.context.workspaceState.update(SESSION_KEY, sessions);
+  }
+
   public async clear(): Promise<void> {
     await this.context.workspaceState.update(SESSION_KEY, []);
     await this.context.workspaceState.update(MESSAGE_KEY, {});

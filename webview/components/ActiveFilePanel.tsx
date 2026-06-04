@@ -11,11 +11,15 @@ type Props = {
 
 export default function ActiveFilePanel({ activeFile, filePreview, busyAction, canReadWorkspace, onReadPreview }: Props) {
   const busy = busyAction === "filePreview";
+  const fileBacked = activeFile?.scheme === "file";
+  const previewApproved = filePreview?.status === "completed";
   return (
     <section className="panel">
       <div className="panel-head">
         <span>Active File</span>
-        <span className="pill">{activeFile?.scheme ?? "none"}</span>
+        <span className={previewApproved ? "pill" : "pill pill--warn"}>
+          {previewApproved ? "preview approved" : activeFile?.scheme ?? "none"}
+        </span>
       </div>
       {activeFile ? (
         <dl className="facts facts--single">
@@ -25,11 +29,15 @@ export default function ActiveFilePanel({ activeFile, filePreview, busyAction, c
           <div><dt>Dirty</dt><dd>{activeFile.isDirty ? "yes" : "no"}</dd></div>
         </dl>
       ) : (
-        <p className="muted">Open a file-backed editor to request an approved bounded preview.</p>
+        <p className="muted">No file-backed editor active. Open a file such as fibonacci_bug.py first.</p>
       )}
-      <button className="ghost" disabled={busy || !activeFile || !canReadWorkspace} onClick={onReadPreview}>
+      {activeFile && !fileBacked ? (
+        <p className="muted">The active tab is not a local file, so Codev cannot request a source preview.</p>
+      ) : null}
+      <button className="ghost" disabled={busy || !fileBacked || !canReadWorkspace} onClick={onReadPreview}>
         {busy ? "Reading preview..." : "Read approved preview"}
       </button>
+      {!canReadWorkspace ? <p className="muted">Workspace read posture is disabled for the current trust/approval mode.</p> : null}
       {filePreview ? (
         <div className="file-preview">
           <p className="muted">

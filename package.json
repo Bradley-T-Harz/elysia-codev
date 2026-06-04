@@ -41,19 +41,19 @@
         },
         "elysia.approvalMode": {
           "type": "string",
-          "enum": ["read_only", "plan_only", "patch_preview", "apply_with_approval", "test_with_approval"],
+          "enum": ["read_only", "plan_only", "path_preview", "apply_with_approval", "test_with_approval"],
           "default": "plan_only",
-          "description": "Default approval posture for the companion. Patch and command execution remain disabled in this scaffold."
+          "description": "Default approval posture for the companion. Mutating actions and checks require explicit local approval in the matching mode."
         },
         "elysia.allowPatchPreview": {
           "type": "boolean",
           "default": false,
-          "description": "Show patch preview placeholders. Real patch apply is not implemented in v0.1.0."
+          "description": "Show patch preview surfaces. Patch apply still requires apply_with_approval or test_with_approval plus exact local approval."
         },
         "elysia.allowCommandExecution": {
           "type": "boolean",
           "default": false,
-          "description": "Reserved for future exact approved test commands. No command execution is implemented in v0.1.0."
+          "description": "Reserved for exact approved allowlisted checks in test_with_approval mode. No arbitrary command execution is allowed."
         },
         "elysia.workspaceTrustMode": {
           "type": "string",

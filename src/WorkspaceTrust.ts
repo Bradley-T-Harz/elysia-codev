@@ -17,8 +17,8 @@ export class WorkspaceTrust {
       workspaceRoot: folders[0]?.uri.fsPath,
       canReadWorkspace: trusted && this.approvals.canReadWorkspace(approvalMode),
       canProposePatch: trusted && this.approvals.canProposePatch(approvalMode),
-      canApplyPatch: false,
-      canRunCommand: false
+      canApplyPatch: trusted && this.approvals.canApplyPatch(approvalMode),
+      canRunCommand: trusted && this.approvals.canRunCommand(approvalMode)
     };
   }
 }
