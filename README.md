@@ -12,6 +12,12 @@ This extension is not Elysia core and does not require Marketplace sign-in. It c
 - Local governed coding session creation through `/coding/session/start`.
 - Chat pane wired to `/coding/chat` for safe planning responses.
 - Metadata-only workspace preview through `/coding/repo/inspect-preview`.
+- Approved selected-file preview through `/coding/file/read-preview`, including
+  Elysia core file type, adapter, capability, risk, hash, encoding, parse, and
+  redaction truth.
+- Guarded patch proposal/apply surfaces when Elysia core policy and approval
+  mode allow them.
+- Exact approved check output surfaces for allowlisted commands only.
 - Local UI sessions stored in VS Code state, with backend session IDs when available.
 - Workspace/trust status.
 - Git and changed-files placeholders.
@@ -21,9 +27,9 @@ This extension is not Elysia core and does not require Marketplace sign-in. It c
 
 ## Intentionally Disabled
 
-- No patch application.
-- No command or test execution.
-- No shell, package manager, Git mutation, or worker execution.
+- No silent patch application.
+- No arbitrary command or test execution.
+- No shell, package manager, Git mutation, or worker execution from Codev.
 - No cloud upload.
 - No Marketplace account requirement.
 - No source-code contents returned by the repo preview or stored by default.
@@ -41,8 +47,14 @@ The current MVP uses:
 - `POST /coding/session/start`
 - `POST /coding/chat`
 - `POST /coding/repo/inspect-preview`
+- `POST /coding/file/read-preview`
+- `POST /coding/patch/propose`
+- `POST /coding/patch/apply-approved`
+- `POST /coding/command/run-approved`
 
-These endpoints are local-only and preview/planning-only. Repo preview returns bounded metadata and ignores common generated/private paths; it does not return raw source text.
+These endpoints are local-only and governed. Repo preview returns bounded
+metadata and ignores common generated/private paths; selected source preview
+requires explicit approval and returns Elysia's file type/risk/capability truth.
 
 ## Run in Extension Development Host
 
@@ -73,8 +85,10 @@ Packaging a local VSIX does not publish the extension. Public VS Code Marketplac
 
 - `elysia.apiUrl`: local API URL. Default `http://127.0.0.1:8000`.
 - `elysia.approvalMode`: default approval posture. Default `plan_only`.
-- `elysia.allowPatchPreview`: placeholder toggle. Real patch application is disabled.
-- `elysia.allowCommandExecution`: reserved for future exact approved commands; disabled.
+- `elysia.allowPatchPreview`: patch preview posture. Apply still requires Elysia
+  core approval mode, exact approval, path guard, hash check, and audit.
+- `elysia.allowCommandExecution`: exact approved commands only when Elysia core
+  policy allows them.
 - `elysia.workspaceTrustMode`: how the companion interprets workspace trust.
 
 ## Roadmap

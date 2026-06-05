@@ -154,7 +154,34 @@ export type FileReadPreview = {
   relative_path?: string;
   path_hash: string;
   content_hash?: string;
+  byte_hash?: string;
   language_hint?: string;
+  file_type_id?: string;
+  file_type_label?: string;
+  category?: string;
+  adapter?: string;
+  language_id?: string;
+  encoding?: string;
+  line_ending?: string;
+  line_count?: number;
+  byte_count?: number;
+  parse_status?: string;
+  parse_summary?: Record<string, unknown>;
+  risk_flags?: {
+    secret_sensitive: boolean;
+    generated_sensitive: boolean;
+    lockfile: boolean;
+    executable_sensitive: boolean;
+  };
+  capabilities?: {
+    readable: boolean;
+    writable: boolean;
+    patchable: boolean;
+    creatable: boolean;
+    deletable: boolean;
+    renameable: boolean;
+  };
+  redactions?: string[];
   source_contents_included: boolean;
   content_preview?: string;
   bytes_returned: number;

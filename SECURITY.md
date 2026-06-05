@@ -8,7 +8,11 @@ Elysia Codev is a VS Code doorway into Elysia core. It is not the coding brain a
 - No cloud upload.
 - No Marketplace account requirement.
 - No shell, subprocess, git mutation, package-manager execution, or autonomous loop in the extension.
-- No source-code contents are read by the extension unless a future Elysia core approval flow explicitly allows it.
+- Source-code previews require explicit Elysia core approval and return file
+  type, adapter, risk, capability, hash, parse, and redaction truth.
+- Codev does not decide file safety itself. Elysia core classifies files,
+  blocks secrets/private/runtime paths, scans previews, validates patchability,
+  and audits approved mutations.
 
 ## Reporting Security Issues
 

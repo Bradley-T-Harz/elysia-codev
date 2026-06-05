@@ -58,6 +58,11 @@ dd { margin: 0.18rem 0 0; }
   font-size: 0.82rem;
   line-height: 1.4;
 }
+.source-preview--compact {
+  max-height: 150px;
+  font-size: 0.76rem;
+  color: var(--vscode-descriptionForeground);
+}
 .button-row { display: grid; grid-template-columns: 1fr; gap: 0.45rem; margin-top: 0.65rem; }
 .button-row .ghost { margin-top: 0; }
 .toggle-list, .tool-list { display: grid; gap: 0.45rem; margin: 0.65rem 0 0; padding: 0; }
