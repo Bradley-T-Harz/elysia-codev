@@ -5,6 +5,8 @@ import type {
   CodingBridgeStatus,
   CodingChatReply,
   CodingCommandRunResult,
+  CodingDocumentApplyResult,
+  CodingDocumentPlan,
   CodingPatchApplyResult,
   CodingPatchProposal,
   ElysiaConnectionStatus,
@@ -24,6 +26,11 @@ type SessionData = { session?: { session_id: string } };
 type ChatData = { coding_chat?: { assistant_text: string; plan?: string[]; refused_capabilities?: string[]; patch_proposal?: CodingPatchProposal } };
 type RepoPreviewData = { repo_preview?: RepoInspectPreview };
 type FilePreviewData = { file_preview?: FileReadPreview };
+type DocumentPreviewData = { document?: FileReadPreview };
+type DocumentExportPlanData = { document_export_plan?: CodingDocumentPlan };
+type DocumentExportResultData = { document_export_result?: CodingDocumentApplyResult };
+type DocumentEditPlanData = { document_edit_plan?: CodingDocumentPlan };
+type DocumentEditResultData = { document_edit_result?: CodingDocumentApplyResult };
 type PatchApplyData = { patch_apply?: CodingPatchApplyResult };
 type CommandRunData = { command_run?: CodingCommandRunResult };
 type LocalRequestInit = {
@@ -129,6 +136,122 @@ export class ElysiaApiClient {
     return envelope.data.file_preview;
   }
 
+  public async inspectDocument(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+  }): Promise<FileReadPreview> {
+    const envelope = await this.request<DocumentPreviewData>("/coding/document/inspect", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.document) {
+      throw new Error("Local Elysia did not return document inspect data.");
+    }
+    return this.normalizeDocumentPreview(envelope.data.document);
+  }
+
+  public async extractDocumentPreview(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+    max_chars?: number;
+    max_tables?: number;
+    max_rows?: number;
+  }): Promise<FileReadPreview> {
+    const envelope = await this.request<DocumentPreviewData>("/coding/document/extract-preview", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.document) {
+      throw new Error("Local Elysia did not return document extraction data.");
+    }
+    return this.normalizeDocumentPreview(envelope.data.document);
+  }
+
+  public async planDocumentExport(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+    export_format: "markdown" | "text";
+    target_path?: string;
+  }): Promise<CodingDocumentPlan> {
+    const envelope = await this.request<DocumentExportPlanData>("/coding/document/export-plan", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.document_export_plan) {
+      throw new Error("Local Elysia did not return document export plan data.");
+    }
+    return envelope.data.document_export_plan;
+  }
+
+  public async applyApprovedDocumentExport(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    operator_approved: boolean;
+    export_format: "markdown" | "text";
+    target_path?: string;
+    expected_source_hash?: string;
+    overwrite_existing?: boolean;
+  }): Promise<CodingDocumentApplyResult> {
+    const envelope = await this.request<DocumentExportResultData>("/coding/document/export-approved", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.document_export_result) {
+      throw new Error("Local Elysia did not return document export result data.");
+    }
+    return envelope.data.document_export_result;
+  }
+
+  public async planDocumentEdit(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+    operation: string;
+    parameters: Record<string, unknown>;
+  }): Promise<CodingDocumentPlan> {
+    const envelope = await this.request<DocumentEditPlanData>("/coding/document/edit-plan", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.document_edit_plan) {
+      throw new Error("Local Elysia did not return document edit plan data.");
+    }
+    return envelope.data.document_edit_plan;
+  }
+
+  public async applyApprovedDocumentEdit(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    operator_approved: boolean;
+    operation: string;
+    parameters: Record<string, unknown>;
+    expected_source_hash?: string;
+  }): Promise<CodingDocumentApplyResult> {
+    const envelope = await this.request<DocumentEditResultData>("/coding/document/apply-approved", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.document_edit_result) {
+      throw new Error("Local Elysia did not return document edit result data.");
+    }
+    return envelope.data.document_edit_result;
+  }
+
   public async applyApprovedPatch(request: {
     session_id?: string;
     approval_mode: string;
@@ -186,6 +309,39 @@ export class ElysiaApiClient {
       throw new Error(detail);
     }
     return envelope;
+  }
+
+  private normalizeDocumentPreview(document: FileReadPreview): FileReadPreview {
+    return {
+      ...document,
+      file_type_id: document.descriptor?.type_id ?? document.file_type_id,
+      file_type_label: document.descriptor?.label ?? document.file_type_label,
+      category: "document",
+      adapter: "document",
+      content_preview: document.text_preview ?? document.content_preview,
+      parse_summary: {
+        ...(document.parse_summary ?? {}),
+        document_type_id: document.descriptor?.type_id,
+        document_label: document.descriptor?.label,
+        document_family: document.descriptor?.family,
+        adapter: document.descriptor?.adapter,
+        status: document.status,
+        metadata: document.metadata ?? {},
+        safety: document.safety ?? {},
+        outline_count: document.outline?.length ?? 0,
+        table_count: document.tables?.length ?? 0,
+        provenance_count: document.provenance?.length ?? 0,
+        warnings: document.warnings ?? [],
+        redactions: document.redactions ?? []
+      },
+      source_contents_included: Boolean(document.text_preview ?? document.content_preview),
+      bytes_returned: document.bytes_returned ?? 0,
+      lines_returned: document.lines_returned ?? 0,
+      truncated: document.truncated ?? false,
+      warnings: document.warnings ?? [],
+      secret_scan_findings: document.secret_scan_findings ?? [],
+      redactions: document.redactions ?? []
+    };
   }
 
   private buildLocalUrl(path: string): URL {

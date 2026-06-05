@@ -63,6 +63,22 @@ dd { margin: 0.18rem 0 0; }
   font-size: 0.76rem;
   color: var(--vscode-descriptionForeground);
 }
+.document-preview {
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 8px;
+  padding: 0.6rem;
+  margin: 0.45rem 0;
+  background: color-mix(in srgb, var(--vscode-editor-background) 88%, var(--vscode-focusBorder) 12%);
+}
+.document-preview__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+.document-preview__meta {
+  margin-top: 0.45rem;
+}
 .button-row { display: grid; grid-template-columns: 1fr; gap: 0.45rem; margin-top: 0.65rem; }
 .button-row .ghost { margin-top: 0; }
 .toggle-list, .tool-list { display: grid; gap: 0.45rem; margin: 0.65rem 0 0; padding: 0; }

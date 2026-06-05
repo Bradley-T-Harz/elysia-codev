@@ -102,6 +102,26 @@ export type FileReadPreview = {
   warnings: string[];
   secret_scan_findings: string[];
   boundaries: CodingBoundaryFlags;
+  descriptor?: {
+    type_id: string;
+    label: string;
+    extension: string;
+    family: string;
+    adapter: string;
+    readable: boolean;
+    extractable: boolean;
+    exportable: boolean;
+    editable: boolean;
+    stable_edit_operations: string[];
+    risk_flags: Record<string, boolean>;
+    notes: string[];
+  };
+  safety?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
+  text_preview?: string;
+  tables?: Array<Record<string, unknown>>;
+  outline?: Array<Record<string, unknown>>;
+  provenance?: Array<Record<string, unknown>>;
 };
 
 export type UiMessage = {
@@ -192,8 +212,53 @@ export type WebviewState = {
       audit_written: boolean;
       warnings: string[];
     } | null;
+    documentOperation: {
+      inspectPreview: FileReadPreview | null;
+      extractPreview: FileReadPreview | null;
+      exportPlan: {
+        status: string;
+        action: string;
+        file_label: string;
+        relative_path?: string;
+        target_relative_path?: string;
+        blocked_reason?: string;
+        plan_summary: string;
+        source_hash?: string;
+        preview?: string;
+        warnings: string[];
+        approval_required: boolean;
+      } | null;
+      editPlan: {
+        status: string;
+        action: string;
+        file_label: string;
+        relative_path?: string;
+        target_relative_path?: string;
+        blocked_reason?: string;
+        plan_summary: string;
+        source_hash?: string;
+        preview?: string;
+        warnings: string[];
+        approval_required: boolean;
+      } | null;
+      applyResult: {
+        status: string;
+        action: string;
+        file_label: string;
+        relative_path?: string;
+        target_relative_path?: string;
+        blocked_reason?: string;
+        mutation_performed: boolean;
+        audit_written: boolean;
+        previous_hash?: string;
+        new_hash?: string;
+        warnings: string[];
+        rollback_note: string;
+      } | null;
+      lastError?: string;
+    } | null;
     lastError?: string;
-    busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions";
+    busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions" | "documentInspect" | "documentExtract" | "documentExportPlan" | "documentExportApply" | "documentEditPlan" | "documentEditApply";
     lastAction?: string;
   };
 };

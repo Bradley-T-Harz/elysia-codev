@@ -4,7 +4,7 @@ import { ElysiaApiClient } from "./ElysiaApiClient";
 import { FileDiffProvider } from "./FileDiffProvider";
 import { SessionStore } from "./SessionStore";
 import { WorkspaceTrust } from "./WorkspaceTrust";
-import type { ApprovalMode, CodingBridgeStatus, CodingCommandRunResult, CodingPatchApplyResult, CodingPatchProposal, ElysiaMessage, ExtensionToWebviewMessage, FileReadPreview, GoalWorkflowState, IdeContextSettings, PatchPreview, RepoInspectPreview, WebviewState, WebviewToExtensionMessage, WorkModeState } from "./types";
+import type { ApprovalMode, CodingBridgeStatus, CodingCommandRunResult, CodingDocumentOperationState, CodingPatchApplyResult, CodingPatchProposal, ElysiaMessage, ExtensionToWebviewMessage, FileReadPreview, GoalWorkflowState, IdeContextSettings, PatchPreview, RepoInspectPreview, WebviewState, WebviewToExtensionMessage, WorkModeState } from "./types";
 
 export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   private view: vscode.WebviewView | undefined;
@@ -12,6 +12,8 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   private codingBridge: CodingBridgeStatus | null = null;
   private repoPreviews = new Map<string, RepoInspectPreview>();
   private filePreviews = new Map<string, FileReadPreview>();
+  private documentOperations = new Map<string, CodingDocumentOperationState>();
+  private documentEditRequests = new Map<string, { operation: string; parameters: Record<string, unknown> }>();
   private patchProposals = new Map<string, CodingPatchProposal>();
   private patchApplyResults = new Map<string, CodingPatchApplyResult>();
   private commandResults = new Map<string, CodingCommandRunResult>();
@@ -114,6 +116,8 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     this.patchProposals.clear();
     this.patchApplyResults.clear();
     this.commandResults.clear();
+    this.documentOperations.clear();
+    this.documentEditRequests.clear();
     this.lastAction = "Local sessions cleared.";
     this.busyAction = undefined;
     await this.postState();
@@ -133,6 +137,8 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     await this.sessions.deleteSession(sessionId);
     this.repoPreviews.delete(sessionId);
     this.filePreviews.delete(sessionId);
+    this.documentOperations.delete(sessionId);
+    this.documentEditRequests.delete(sessionId);
     this.patchProposals.delete(sessionId);
     this.patchApplyResults.delete(sessionId);
     this.commandResults.delete(sessionId);
@@ -244,6 +250,30 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     }
     if (message.type === "readActiveFilePreview") {
       await this.readActiveFilePreview();
+      return;
+    }
+    if (message.type === "inspectActiveDocument") {
+      await this.inspectActiveDocument();
+      return;
+    }
+    if (message.type === "extractActiveDocument") {
+      await this.extractActiveDocument();
+      return;
+    }
+    if (message.type === "planDocumentExport") {
+      await this.planDocumentExport(message.exportFormat);
+      return;
+    }
+    if (message.type === "applyApprovedDocumentExport") {
+      await this.applyApprovedDocumentExport();
+      return;
+    }
+    if (message.type === "planDocumentEdit") {
+      await this.planDocumentEdit(message.operation, message.parameters);
+      return;
+    }
+    if (message.type === "applyApprovedDocumentEdit") {
+      await this.applyApprovedDocumentEdit();
       return;
     }
     if (message.type === "applyApprovedPatch") {
@@ -384,10 +414,281 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
       if (preview.status === "completed") {
         this.patchProposals.delete(activeSessionId);
         this.patchApplyResults.delete(activeSessionId);
+        this.documentOperations.delete(activeSessionId);
       }
     } catch (error) {
       this.codingError = error instanceof Error ? error.message : "Selected-file preview failed.";
       this.lastAction = "Selected-file preview failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private getDocumentOperation(sessionId: string): CodingDocumentOperationState {
+    const existing = this.documentOperations.get(sessionId);
+    if (existing) return existing;
+    const created: CodingDocumentOperationState = {
+      inspectPreview: null,
+      extractPreview: null,
+      exportPlan: null,
+      editPlan: null,
+      applyResult: null
+    };
+    this.documentOperations.set(sessionId, created);
+    return created;
+  }
+
+  private getActiveDocumentContext(): { sessionId: string; workspaceRoot: string; filePath: string; backendSessionId?: string } | { error: string } {
+    const sessionId = this.activeSessionId;
+    const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
+    const filePath = this.diffs.getActiveFilePath();
+    if (!sessionId) return { error: "Create or select a Codev session first." };
+    if (!workspaceRoot || !filePath) return { error: "Open a file-backed document in the workspace first." };
+    const preview = this.filePreviews.get(sessionId);
+    if (preview?.category !== "document") return { error: "Read an approved preview of a supported document first." };
+    const session = this.sessions.getSessions().find((item) => item.id === sessionId);
+    return { sessionId, workspaceRoot, filePath, backendSessionId: session?.backendSessionId };
+  }
+
+  private async inspectActiveDocument(): Promise<void> {
+    const context = this.getActiveDocumentContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    this.busyAction = "documentInspect";
+    this.lastAction = "Inspecting document metadata...";
+    await this.postState();
+    try {
+      const preview = await this.api.inspectDocument({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        approval_reason: "operator_confirmed_in_vscode"
+      });
+      const operation = this.getDocumentOperation(context.sessionId);
+      this.documentOperations.set(context.sessionId, { ...operation, inspectPreview: preview, lastError: undefined });
+      this.codingError = preview.status === "completed" ? undefined : preview.blocked_reason ?? preview.status;
+      this.lastAction = "Document inspect completed.";
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Document inspect failed.";
+      this.documentOperations.set(context.sessionId, { ...this.getDocumentOperation(context.sessionId), lastError: this.codingError });
+      this.lastAction = "Document inspect failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async extractActiveDocument(): Promise<void> {
+    const context = this.getActiveDocumentContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    this.busyAction = "documentExtract";
+    this.lastAction = "Extracting bounded document preview...";
+    await this.postState();
+    try {
+      const preview = await this.api.extractDocumentPreview({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        approval_reason: "operator_confirmed_in_vscode",
+        max_chars: 12000,
+        max_tables: 8,
+        max_rows: 20
+      });
+      const operation = this.getDocumentOperation(context.sessionId);
+      this.documentOperations.set(context.sessionId, { ...operation, extractPreview: preview, lastError: undefined });
+      this.filePreviews.set(context.sessionId, preview);
+      this.codingError = preview.status === "completed" ? undefined : preview.blocked_reason ?? preview.status;
+      this.lastAction = "Document extract preview updated.";
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Document extraction failed.";
+      this.documentOperations.set(context.sessionId, { ...this.getDocumentOperation(context.sessionId), lastError: this.codingError });
+      this.lastAction = "Document extraction failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async planDocumentExport(exportFormat: "markdown" | "text"): Promise<void> {
+    const context = this.getActiveDocumentContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    const preview = this.filePreviews.get(context.sessionId);
+    const relative = preview?.relative_path ?? preview?.file_label ?? "document";
+    const suffix = exportFormat === "markdown" ? "md" : "txt";
+    this.busyAction = "documentExportPlan";
+    this.lastAction = "Planning document export...";
+    await this.postState();
+    try {
+      const plan = await this.api.planDocumentExport({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        approval_reason: "operator_confirmed_in_vscode",
+        export_format: exportFormat,
+        target_path: `${relative}.export.${suffix}`
+      });
+      const operation = this.getDocumentOperation(context.sessionId);
+      this.documentOperations.set(context.sessionId, { ...operation, exportPlan: plan, applyResult: null, lastError: undefined });
+      this.codingError = plan.status === "planned" ? undefined : plan.blocked_reason ?? plan.status;
+      this.lastAction = "Document export plan ready.";
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Document export planning failed.";
+      this.documentOperations.set(context.sessionId, { ...this.getDocumentOperation(context.sessionId), lastError: this.codingError });
+      this.lastAction = "Document export planning failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async applyApprovedDocumentExport(): Promise<void> {
+    const context = this.getActiveDocumentContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    const operation = this.getDocumentOperation(context.sessionId);
+    const plan = operation.exportPlan;
+    if (!plan || plan.status !== "planned") {
+      this.codingError = "Plan a document export before approving export.";
+      await this.postState();
+      return;
+    }
+    const approval = await vscode.window.showWarningMessage(
+      `Write approved document export to ${plan.target_relative_path}? Source document is not modified.`,
+      { modal: true },
+      "Approve document export"
+    );
+    if (approval !== "Approve document export") {
+      this.lastAction = "Document export cancelled.";
+      await this.postState();
+      return;
+    }
+    this.busyAction = "documentExportApply";
+    this.lastAction = "Applying approved document export...";
+    await this.postState();
+    try {
+      const format = plan.target_relative_path?.endsWith(".txt") ? "text" : "markdown";
+      const result = await this.api.applyApprovedDocumentExport({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        operator_approved: true,
+        export_format: format,
+        target_path: plan.target_relative_path,
+        expected_source_hash: plan.source_hash,
+        overwrite_existing: false
+      });
+      this.documentOperations.set(context.sessionId, { ...operation, applyResult: result, lastError: undefined });
+      this.codingError = result.status === "applied" ? undefined : result.blocked_reason ?? result.status;
+      this.lastAction = `Document export ${result.status}.`;
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Document export failed.";
+      this.documentOperations.set(context.sessionId, { ...operation, lastError: this.codingError });
+      this.lastAction = "Document export failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async planDocumentEdit(operationName: string, parameters: Record<string, unknown>): Promise<void> {
+    const context = this.getActiveDocumentContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    this.busyAction = "documentEditPlan";
+    this.lastAction = "Planning stable document edit...";
+    await this.postState();
+    try {
+      const plan = await this.api.planDocumentEdit({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        approval_reason: "operator_confirmed_in_vscode",
+        operation: operationName,
+        parameters
+      });
+      const operation = this.getDocumentOperation(context.sessionId);
+      this.documentOperations.set(context.sessionId, { ...operation, editPlan: plan, applyResult: null, lastError: undefined });
+      this.documentEditRequests.set(context.sessionId, { operation: operationName, parameters });
+      this.codingError = plan.status === "planned" ? undefined : plan.blocked_reason ?? plan.status;
+      this.lastAction = `Document edit plan ${plan.status}.`;
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Document edit planning failed.";
+      this.documentOperations.set(context.sessionId, { ...this.getDocumentOperation(context.sessionId), lastError: this.codingError });
+      this.lastAction = "Document edit planning failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async applyApprovedDocumentEdit(): Promise<void> {
+    const context = this.getActiveDocumentContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    const operation = this.getDocumentOperation(context.sessionId);
+    const plan = operation.editPlan;
+    if (!plan || plan.status !== "planned") {
+      this.codingError = "Plan a stable document edit before approval.";
+      await this.postState();
+      return;
+    }
+    const approval = await vscode.window.showWarningMessage(
+      `Apply approved stable document edit to ${plan.relative_path ?? plan.file_label}?`,
+      { modal: true },
+      "Approve document edit"
+    );
+    if (approval !== "Approve document edit") {
+      this.lastAction = "Document edit cancelled.";
+      await this.postState();
+      return;
+    }
+    const request = this.documentEditRequests.get(context.sessionId);
+    if (!request) {
+      this.codingError = "Document edit request details are missing. Re-plan the edit before applying.";
+      await this.postState();
+      return;
+    }
+    this.busyAction = "documentEditApply";
+    this.lastAction = "Applying approved document edit...";
+    await this.postState();
+    try {
+      const result = await this.api.applyApprovedDocumentEdit({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        operator_approved: true,
+        operation: request.operation,
+        parameters: request.parameters,
+        expected_source_hash: plan.source_hash
+      });
+      this.documentOperations.set(context.sessionId, { ...operation, applyResult: result, lastError: undefined });
+      this.codingError = result.status === "applied" ? undefined : result.blocked_reason ?? result.status;
+      this.lastAction = `Document edit ${result.status}.`;
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Document edit failed.";
+      this.documentOperations.set(context.sessionId, { ...operation, lastError: this.codingError });
+      this.lastAction = "Document edit failed.";
     }
     this.busyAction = undefined;
     await this.postState();
@@ -594,6 +895,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
         filePreview: activeFilePreview,
         patchApplyResult: this.activeSessionId ? this.patchApplyResults.get(this.activeSessionId) ?? null : null,
         commandResult: this.activeSessionId ? this.commandResults.get(this.activeSessionId) ?? null : null,
+        documentOperation: this.activeSessionId ? this.documentOperations.get(this.activeSessionId) ?? null : null,
         lastError: this.codingError,
         busyAction: this.busyAction,
         lastAction: this.lastAction

@@ -191,6 +191,26 @@ export type FileReadPreview = {
   warnings: string[];
   secret_scan_findings: string[];
   boundaries: CodingBoundaryFlags;
+  descriptor?: {
+    type_id: string;
+    label: string;
+    extension: string;
+    family: string;
+    adapter: string;
+    readable: boolean;
+    extractable: boolean;
+    exportable: boolean;
+    editable: boolean;
+    stable_edit_operations: string[];
+    risk_flags: Record<string, boolean>;
+    notes: string[];
+  };
+  safety?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
+  text_preview?: string;
+  tables?: Array<Record<string, unknown>>;
+  outline?: Array<Record<string, unknown>>;
+  provenance?: Array<Record<string, unknown>>;
 };
 
 export type CodingPatchProposal = {
@@ -237,6 +257,44 @@ export type CodingCommandRunResult = {
   warnings: string[];
 };
 
+export type CodingDocumentPlan = {
+  status: string;
+  action: string;
+  file_label: string;
+  relative_path?: string;
+  target_relative_path?: string;
+  blocked_reason?: string;
+  plan_summary: string;
+  source_hash?: string;
+  preview?: string;
+  warnings: string[];
+  approval_required: boolean;
+};
+
+export type CodingDocumentApplyResult = {
+  status: string;
+  action: string;
+  file_label: string;
+  relative_path?: string;
+  target_relative_path?: string;
+  blocked_reason?: string;
+  mutation_performed: boolean;
+  audit_written: boolean;
+  previous_hash?: string;
+  new_hash?: string;
+  warnings: string[];
+  rollback_note: string;
+};
+
+export type CodingDocumentOperationState = {
+  inspectPreview: FileReadPreview | null;
+  extractPreview: FileReadPreview | null;
+  exportPlan: CodingDocumentPlan | null;
+  editPlan: CodingDocumentPlan | null;
+  applyResult: CodingDocumentApplyResult | null;
+  lastError?: string;
+};
+
 export type CodingChatReply = {
   assistantText: string;
   patchProposal?: CodingPatchProposal;
@@ -248,8 +306,9 @@ export type CodingState = {
   filePreview: FileReadPreview | null;
   patchApplyResult: CodingPatchApplyResult | null;
   commandResult: CodingCommandRunResult | null;
+  documentOperation: CodingDocumentOperationState | null;
   lastError?: string;
-  busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions";
+  busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions" | "documentInspect" | "documentExtract" | "documentExportPlan" | "documentExportApply" | "documentEditPlan" | "documentEditApply";
   lastAction?: string;
 };
 
@@ -292,6 +351,12 @@ export type WebviewToExtensionMessage =
   | { type: "sendChatMessage"; text: string }
   | { type: "inspectRepoPreview" }
   | { type: "readActiveFilePreview" }
+  | { type: "inspectActiveDocument" }
+  | { type: "extractActiveDocument" }
+  | { type: "planDocumentExport"; exportFormat: "markdown" | "text" }
+  | { type: "applyApprovedDocumentExport" }
+  | { type: "planDocumentEdit"; operation: string; parameters: Record<string, unknown> }
+  | { type: "applyApprovedDocumentEdit" }
   | { type: "applyApprovedPatch" }
   | { type: "runApprovedCheck"; commandId: string };
 

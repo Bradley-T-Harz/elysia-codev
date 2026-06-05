@@ -1,5 +1,6 @@
 import * as React from "react";
 import type { WebviewState } from "../types";
+import DocumentPreviewPanel from "./DocumentPreviewPanel";
 
 type Props = {
   activeFile: WebviewState["activeFile"];
@@ -7,9 +8,16 @@ type Props = {
   busyAction: WebviewState["coding"]["busyAction"];
   canReadWorkspace: boolean;
   onReadPreview: () => void;
+  documentOperation: WebviewState["coding"]["documentOperation"];
+  onInspectDocument: () => void;
+  onExtractDocument: () => void;
+  onPlanExport: (exportFormat: "markdown" | "text") => void;
+  onApplyExport: () => void;
+  onPlanEdit: (operation: string, parameters: Record<string, unknown>) => void;
+  onApplyEdit: () => void;
 };
 
-export default function ActiveFilePanel({ activeFile, filePreview, busyAction, canReadWorkspace, onReadPreview }: Props) {
+export default function ActiveFilePanel({ activeFile, filePreview, busyAction, canReadWorkspace, onReadPreview, documentOperation, onInspectDocument, onExtractDocument, onPlanExport, onApplyExport, onPlanEdit, onApplyEdit }: Props) {
   const busy = busyAction === "filePreview";
   const fileBacked = activeFile?.scheme === "file";
   const previewApproved = filePreview?.status === "completed";
@@ -78,6 +86,19 @@ export default function ActiveFilePanel({ activeFile, filePreview, busyAction, c
           {filePreview.redactions?.length ? <p className="muted">Redactions: {filePreview.redactions.join(", ")}</p> : null}
           {filePreview.blocked_reason ? <p className="error-note">Blocked: {filePreview.blocked_reason}</p> : null}
           {filePreview.warnings.length ? <p className="muted">Warnings: {filePreview.warnings.join(", ")}</p> : null}
+          {filePreview.category === "document" ? (
+            <DocumentPreviewPanel
+              filePreview={filePreview}
+              operation={documentOperation}
+              busyAction={busyAction}
+              onInspect={onInspectDocument}
+              onExtract={onExtractDocument}
+              onPlanExport={onPlanExport}
+              onApplyExport={onApplyExport}
+              onPlanEdit={onPlanEdit}
+              onApplyEdit={onApplyEdit}
+            />
+          ) : null}
           {parseSummary ? <pre className="source-preview source-preview--compact">{parseSummary}</pre> : null}
           {filePreview.content_preview ? <pre className="source-preview">{filePreview.content_preview}</pre> : null}
         </div>

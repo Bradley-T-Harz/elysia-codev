@@ -58,7 +58,7 @@ const emptyState: WebviewState = {
   git: { branch: "Not inspected", dirtyState: "unknown", changedCount: 0, summary: "No repo inspected." },
   changedFiles: [],
   patchPreview: { state: "empty", summary: "No patch proposed.", files: [], canApply: false },
-  coding: { bridge: null, repoPreview: null, filePreview: null, patchApplyResult: null, commandResult: null }
+  coding: { bridge: null, repoPreview: null, filePreview: null, patchApplyResult: null, commandResult: null, documentOperation: null }
 };
 
 export default function App({ vscode }: AppProps) {
@@ -142,6 +142,13 @@ export default function App({ vscode }: AppProps) {
             busyAction={state.coding.busyAction}
             canReadWorkspace={state.workspace.canReadWorkspace}
             onReadPreview={() => vscode.postMessage({ type: "readActiveFilePreview" })}
+            documentOperation={state.coding.documentOperation}
+            onInspectDocument={() => vscode.postMessage({ type: "inspectActiveDocument" })}
+            onExtractDocument={() => vscode.postMessage({ type: "extractActiveDocument" })}
+            onPlanExport={(exportFormat) => vscode.postMessage({ type: "planDocumentExport", exportFormat })}
+            onApplyExport={() => vscode.postMessage({ type: "applyApprovedDocumentExport" })}
+            onPlanEdit={(operation, parameters) => vscode.postMessage({ type: "planDocumentEdit", operation, parameters })}
+            onApplyEdit={() => vscode.postMessage({ type: "applyApprovedDocumentEdit" })}
           />
           <GitStatusPanel git={state.git} />
           <ChangedFilesPanel files={state.changedFiles} />
