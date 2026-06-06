@@ -15,6 +15,9 @@ This extension is not Elysia core and does not require Marketplace sign-in. It c
 - Approved selected-file preview through `/coding/file/read-preview`, including
   Elysia core file type, adapter, capability, risk, hash, encoding, parse, and
   redaction truth.
+- Science/data stewardship panels for approved data previews, metadata/schema
+  summaries, data export plans, and governed mutation plans backed by Elysia
+  core `/coding/data/*` endpoints.
 - Guarded patch proposal/apply surfaces when Elysia core policy and approval
   mode allow them.
 - Exact approved check output surfaces for allowlisted commands only.
@@ -48,6 +51,13 @@ The current MVP uses:
 - `POST /coding/chat`
 - `POST /coding/repo/inspect-preview`
 - `POST /coding/file/read-preview`
+- `GET /coding/data-types`
+- `POST /coding/data/inspect`
+- `POST /coding/data/preview`
+- `POST /coding/data/export-plan`
+- `POST /coding/data/export-approved`
+- `POST /coding/data/mutation-plan`
+- `POST /coding/data/apply-mutation-approved`
 - `POST /coding/patch/propose`
 - `POST /coding/patch/apply-approved`
 - `POST /coding/command/run-approved`

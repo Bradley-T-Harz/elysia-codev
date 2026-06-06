@@ -4,7 +4,7 @@ import { ElysiaApiClient } from "./ElysiaApiClient";
 import { FileDiffProvider } from "./FileDiffProvider";
 import { SessionStore } from "./SessionStore";
 import { WorkspaceTrust } from "./WorkspaceTrust";
-import type { ApprovalMode, CodingBridgeStatus, CodingCommandRunResult, CodingDocumentOperationState, CodingPatchApplyResult, CodingPatchProposal, ElysiaMessage, ExtensionToWebviewMessage, FileReadPreview, GoalWorkflowState, IdeContextSettings, PatchPreview, RepoInspectPreview, WebviewState, WebviewToExtensionMessage, WorkModeState } from "./types";
+import type { ApprovalMode, CodingBridgeStatus, CodingCommandRunResult, CodingDataOperationState, CodingDocumentOperationState, CodingPatchApplyResult, CodingPatchProposal, ElysiaMessage, ExtensionToWebviewMessage, FileReadPreview, GoalWorkflowState, IdeContextSettings, PatchPreview, RepoInspectPreview, WebviewState, WebviewToExtensionMessage, WorkModeState } from "./types";
 
 export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   private view: vscode.WebviewView | undefined;
@@ -14,6 +14,8 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   private filePreviews = new Map<string, FileReadPreview>();
   private documentOperations = new Map<string, CodingDocumentOperationState>();
   private documentEditRequests = new Map<string, { operation: string; parameters: Record<string, unknown> }>();
+  private dataOperations = new Map<string, CodingDataOperationState>();
+  private dataMutationRequests = new Map<string, { operation: string; parameters: Record<string, unknown> }>();
   private patchProposals = new Map<string, CodingPatchProposal>();
   private patchApplyResults = new Map<string, CodingPatchApplyResult>();
   private commandResults = new Map<string, CodingCommandRunResult>();
@@ -117,6 +119,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     this.patchApplyResults.clear();
     this.commandResults.clear();
     this.documentOperations.clear();
+    this.dataOperations.clear();
     this.documentEditRequests.clear();
     this.lastAction = "Local sessions cleared.";
     this.busyAction = undefined;
@@ -138,6 +141,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     this.repoPreviews.delete(sessionId);
     this.filePreviews.delete(sessionId);
     this.documentOperations.delete(sessionId);
+    this.dataOperations.delete(sessionId);
     this.documentEditRequests.delete(sessionId);
     this.patchProposals.delete(sessionId);
     this.patchApplyResults.delete(sessionId);
@@ -274,6 +278,30 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     }
     if (message.type === "applyApprovedDocumentEdit") {
       await this.applyApprovedDocumentEdit();
+      return;
+    }
+    if (message.type === "inspectActiveData") {
+      await this.inspectActiveData();
+      return;
+    }
+    if (message.type === "previewActiveData") {
+      await this.previewActiveData();
+      return;
+    }
+    if (message.type === "planDataExport") {
+      await this.planDataExport(message.exportFormat);
+      return;
+    }
+    if (message.type === "applyApprovedDataExport") {
+      await this.applyApprovedDataExport();
+      return;
+    }
+    if (message.type === "planDataMutation") {
+      await this.planDataMutation(message.operation, message.parameters);
+      return;
+    }
+    if (message.type === "applyApprovedDataMutation") {
+      await this.applyApprovedDataMutation();
       return;
     }
     if (message.type === "applyApprovedPatch") {
@@ -694,6 +722,278 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     await this.postState();
   }
 
+  private getDataOperation(sessionId: string): CodingDataOperationState {
+    const existing = this.dataOperations.get(sessionId);
+    if (existing) return existing;
+    const created: CodingDataOperationState = {
+      inspectPreview: null,
+      extractPreview: null,
+      exportPlan: null,
+      mutationPlan: null,
+      applyResult: null
+    };
+    this.dataOperations.set(sessionId, created);
+    return created;
+  }
+
+  private getActiveDataContext(): { sessionId: string; workspaceRoot: string; filePath: string; backendSessionId?: string } | { error: string } {
+    const sessionId = this.activeSessionId;
+    const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
+    const filePath = this.diffs.getActiveFilePath();
+    if (!sessionId) return { error: "Create or select a Codev session first." };
+    if (!workspaceRoot || !filePath) return { error: "Open a file-backed data file in the workspace first." };
+    const preview = this.filePreviews.get(sessionId);
+    if (preview?.category !== "science_data" && preview?.adapter !== "data") {
+      return { error: "Read an approved preview of a supported science/data file first." };
+    }
+    const session = this.sessions.getSessions().find((item) => item.id === sessionId);
+    return { sessionId, workspaceRoot, filePath, backendSessionId: session?.backendSessionId };
+  }
+
+  private async inspectActiveData(): Promise<void> {
+    const context = this.getActiveDataContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    this.busyAction = "dataInspect";
+    this.lastAction = "Inspecting data metadata...";
+    await this.postState();
+    try {
+      const preview = await this.api.inspectData({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        approval_reason: "operator_confirmed_in_vscode"
+      });
+      const operation = this.getDataOperation(context.sessionId);
+      this.dataOperations.set(context.sessionId, { ...operation, inspectPreview: preview, lastError: undefined });
+      this.codingError = preview.status === "completed" || preview.status === "reduced_dependency_missing" ? undefined : preview.blocked_reason ?? preview.status;
+      this.lastAction = "Data inspect completed.";
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Data inspect failed.";
+      this.dataOperations.set(context.sessionId, { ...this.getDataOperation(context.sessionId), lastError: this.codingError });
+      this.lastAction = "Data inspect failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async previewActiveData(): Promise<void> {
+    const context = this.getActiveDataContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    this.busyAction = "dataPreview";
+    this.lastAction = "Building bounded data preview...";
+    await this.postState();
+    try {
+      const preview = await this.api.previewData({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        approval_reason: "operator_confirmed_in_vscode",
+        max_rows: 50,
+        max_features: 25,
+        max_values: 100
+      });
+      const operation = this.getDataOperation(context.sessionId);
+      this.dataOperations.set(context.sessionId, { ...operation, extractPreview: preview, lastError: undefined });
+      this.filePreviews.set(context.sessionId, preview);
+      this.codingError = preview.status === "completed" || preview.status === "reduced_dependency_missing" ? undefined : preview.blocked_reason ?? preview.status;
+      this.lastAction = "Data preview updated.";
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Data preview failed.";
+      this.dataOperations.set(context.sessionId, { ...this.getDataOperation(context.sessionId), lastError: this.codingError });
+      this.lastAction = "Data preview failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async planDataExport(exportFormat: "markdown" | "json"): Promise<void> {
+    const context = this.getActiveDataContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    const preview = this.filePreviews.get(context.sessionId);
+    const relative = preview?.relative_path ?? preview?.file_label ?? "data";
+    const suffix = exportFormat === "markdown" ? "md" : "json";
+    this.busyAction = "dataExportPlan";
+    this.lastAction = "Planning data export...";
+    await this.postState();
+    try {
+      const plan = await this.api.planDataExport({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        approval_reason: "operator_confirmed_in_vscode",
+        export_format: exportFormat,
+        target_path: `${relative}.data-export.${suffix}`
+      });
+      const operation = this.getDataOperation(context.sessionId);
+      this.dataOperations.set(context.sessionId, { ...operation, exportPlan: plan, applyResult: null, lastError: undefined });
+      this.codingError = plan.status === "planned" ? undefined : plan.blocked_reason ?? plan.status;
+      this.lastAction = "Data export plan ready.";
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Data export planning failed.";
+      this.dataOperations.set(context.sessionId, { ...this.getDataOperation(context.sessionId), lastError: this.codingError });
+      this.lastAction = "Data export planning failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async applyApprovedDataExport(): Promise<void> {
+    const context = this.getActiveDataContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    const operation = this.getDataOperation(context.sessionId);
+    const plan = operation.exportPlan;
+    if (!plan || plan.status !== "planned") {
+      this.codingError = "Plan a data export before approving export.";
+      await this.postState();
+      return;
+    }
+    const approval = await vscode.window.showWarningMessage(
+      `Write approved data export to ${plan.target_relative_path}? Source dataset is not modified.`,
+      { modal: true },
+      "Approve data export"
+    );
+    if (approval !== "Approve data export") {
+      this.lastAction = "Data export cancelled.";
+      await this.postState();
+      return;
+    }
+    this.busyAction = "dataExportApply";
+    this.lastAction = "Applying approved data export...";
+    await this.postState();
+    try {
+      const format = plan.target_relative_path?.endsWith(".json") ? "json" : "markdown";
+      const result = await this.api.applyApprovedDataExport({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        operator_approved: true,
+        export_format: format,
+        target_path: plan.target_relative_path,
+        expected_source_hash: plan.source_hash,
+        overwrite_existing: false
+      });
+      this.dataOperations.set(context.sessionId, { ...operation, applyResult: result, lastError: undefined });
+      this.codingError = result.status === "applied" ? undefined : result.blocked_reason ?? result.status;
+      this.lastAction = `Data export ${result.status}.`;
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Data export failed.";
+      this.dataOperations.set(context.sessionId, { ...operation, lastError: this.codingError });
+      this.lastAction = "Data export failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async planDataMutation(operationName: string, parameters: Record<string, unknown>): Promise<void> {
+    const context = this.getActiveDataContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    this.busyAction = "dataMutationPlan";
+    this.lastAction = "Planning governed data mutation...";
+    await this.postState();
+    try {
+      const plan = await this.api.planDataMutation({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        approval_reason: "operator_confirmed_in_vscode",
+        operation: operationName,
+        parameters
+      });
+      const operation = this.getDataOperation(context.sessionId);
+      this.dataOperations.set(context.sessionId, { ...operation, mutationPlan: plan, applyResult: null, lastError: undefined });
+      this.dataMutationRequests.set(context.sessionId, { operation: operationName, parameters });
+      this.codingError = plan.status === "planned" ? undefined : plan.blocked_reason ?? plan.status;
+      this.lastAction = `Data mutation plan ${plan.status}.`;
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Data mutation planning failed.";
+      this.dataOperations.set(context.sessionId, { ...this.getDataOperation(context.sessionId), lastError: this.codingError });
+      this.lastAction = "Data mutation planning failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async applyApprovedDataMutation(): Promise<void> {
+    const context = this.getActiveDataContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    const operation = this.getDataOperation(context.sessionId);
+    const plan = operation.mutationPlan;
+    if (!plan || plan.status !== "planned") {
+      this.codingError = "Plan a governed data mutation before approval.";
+      await this.postState();
+      return;
+    }
+    const approval = await vscode.window.showWarningMessage(
+      `Apply approved data mutation to ${plan.relative_path ?? plan.file_label}? A backup/transaction will be used where required.`,
+      { modal: true },
+      "Approve data mutation"
+    );
+    if (approval !== "Approve data mutation") {
+      this.lastAction = "Data mutation cancelled.";
+      await this.postState();
+      return;
+    }
+    const request = this.dataMutationRequests.get(context.sessionId);
+    if (!request) {
+      this.codingError = "Data mutation request details are missing. Re-plan the mutation before applying.";
+      await this.postState();
+      return;
+    }
+    this.busyAction = "dataMutationApply";
+    this.lastAction = "Applying approved data mutation...";
+    await this.postState();
+    try {
+      const result = await this.api.applyApprovedDataMutation({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        operator_approved: true,
+        operation: request.operation,
+        parameters: request.parameters,
+        expected_source_hash: plan.source_hash
+      });
+      this.dataOperations.set(context.sessionId, { ...operation, applyResult: result, lastError: undefined });
+      this.codingError = result.status === "applied" ? undefined : result.blocked_reason ?? result.status;
+      this.lastAction = `Data mutation ${result.status}.`;
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Data mutation failed.";
+      this.dataOperations.set(context.sessionId, { ...operation, lastError: this.codingError });
+      this.lastAction = "Data mutation failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
   private async applyApprovedPatch(): Promise<void> {
     const sessionId = this.activeSessionId;
     if (!sessionId) return;
@@ -896,6 +1196,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
         patchApplyResult: this.activeSessionId ? this.patchApplyResults.get(this.activeSessionId) ?? null : null,
         commandResult: this.activeSessionId ? this.commandResults.get(this.activeSessionId) ?? null : null,
         documentOperation: this.activeSessionId ? this.documentOperations.get(this.activeSessionId) ?? null : null,
+        dataOperation: this.activeSessionId ? this.dataOperations.get(this.activeSessionId) ?? null : null,
         lastError: this.codingError,
         busyAction: this.busyAction,
         lastAction: this.lastAction

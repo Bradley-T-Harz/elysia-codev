@@ -1,5 +1,6 @@
 import * as React from "react";
 import type { WebviewState } from "../types";
+import DataPreviewPanel from "./DataPreviewPanel";
 import DocumentPreviewPanel from "./DocumentPreviewPanel";
 
 type Props = {
@@ -15,9 +16,16 @@ type Props = {
   onApplyExport: () => void;
   onPlanEdit: (operation: string, parameters: Record<string, unknown>) => void;
   onApplyEdit: () => void;
+  dataOperation: WebviewState["coding"]["dataOperation"];
+  onInspectData: () => void;
+  onPreviewData: () => void;
+  onPlanDataExport: (exportFormat: "markdown" | "json") => void;
+  onApplyDataExport: () => void;
+  onPlanDataMutation: (operation: string, parameters: Record<string, unknown>) => void;
+  onApplyDataMutation: () => void;
 };
 
-export default function ActiveFilePanel({ activeFile, filePreview, busyAction, canReadWorkspace, onReadPreview, documentOperation, onInspectDocument, onExtractDocument, onPlanExport, onApplyExport, onPlanEdit, onApplyEdit }: Props) {
+export default function ActiveFilePanel({ activeFile, filePreview, busyAction, canReadWorkspace, onReadPreview, documentOperation, onInspectDocument, onExtractDocument, onPlanExport, onApplyExport, onPlanEdit, onApplyEdit, dataOperation, onInspectData, onPreviewData, onPlanDataExport, onApplyDataExport, onPlanDataMutation, onApplyDataMutation }: Props) {
   const busy = busyAction === "filePreview";
   const fileBacked = activeFile?.scheme === "file";
   const previewApproved = filePreview?.status === "completed";
@@ -97,6 +105,19 @@ export default function ActiveFilePanel({ activeFile, filePreview, busyAction, c
               onApplyExport={onApplyExport}
               onPlanEdit={onPlanEdit}
               onApplyEdit={onApplyEdit}
+            />
+          ) : null}
+          {filePreview.category === "science_data" || filePreview.adapter === "data" ? (
+            <DataPreviewPanel
+              filePreview={filePreview}
+              operation={dataOperation}
+              busyAction={busyAction}
+              onInspect={onInspectData}
+              onPreview={onPreviewData}
+              onPlanExport={onPlanDataExport}
+              onApplyExport={onApplyDataExport}
+              onPlanMutation={onPlanDataMutation}
+              onApplyMutation={onApplyDataMutation}
             />
           ) : null}
           {parseSummary ? <pre className="source-preview source-preview--compact">{parseSummary}</pre> : null}

@@ -207,6 +207,15 @@ export type FileReadPreview = {
   };
   safety?: Record<string, unknown>;
   metadata?: Record<string, unknown>;
+  schema_summary?: Record<string, unknown>;
+  preview?: Record<string, unknown>;
+  layers?: Array<Record<string, unknown>>;
+  bands?: Array<Record<string, unknown>>;
+  dimensions?: Array<Record<string, unknown>>;
+  variables?: Array<Record<string, unknown>>;
+  redaction_count?: number;
+  preview_truncated?: boolean;
+  dependencies?: Record<string, string>;
   text_preview?: string;
   tables?: Array<Record<string, unknown>>;
   outline?: Array<Record<string, unknown>>;
@@ -288,12 +297,31 @@ export type CodingDocumentApplyResult = {
   rollback_note: string;
 };
 
+export type CodingDataPlan = CodingDocumentPlan & {
+  transaction?: Record<string, unknown>;
+  backup?: Record<string, unknown>;
+};
+
+export type CodingDataApplyResult = CodingDocumentApplyResult & {
+  transaction?: Record<string, unknown>;
+  backup?: Record<string, unknown>;
+};
+
 export type CodingDocumentOperationState = {
   inspectPreview: FileReadPreview | null;
   extractPreview: FileReadPreview | null;
   exportPlan: CodingDocumentPlan | null;
   editPlan: CodingDocumentPlan | null;
   applyResult: CodingDocumentApplyResult | null;
+  lastError?: string;
+};
+
+export type CodingDataOperationState = {
+  inspectPreview: FileReadPreview | null;
+  extractPreview: FileReadPreview | null;
+  exportPlan: CodingDataPlan | null;
+  mutationPlan: CodingDataPlan | null;
+  applyResult: CodingDataApplyResult | null;
   lastError?: string;
 };
 
@@ -309,8 +337,9 @@ export type CodingState = {
   patchApplyResult: CodingPatchApplyResult | null;
   commandResult: CodingCommandRunResult | null;
   documentOperation: CodingDocumentOperationState | null;
+  dataOperation: CodingDataOperationState | null;
   lastError?: string;
-  busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions" | "documentInspect" | "documentExtract" | "documentExportPlan" | "documentExportApply" | "documentEditPlan" | "documentEditApply";
+  busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions" | "documentInspect" | "documentExtract" | "documentExportPlan" | "documentExportApply" | "documentEditPlan" | "documentEditApply" | "dataInspect" | "dataPreview" | "dataExportPlan" | "dataExportApply" | "dataMutationPlan" | "dataMutationApply";
   lastAction?: string;
 };
 
@@ -359,6 +388,12 @@ export type WebviewToExtensionMessage =
   | { type: "applyApprovedDocumentExport" }
   | { type: "planDocumentEdit"; operation: string; parameters: Record<string, unknown> }
   | { type: "applyApprovedDocumentEdit" }
+  | { type: "inspectActiveData" }
+  | { type: "previewActiveData" }
+  | { type: "planDataExport"; exportFormat: "markdown" | "json" }
+  | { type: "applyApprovedDataExport" }
+  | { type: "planDataMutation"; operation: string; parameters: Record<string, unknown> }
+  | { type: "applyApprovedDataMutation" }
   | { type: "applyApprovedPatch" }
   | { type: "runApprovedCheck"; commandId: string };
 

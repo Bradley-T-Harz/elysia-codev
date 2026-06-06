@@ -5,6 +5,8 @@ import type {
   CodingBridgeStatus,
   CodingChatReply,
   CodingCommandRunResult,
+  CodingDataApplyResult,
+  CodingDataPlan,
   CodingDocumentApplyResult,
   CodingDocumentPlan,
   CodingPatchApplyResult,
@@ -31,6 +33,11 @@ type DocumentExportPlanData = { document_export_plan?: CodingDocumentPlan };
 type DocumentExportResultData = { document_export_result?: CodingDocumentApplyResult };
 type DocumentEditPlanData = { document_edit_plan?: CodingDocumentPlan };
 type DocumentEditResultData = { document_edit_result?: CodingDocumentApplyResult };
+type DataPreviewData = { data?: FileReadPreview };
+type DataExportPlanData = { data_export_plan?: CodingDataPlan };
+type DataExportResultData = { data_export_result?: CodingDataApplyResult };
+type DataMutationPlanData = { data_mutation_plan?: CodingDataPlan };
+type DataMutationResultData = { data_mutation_result?: CodingDataApplyResult };
 type PatchApplyData = { patch_apply?: CodingPatchApplyResult };
 type CommandRunData = { command_run?: CodingCommandRunResult };
 type LocalRequestInit = {
@@ -252,6 +259,122 @@ export class ElysiaApiClient {
     return envelope.data.document_edit_result;
   }
 
+  public async inspectData(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+  }): Promise<FileReadPreview> {
+    const envelope = await this.request<DataPreviewData>("/coding/data/inspect", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.data) {
+      throw new Error("Local Elysia did not return data inspect data.");
+    }
+    return this.normalizeDataPreview(envelope.data.data);
+  }
+
+  public async previewData(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+    max_rows?: number;
+    max_features?: number;
+    max_values?: number;
+  }): Promise<FileReadPreview> {
+    const envelope = await this.request<DataPreviewData>("/coding/data/preview", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.data) {
+      throw new Error("Local Elysia did not return data preview data.");
+    }
+    return this.normalizeDataPreview(envelope.data.data);
+  }
+
+  public async planDataExport(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+    export_format: "markdown" | "json";
+    target_path?: string;
+  }): Promise<CodingDataPlan> {
+    const envelope = await this.request<DataExportPlanData>("/coding/data/export-plan", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.data_export_plan) {
+      throw new Error("Local Elysia did not return data export plan data.");
+    }
+    return envelope.data.data_export_plan;
+  }
+
+  public async applyApprovedDataExport(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    operator_approved: boolean;
+    export_format: "markdown" | "json";
+    target_path?: string;
+    expected_source_hash?: string;
+    overwrite_existing?: boolean;
+  }): Promise<CodingDataApplyResult> {
+    const envelope = await this.request<DataExportResultData>("/coding/data/export-approved", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.data_export_result) {
+      throw new Error("Local Elysia did not return data export result data.");
+    }
+    return envelope.data.data_export_result;
+  }
+
+  public async planDataMutation(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+    operation: string;
+    parameters: Record<string, unknown>;
+  }): Promise<CodingDataPlan> {
+    const envelope = await this.request<DataMutationPlanData>("/coding/data/mutation-plan", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.data_mutation_plan) {
+      throw new Error("Local Elysia did not return data mutation plan data.");
+    }
+    return envelope.data.data_mutation_plan;
+  }
+
+  public async applyApprovedDataMutation(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    operator_approved: boolean;
+    operation: string;
+    parameters: Record<string, unknown>;
+    expected_source_hash?: string;
+  }): Promise<CodingDataApplyResult> {
+    const envelope = await this.request<DataMutationResultData>("/coding/data/apply-mutation-approved", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.data_mutation_result) {
+      throw new Error("Local Elysia did not return data mutation result data.");
+    }
+    return envelope.data.data_mutation_result;
+  }
+
   public async applyApprovedPatch(request: {
     session_id?: string;
     approval_mode: string;
@@ -341,6 +464,33 @@ export class ElysiaApiClient {
       warnings: document.warnings ?? [],
       secret_scan_findings: document.secret_scan_findings ?? [],
       redactions: document.redactions ?? []
+    };
+  }
+
+  private normalizeDataPreview(data: FileReadPreview): FileReadPreview {
+    return {
+      ...data,
+      file_type_id: data.descriptor?.type_id ?? data.file_type_id,
+      file_type_label: data.descriptor?.label ?? data.file_type_label,
+      category: "science_data",
+      adapter: "data",
+      content_preview: data.content_preview ?? JSON.stringify(data.preview ?? data.schema_summary ?? data.metadata ?? {}, null, 2),
+      parse_summary: {
+        ...(data.parse_summary ?? {}),
+        ...data,
+        descriptor: data.descriptor ?? {},
+        metadata: data.metadata ?? {},
+        schema_summary: data.schema_summary ?? {},
+        preview: data.preview ?? {},
+        warnings: data.warnings ?? []
+      },
+      source_contents_included: false,
+      bytes_returned: data.bytes_returned ?? 0,
+      lines_returned: data.lines_returned ?? 0,
+      truncated: data.truncated ?? data.preview_truncated ?? false,
+      warnings: data.warnings ?? [],
+      secret_scan_findings: data.secret_scan_findings ?? [],
+      redactions: data.redactions ?? []
     };
   }
 

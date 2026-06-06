@@ -58,7 +58,7 @@ const emptyState: WebviewState = {
   git: { branch: "Not inspected", dirtyState: "unknown", changedCount: 0, summary: "No repo inspected." },
   changedFiles: [],
   patchPreview: { state: "empty", summary: "No patch proposed.", files: [], canApply: false },
-  coding: { bridge: null, repoPreview: null, filePreview: null, patchApplyResult: null, commandResult: null, documentOperation: null }
+  coding: { bridge: null, repoPreview: null, filePreview: null, patchApplyResult: null, commandResult: null, documentOperation: null, dataOperation: null }
 };
 
 export default function App({ vscode }: AppProps) {
@@ -149,6 +149,13 @@ export default function App({ vscode }: AppProps) {
             onApplyExport={() => vscode.postMessage({ type: "applyApprovedDocumentExport" })}
             onPlanEdit={(operation, parameters) => vscode.postMessage({ type: "planDocumentEdit", operation, parameters })}
             onApplyEdit={() => vscode.postMessage({ type: "applyApprovedDocumentEdit" })}
+            dataOperation={state.coding.dataOperation}
+            onInspectData={() => vscode.postMessage({ type: "inspectActiveData" })}
+            onPreviewData={() => vscode.postMessage({ type: "previewActiveData" })}
+            onPlanDataExport={(exportFormat) => vscode.postMessage({ type: "planDataExport", exportFormat })}
+            onApplyDataExport={() => vscode.postMessage({ type: "applyApprovedDataExport" })}
+            onPlanDataMutation={(operation, parameters) => vscode.postMessage({ type: "planDataMutation", operation, parameters })}
+            onApplyDataMutation={() => vscode.postMessage({ type: "applyApprovedDataMutation" })}
           />
           <GitStatusPanel git={state.git} />
           <ChangedFilesPanel files={state.changedFiles} />
