@@ -268,6 +268,7 @@ export type CodingDocumentPlan = {
   source_hash?: string;
   preview?: string;
   warnings: string[];
+  operation_details?: Record<string, unknown>;
   approval_required: boolean;
 };
 
@@ -283,6 +284,7 @@ export type CodingDocumentApplyResult = {
   previous_hash?: string;
   new_hash?: string;
   warnings: string[];
+  operation_details?: Record<string, unknown>;
   rollback_note: string;
 };
 

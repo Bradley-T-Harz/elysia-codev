@@ -226,6 +226,7 @@ export type WebviewState = {
         source_hash?: string;
         preview?: string;
         warnings: string[];
+        operation_details?: Record<string, unknown>;
         approval_required: boolean;
       } | null;
       editPlan: {
@@ -239,6 +240,7 @@ export type WebviewState = {
         source_hash?: string;
         preview?: string;
         warnings: string[];
+        operation_details?: Record<string, unknown>;
         approval_required: boolean;
       } | null;
       applyResult: {
@@ -253,6 +255,7 @@ export type WebviewState = {
         previous_hash?: string;
         new_hash?: string;
         warnings: string[];
+        operation_details?: Record<string, unknown>;
         rollback_note: string;
       } | null;
       lastError?: string;
