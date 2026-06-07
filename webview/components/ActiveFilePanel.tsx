@@ -2,6 +2,7 @@ import * as React from "react";
 import type { WebviewState } from "../types";
 import DataPreviewPanel from "./DataPreviewPanel";
 import DocumentPreviewPanel from "./DocumentPreviewPanel";
+import VisualPreviewPanel from "./VisualPreviewPanel";
 
 type Props = {
   activeFile: WebviewState["activeFile"];
@@ -23,9 +24,18 @@ type Props = {
   onApplyDataExport: () => void;
   onPlanDataMutation: (operation: string, parameters: Record<string, unknown>) => void;
   onApplyDataMutation: () => void;
+  visualOperation: WebviewState["coding"]["visualOperation"];
+  onInspectVisual: () => void;
+  onPreviewVisual: () => void;
+  onVisualOcr: () => void;
+  onVisualAnalysis: () => void;
+  onPlanVisualExport: (exportFormat: "markdown" | "json" | "png" | "jpg" | "webp" | "tiff" | "svg") => void;
+  onApplyVisualExport: () => void;
+  onPlanVisualEdit: (operation: string, parameters: Record<string, unknown>) => void;
+  onApplyVisualEdit: () => void;
 };
 
-export default function ActiveFilePanel({ activeFile, filePreview, busyAction, canReadWorkspace, onReadPreview, documentOperation, onInspectDocument, onExtractDocument, onPlanExport, onApplyExport, onPlanEdit, onApplyEdit, dataOperation, onInspectData, onPreviewData, onPlanDataExport, onApplyDataExport, onPlanDataMutation, onApplyDataMutation }: Props) {
+export default function ActiveFilePanel({ activeFile, filePreview, busyAction, canReadWorkspace, onReadPreview, documentOperation, onInspectDocument, onExtractDocument, onPlanExport, onApplyExport, onPlanEdit, onApplyEdit, dataOperation, onInspectData, onPreviewData, onPlanDataExport, onApplyDataExport, onPlanDataMutation, onApplyDataMutation, visualOperation, onInspectVisual, onPreviewVisual, onVisualOcr, onVisualAnalysis, onPlanVisualExport, onApplyVisualExport, onPlanVisualEdit, onApplyVisualEdit }: Props) {
   const busy = busyAction === "filePreview";
   const fileBacked = activeFile?.scheme === "file";
   const previewApproved = filePreview?.status === "completed";
@@ -118,6 +128,21 @@ export default function ActiveFilePanel({ activeFile, filePreview, busyAction, c
               onApplyExport={onApplyDataExport}
               onPlanMutation={onPlanDataMutation}
               onApplyMutation={onApplyDataMutation}
+            />
+          ) : null}
+          {filePreview.category === "visual" ? (
+            <VisualPreviewPanel
+              filePreview={filePreview}
+              operation={visualOperation}
+              busyAction={busyAction}
+              onInspect={onInspectVisual}
+              onPreview={onPreviewVisual}
+              onOcr={onVisualOcr}
+              onAnalyze={onVisualAnalysis}
+              onPlanExport={onPlanVisualExport}
+              onApplyExport={onApplyVisualExport}
+              onPlanEdit={onPlanVisualEdit}
+              onApplyEdit={onApplyVisualEdit}
             />
           ) : null}
           {parseSummary ? <pre className="source-preview source-preview--compact">{parseSummary}</pre> : null}

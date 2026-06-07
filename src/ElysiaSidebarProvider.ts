@@ -4,7 +4,7 @@ import { ElysiaApiClient } from "./ElysiaApiClient";
 import { FileDiffProvider } from "./FileDiffProvider";
 import { SessionStore } from "./SessionStore";
 import { WorkspaceTrust } from "./WorkspaceTrust";
-import type { ApprovalMode, CodingBridgeStatus, CodingCommandRunResult, CodingDataOperationState, CodingDocumentOperationState, CodingPatchApplyResult, CodingPatchProposal, ElysiaMessage, ExtensionToWebviewMessage, FileReadPreview, GoalWorkflowState, IdeContextSettings, PatchPreview, RepoInspectPreview, WebviewState, WebviewToExtensionMessage, WorkModeState } from "./types";
+import type { ApprovalMode, CodingBridgeStatus, CodingCommandRunResult, CodingDataOperationState, CodingDocumentOperationState, CodingPatchApplyResult, CodingPatchProposal, CodingVisualOperationState, ElysiaMessage, ExtensionToWebviewMessage, FileReadPreview, GoalWorkflowState, IdeContextSettings, PatchPreview, RepoInspectPreview, WebviewState, WebviewToExtensionMessage, WorkModeState } from "./types";
 
 export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   private view: vscode.WebviewView | undefined;
@@ -16,6 +16,8 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   private documentEditRequests = new Map<string, { operation: string; parameters: Record<string, unknown> }>();
   private dataOperations = new Map<string, CodingDataOperationState>();
   private dataMutationRequests = new Map<string, { operation: string; parameters: Record<string, unknown> }>();
+  private visualOperations = new Map<string, CodingVisualOperationState>();
+  private visualEditRequests = new Map<string, { operation: string; parameters: Record<string, unknown> }>();
   private patchProposals = new Map<string, CodingPatchProposal>();
   private patchApplyResults = new Map<string, CodingPatchApplyResult>();
   private commandResults = new Map<string, CodingCommandRunResult>();
@@ -120,7 +122,9 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     this.commandResults.clear();
     this.documentOperations.clear();
     this.dataOperations.clear();
+    this.visualOperations.clear();
     this.documentEditRequests.clear();
+    this.visualEditRequests.clear();
     this.lastAction = "Local sessions cleared.";
     this.busyAction = undefined;
     await this.postState();
@@ -142,7 +146,9 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     this.filePreviews.delete(sessionId);
     this.documentOperations.delete(sessionId);
     this.dataOperations.delete(sessionId);
+    this.visualOperations.delete(sessionId);
     this.documentEditRequests.delete(sessionId);
+    this.visualEditRequests.delete(sessionId);
     this.patchProposals.delete(sessionId);
     this.patchApplyResults.delete(sessionId);
     this.commandResults.delete(sessionId);
@@ -304,6 +310,38 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
       await this.applyApprovedDataMutation();
       return;
     }
+    if (message.type === "inspectActiveVisual") {
+      await this.inspectActiveVisual();
+      return;
+    }
+    if (message.type === "previewActiveVisual") {
+      await this.previewActiveVisual();
+      return;
+    }
+    if (message.type === "runVisualOcr") {
+      await this.runVisualOcr();
+      return;
+    }
+    if (message.type === "runVisualAnalysis") {
+      await this.runVisualAnalysis();
+      return;
+    }
+    if (message.type === "planVisualExport") {
+      await this.planVisualExport(message.exportFormat);
+      return;
+    }
+    if (message.type === "applyApprovedVisualExport") {
+      await this.applyApprovedVisualExport();
+      return;
+    }
+    if (message.type === "planVisualEdit") {
+      await this.planVisualEdit(message.operation, message.parameters);
+      return;
+    }
+    if (message.type === "applyApprovedVisualEdit") {
+      await this.applyApprovedVisualEdit();
+      return;
+    }
     if (message.type === "applyApprovedPatch") {
       await this.applyApprovedPatch();
       return;
@@ -442,7 +480,9 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
       if (preview.status === "completed") {
         this.patchProposals.delete(activeSessionId);
         this.patchApplyResults.delete(activeSessionId);
-        this.documentOperations.delete(activeSessionId);
+        if (preview.category !== "document") this.documentOperations.delete(activeSessionId);
+        if (preview.category !== "science_data" && preview.adapter !== "data") this.dataOperations.delete(activeSessionId);
+        if (preview.category !== "visual") this.visualOperations.delete(activeSessionId);
       }
     } catch (error) {
       this.codingError = error instanceof Error ? error.message : "Selected-file preview failed.";
@@ -736,6 +776,22 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     return created;
   }
 
+  private getVisualOperation(sessionId: string): CodingVisualOperationState {
+    const existing = this.visualOperations.get(sessionId);
+    if (existing) return existing;
+    const created: CodingVisualOperationState = {
+      inspectPreview: null,
+      extractPreview: null,
+      ocrResult: null,
+      analysisResult: null,
+      exportPlan: null,
+      editPlan: null,
+      applyResult: null
+    };
+    this.visualOperations.set(sessionId, created);
+    return created;
+  }
+
   private getActiveDataContext(): { sessionId: string; workspaceRoot: string; filePath: string; backendSessionId?: string } | { error: string } {
     const sessionId = this.activeSessionId;
     const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
@@ -994,6 +1050,308 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     await this.postState();
   }
 
+  private async inspectActiveVisual(): Promise<void> {
+    const context = this.getActiveDataContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    this.busyAction = "visualInspect";
+    this.lastAction = "Inspecting visual file...";
+    await this.postState();
+    try {
+      const preview = await this.api.inspectVisual({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        approval_reason: "operator_confirmed_in_vscode"
+      });
+      const operation = this.getVisualOperation(context.sessionId);
+      this.visualOperations.set(context.sessionId, { ...operation, inspectPreview: preview, lastError: undefined });
+      this.codingError = preview.status === "completed" ? undefined : preview.blocked_reason ?? preview.status;
+      this.lastAction = `Visual inspection ${preview.status}.`;
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Visual inspection failed.";
+      this.visualOperations.set(context.sessionId, { ...this.getVisualOperation(context.sessionId), lastError: this.codingError });
+      this.lastAction = "Visual inspection failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async previewActiveVisual(): Promise<void> {
+    const context = this.getActiveDataContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    this.busyAction = "visualPreview";
+    this.lastAction = "Creating approved visual preview...";
+    await this.postState();
+    try {
+      const preview = await this.api.previewVisual({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        approval_reason: "operator_confirmed_in_vscode"
+      });
+      const operation = this.getVisualOperation(context.sessionId);
+      this.visualOperations.set(context.sessionId, { ...operation, extractPreview: preview, lastError: undefined });
+      this.codingError = preview.status === "completed" ? undefined : preview.blocked_reason ?? preview.status;
+      this.lastAction = `Visual preview ${preview.status}.`;
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Visual preview failed.";
+      this.visualOperations.set(context.sessionId, { ...this.getVisualOperation(context.sessionId), lastError: this.codingError });
+      this.lastAction = "Visual preview failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async runVisualOcr(): Promise<void> {
+    const context = this.getActiveDataContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    this.busyAction = "visualOcr";
+    this.lastAction = "Running approved local OCR...";
+    await this.postState();
+    try {
+      const result = await this.api.runVisualOcr({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        approval_reason: "operator_confirmed_in_vscode",
+        max_chars: 1200
+      });
+      const operation = this.getVisualOperation(context.sessionId);
+      this.visualOperations.set(context.sessionId, { ...operation, ocrResult: result, lastError: undefined });
+      this.codingError = String(result.status ?? "") === "completed" ? undefined : String(result.blocked_reason ?? result.status ?? "");
+      this.lastAction = `Visual OCR ${String(result.status ?? "returned")}.`;
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Visual OCR failed.";
+      this.visualOperations.set(context.sessionId, { ...this.getVisualOperation(context.sessionId), lastError: this.codingError });
+      this.lastAction = "Visual OCR failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async runVisualAnalysis(): Promise<void> {
+    const context = this.getActiveDataContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    this.busyAction = "visualAnalysis";
+    this.lastAction = "Running local visual analysis...";
+    await this.postState();
+    try {
+      const result = await this.api.analyzeVisual({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        approval_reason: "operator_confirmed_in_vscode",
+        include_semantic_provider: true
+      });
+      const operation = this.getVisualOperation(context.sessionId);
+      this.visualOperations.set(context.sessionId, { ...operation, analysisResult: result, lastError: undefined });
+      this.codingError = String(result.status ?? "") === "completed" ? undefined : String(result.blocked_reason ?? result.status ?? "");
+      this.lastAction = `Visual analysis ${String(result.status ?? "returned")}.`;
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Visual analysis failed.";
+      this.visualOperations.set(context.sessionId, { ...this.getVisualOperation(context.sessionId), lastError: this.codingError });
+      this.lastAction = "Visual analysis failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async planVisualExport(exportFormat: "markdown" | "json" | "png" | "jpg" | "webp" | "tiff" | "svg"): Promise<void> {
+    const context = this.getActiveDataContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    const fileName = context.filePath.split(/[\\/]/).pop() ?? "visual";
+    const suffix = exportFormat === "markdown" ? "md" : exportFormat;
+    this.busyAction = "visualExportPlan";
+    this.lastAction = "Planning visual export...";
+    await this.postState();
+    try {
+      const plan = await this.api.planVisualExport({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        approval_reason: "operator_confirmed_in_vscode",
+        export_format: exportFormat,
+        target_path: `${fileName}.visual-export.${suffix}`
+      });
+      const operation = this.getVisualOperation(context.sessionId);
+      this.visualOperations.set(context.sessionId, { ...operation, exportPlan: plan, applyResult: null, lastError: undefined });
+      this.codingError = plan.status === "planned" ? undefined : plan.blocked_reason ?? plan.status;
+      this.lastAction = `Visual export plan ${plan.status}.`;
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Visual export planning failed.";
+      this.visualOperations.set(context.sessionId, { ...this.getVisualOperation(context.sessionId), lastError: this.codingError });
+      this.lastAction = "Visual export planning failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async applyApprovedVisualExport(): Promise<void> {
+    const context = this.getActiveDataContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    const operation = this.getVisualOperation(context.sessionId);
+    const plan = operation.exportPlan;
+    if (!plan || plan.status !== "planned") {
+      this.codingError = "Plan a visual export before approval.";
+      await this.postState();
+      return;
+    }
+    const approval = await vscode.window.showWarningMessage(
+      `Write derived visual export ${plan.target_relative_path ?? ""}? Source visual remains unchanged.`,
+      { modal: true },
+      "Approve visual export"
+    );
+    if (approval !== "Approve visual export") {
+      this.lastAction = "Visual export cancelled.";
+      await this.postState();
+      return;
+    }
+    this.busyAction = "visualExportApply";
+    this.lastAction = "Applying approved visual export...";
+    await this.postState();
+    try {
+      const exportFormat = String(plan.operation_details?.export_format ?? "markdown") as "markdown" | "json" | "png" | "jpg" | "webp" | "tiff" | "svg";
+      const result = await this.api.applyApprovedVisualExport({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        operator_approved: true,
+        export_format: exportFormat,
+        target_path: plan.target_relative_path,
+        expected_source_hash: plan.source_hash
+      });
+      this.visualOperations.set(context.sessionId, { ...operation, applyResult: result, lastError: undefined });
+      this.codingError = result.status === "applied" ? undefined : result.blocked_reason ?? result.status;
+      this.lastAction = `Visual export ${result.status}.`;
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Visual export failed.";
+      this.visualOperations.set(context.sessionId, { ...operation, lastError: this.codingError });
+      this.lastAction = "Visual export failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async planVisualEdit(operationName: string, parameters: Record<string, unknown>): Promise<void> {
+    const context = this.getActiveDataContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    this.busyAction = "visualEditPlan";
+    this.lastAction = "Planning visual edit...";
+    await this.postState();
+    try {
+      const plan = await this.api.planVisualEdit({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        approval_reason: "operator_confirmed_in_vscode",
+        operation: operationName,
+        parameters
+      });
+      const operation = this.getVisualOperation(context.sessionId);
+      this.visualOperations.set(context.sessionId, { ...operation, editPlan: plan, applyResult: null, lastError: undefined });
+      this.visualEditRequests.set(context.sessionId, { operation: operationName, parameters });
+      this.codingError = plan.status === "planned" ? undefined : plan.blocked_reason ?? plan.status;
+      this.lastAction = `Visual edit plan ${plan.status}.`;
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Visual edit planning failed.";
+      this.visualOperations.set(context.sessionId, { ...this.getVisualOperation(context.sessionId), lastError: this.codingError });
+      this.lastAction = "Visual edit planning failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async applyApprovedVisualEdit(): Promise<void> {
+    const context = this.getActiveDataContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    const operation = this.getVisualOperation(context.sessionId);
+    const plan = operation.editPlan;
+    if (!plan || plan.status !== "planned") {
+      this.codingError = "Plan a governed visual edit before approval.";
+      await this.postState();
+      return;
+    }
+    const request = this.visualEditRequests.get(context.sessionId);
+    if (!request) {
+      this.codingError = "Visual edit request details are missing. Re-plan the edit before applying.";
+      await this.postState();
+      return;
+    }
+    const approval = await vscode.window.showWarningMessage(
+      `Write derived visual edit ${plan.target_relative_path ?? ""}? Source visual remains unchanged.`,
+      { modal: true },
+      "Approve visual edit"
+    );
+    if (approval !== "Approve visual edit") {
+      this.lastAction = "Visual edit cancelled.";
+      await this.postState();
+      return;
+    }
+    this.busyAction = "visualEditApply";
+    this.lastAction = "Applying approved visual edit...";
+    await this.postState();
+    try {
+      const result = await this.api.applyApprovedVisualEdit({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        operator_approved: true,
+        operation: request.operation,
+        parameters: request.parameters,
+        expected_source_hash: plan.source_hash
+      });
+      this.visualOperations.set(context.sessionId, { ...operation, applyResult: result, lastError: undefined });
+      this.codingError = result.status === "applied" ? undefined : result.blocked_reason ?? result.status;
+      this.lastAction = `Visual edit ${result.status}.`;
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Visual edit failed.";
+      this.visualOperations.set(context.sessionId, { ...operation, lastError: this.codingError });
+      this.lastAction = "Visual edit failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
   private async applyApprovedPatch(): Promise<void> {
     const sessionId = this.activeSessionId;
     if (!sessionId) return;
@@ -1197,6 +1555,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
         commandResult: this.activeSessionId ? this.commandResults.get(this.activeSessionId) ?? null : null,
         documentOperation: this.activeSessionId ? this.documentOperations.get(this.activeSessionId) ?? null : null,
         dataOperation: this.activeSessionId ? this.dataOperations.get(this.activeSessionId) ?? null : null,
+        visualOperation: this.activeSessionId ? this.visualOperations.get(this.activeSessionId) ?? null : null,
         lastError: this.codingError,
         busyAction: this.busyAction,
         lastAction: this.lastAction

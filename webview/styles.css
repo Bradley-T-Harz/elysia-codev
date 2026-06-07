@@ -79,6 +79,15 @@ dd { margin: 0.18rem 0 0; }
 .document-preview__meta {
   margin-top: 0.45rem;
 }
+.visual-thumbnail {
+  width: 100%;
+  max-height: 180px;
+  object-fit: contain;
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--vscode-editor-background) 82%, white 6%);
+  margin-top: 0.55rem;
+}
 .button-row { display: grid; grid-template-columns: 1fr; gap: 0.45rem; margin-top: 0.65rem; }
 .button-row .ghost { margin-top: 0; }
 .toggle-list, .tool-list { display: grid; gap: 0.45rem; margin: 0.65rem 0 0; padding: 0; }

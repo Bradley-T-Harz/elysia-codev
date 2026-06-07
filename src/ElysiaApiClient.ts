@@ -38,6 +38,13 @@ type DataExportPlanData = { data_export_plan?: CodingDataPlan };
 type DataExportResultData = { data_export_result?: CodingDataApplyResult };
 type DataMutationPlanData = { data_mutation_plan?: CodingDataPlan };
 type DataMutationResultData = { data_mutation_result?: CodingDataApplyResult };
+type VisualPreviewData = { visual?: FileReadPreview };
+type VisualOcrData = { ocr?: Record<string, unknown> };
+type VisualAnalysisData = { analysis?: Record<string, unknown> };
+type VisualExportPlanData = { visual_export_plan?: CodingDocumentPlan };
+type VisualExportResultData = { visual_export_result?: CodingDocumentApplyResult };
+type VisualEditPlanData = { visual_edit_plan?: CodingDocumentPlan };
+type VisualEditResultData = { visual_apply_result?: CodingDocumentApplyResult };
 type PatchApplyData = { patch_apply?: CodingPatchApplyResult };
 type CommandRunData = { command_run?: CodingCommandRunResult };
 type LocalRequestInit = {
@@ -375,6 +382,155 @@ export class ElysiaApiClient {
     return envelope.data.data_mutation_result;
   }
 
+  public async inspectVisual(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+  }): Promise<FileReadPreview> {
+    const envelope = await this.request<VisualPreviewData>("/coding/visual/inspect", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.visual) {
+      throw new Error("Local Elysia did not return visual inspect data.");
+    }
+    return this.normalizeVisualPreview(envelope.data.visual);
+  }
+
+  public async previewVisual(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+  }): Promise<FileReadPreview> {
+    const envelope = await this.request<VisualPreviewData>("/coding/visual/preview", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.visual) {
+      throw new Error("Local Elysia did not return visual preview data.");
+    }
+    return this.normalizeVisualPreview(envelope.data.visual);
+  }
+
+  public async runVisualOcr(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+    max_chars?: number;
+  }): Promise<Record<string, unknown>> {
+    const envelope = await this.request<VisualOcrData>("/coding/visual/ocr", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.ocr) {
+      throw new Error("Local Elysia did not return visual OCR data.");
+    }
+    return envelope.data.ocr;
+  }
+
+  public async analyzeVisual(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+    include_semantic_provider?: boolean;
+  }): Promise<Record<string, unknown>> {
+    const envelope = await this.request<VisualAnalysisData>("/coding/visual/analysis", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.analysis) {
+      throw new Error("Local Elysia did not return visual analysis data.");
+    }
+    return envelope.data.analysis;
+  }
+
+  public async planVisualExport(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+    export_format: "markdown" | "json" | "png" | "jpg" | "webp" | "tiff" | "svg";
+    target_path?: string;
+  }): Promise<CodingDocumentPlan> {
+    const envelope = await this.request<VisualExportPlanData>("/coding/visual/export-plan", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.visual_export_plan) {
+      throw new Error("Local Elysia did not return visual export plan data.");
+    }
+    return envelope.data.visual_export_plan;
+  }
+
+  public async applyApprovedVisualExport(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    operator_approved: boolean;
+    export_format: "markdown" | "json" | "png" | "jpg" | "webp" | "tiff" | "svg";
+    target_path?: string;
+    expected_source_hash?: string;
+    overwrite_existing?: boolean;
+  }): Promise<CodingDocumentApplyResult> {
+    const envelope = await this.request<VisualExportResultData>("/coding/visual/export-approved", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.visual_export_result) {
+      throw new Error("Local Elysia did not return visual export result data.");
+    }
+    return envelope.data.visual_export_result;
+  }
+
+  public async planVisualEdit(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+    operation: string;
+    parameters: Record<string, unknown>;
+  }): Promise<CodingDocumentPlan> {
+    const envelope = await this.request<VisualEditPlanData>("/coding/visual/edit-plan", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.visual_edit_plan) {
+      throw new Error("Local Elysia did not return visual edit plan data.");
+    }
+    return envelope.data.visual_edit_plan;
+  }
+
+  public async applyApprovedVisualEdit(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    operator_approved: boolean;
+    operation: string;
+    parameters: Record<string, unknown>;
+    expected_source_hash?: string;
+  }): Promise<CodingDocumentApplyResult> {
+    const envelope = await this.request<VisualEditResultData>("/coding/visual/apply-approved", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.visual_apply_result) {
+      throw new Error("Local Elysia did not return visual edit result data.");
+    }
+    return envelope.data.visual_apply_result;
+  }
+
   public async applyApprovedPatch(request: {
     session_id?: string;
     approval_mode: string;
@@ -491,6 +647,36 @@ export class ElysiaApiClient {
       warnings: data.warnings ?? [],
       secret_scan_findings: data.secret_scan_findings ?? [],
       redactions: data.redactions ?? []
+    };
+  }
+
+  private normalizeVisualPreview(visual: FileReadPreview): FileReadPreview {
+    return {
+      ...visual,
+      file_type_id: visual.descriptor?.type_id ?? visual.file_type_id,
+      file_type_label: visual.descriptor?.label ?? visual.file_type_label,
+      category: "visual",
+      adapter: visual.descriptor?.adapter ?? visual.adapter ?? "visual",
+      content_preview:
+        visual.content_preview ??
+        `Visual ${visual.descriptor?.label ?? visual.file_label}: metadata, privacy report, safe thumbnail, and local analysis are available through governed visual stewardship.`,
+      parse_summary: {
+        ...(visual.parse_summary ?? {}),
+        descriptor: visual.descriptor ?? {},
+        metadata: visual.metadata ?? {},
+        preview: visual.preview ?? {},
+        exif_privacy: (visual as { exif_privacy?: Record<string, unknown> }).exif_privacy ?? {},
+        svg_safety: (visual as { svg_safety?: Record<string, unknown> }).svg_safety ?? {},
+        risk_flags: visual.risk_flags ?? {},
+        warnings: visual.warnings ?? []
+      },
+      source_contents_included: false,
+      bytes_returned: visual.bytes_returned ?? 0,
+      lines_returned: visual.lines_returned ?? 0,
+      truncated: visual.truncated ?? false,
+      warnings: visual.warnings ?? [],
+      secret_scan_findings: visual.secret_scan_findings ?? [],
+      redactions: visual.redactions ?? []
     };
   }
 

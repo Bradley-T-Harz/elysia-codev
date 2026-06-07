@@ -58,7 +58,7 @@ const emptyState: WebviewState = {
   git: { branch: "Not inspected", dirtyState: "unknown", changedCount: 0, summary: "No repo inspected." },
   changedFiles: [],
   patchPreview: { state: "empty", summary: "No patch proposed.", files: [], canApply: false },
-  coding: { bridge: null, repoPreview: null, filePreview: null, patchApplyResult: null, commandResult: null, documentOperation: null, dataOperation: null }
+  coding: { bridge: null, repoPreview: null, filePreview: null, patchApplyResult: null, commandResult: null, documentOperation: null, dataOperation: null, visualOperation: null }
 };
 
 export default function App({ vscode }: AppProps) {
@@ -156,6 +156,15 @@ export default function App({ vscode }: AppProps) {
             onApplyDataExport={() => vscode.postMessage({ type: "applyApprovedDataExport" })}
             onPlanDataMutation={(operation, parameters) => vscode.postMessage({ type: "planDataMutation", operation, parameters })}
             onApplyDataMutation={() => vscode.postMessage({ type: "applyApprovedDataMutation" })}
+            visualOperation={state.coding.visualOperation}
+            onInspectVisual={() => vscode.postMessage({ type: "inspectActiveVisual" })}
+            onPreviewVisual={() => vscode.postMessage({ type: "previewActiveVisual" })}
+            onVisualOcr={() => vscode.postMessage({ type: "runVisualOcr" })}
+            onVisualAnalysis={() => vscode.postMessage({ type: "runVisualAnalysis" })}
+            onPlanVisualExport={(exportFormat) => vscode.postMessage({ type: "planVisualExport", exportFormat })}
+            onApplyVisualExport={() => vscode.postMessage({ type: "applyApprovedVisualExport" })}
+            onPlanVisualEdit={(operation, parameters) => vscode.postMessage({ type: "planVisualEdit", operation, parameters })}
+            onApplyVisualEdit={() => vscode.postMessage({ type: "applyApprovedVisualEdit" })}
           />
           <GitStatusPanel git={state.git} />
           <ChangedFilesPanel files={state.changedFiles} />

@@ -325,6 +325,17 @@ export type CodingDataOperationState = {
   lastError?: string;
 };
 
+export type CodingVisualOperationState = {
+  inspectPreview: FileReadPreview | null;
+  extractPreview: FileReadPreview | null;
+  ocrResult: Record<string, unknown> | null;
+  analysisResult: Record<string, unknown> | null;
+  exportPlan: CodingDocumentPlan | null;
+  editPlan: CodingDocumentPlan | null;
+  applyResult: CodingDocumentApplyResult | null;
+  lastError?: string;
+};
+
 export type CodingChatReply = {
   assistantText: string;
   patchProposal?: CodingPatchProposal;
@@ -338,8 +349,9 @@ export type CodingState = {
   commandResult: CodingCommandRunResult | null;
   documentOperation: CodingDocumentOperationState | null;
   dataOperation: CodingDataOperationState | null;
+  visualOperation: CodingVisualOperationState | null;
   lastError?: string;
-  busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions" | "documentInspect" | "documentExtract" | "documentExportPlan" | "documentExportApply" | "documentEditPlan" | "documentEditApply" | "dataInspect" | "dataPreview" | "dataExportPlan" | "dataExportApply" | "dataMutationPlan" | "dataMutationApply";
+  busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions" | "documentInspect" | "documentExtract" | "documentExportPlan" | "documentExportApply" | "documentEditPlan" | "documentEditApply" | "dataInspect" | "dataPreview" | "dataExportPlan" | "dataExportApply" | "dataMutationPlan" | "dataMutationApply" | "visualInspect" | "visualPreview" | "visualOcr" | "visualAnalysis" | "visualExportPlan" | "visualExportApply" | "visualEditPlan" | "visualEditApply";
   lastAction?: string;
 };
 
@@ -394,6 +406,14 @@ export type WebviewToExtensionMessage =
   | { type: "applyApprovedDataExport" }
   | { type: "planDataMutation"; operation: string; parameters: Record<string, unknown> }
   | { type: "applyApprovedDataMutation" }
+  | { type: "inspectActiveVisual" }
+  | { type: "previewActiveVisual" }
+  | { type: "runVisualOcr" }
+  | { type: "runVisualAnalysis" }
+  | { type: "planVisualExport"; exportFormat: "markdown" | "json" | "png" | "jpg" | "webp" | "tiff" | "svg" }
+  | { type: "applyApprovedVisualExport" }
+  | { type: "planVisualEdit"; operation: string; parameters: Record<string, unknown> }
+  | { type: "applyApprovedVisualEdit" }
   | { type: "applyApprovedPatch" }
   | { type: "runApprovedCheck"; commandId: string };
 
