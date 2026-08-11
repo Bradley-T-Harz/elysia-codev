@@ -5,6 +5,7 @@ type Props = {
   filePreview: FileReadPreview;
   operation: import("../types").WebviewState["coding"]["documentOperation"];
   busyAction: import("../types").WebviewState["coding"]["busyAction"];
+  canMutate: boolean;
   onInspect: () => void;
   onExtract: () => void;
   onPlanExport: (exportFormat: "markdown" | "text") => void;
@@ -47,7 +48,7 @@ function defaultEditFor(filePreview: FileReadPreview): { operation: string; para
   return { operation: "unsupported", parameters: {}, label: "Plan governed document action", reason: `${relative} has no stable edit or derived-copy operation exposed for this format.` };
 }
 
-export default function DocumentPreviewPanel({ filePreview, operation, busyAction, onInspect, onExtract, onPlanExport, onApplyExport, onPlanEdit, onApplyEdit }: Props) {
+export default function DocumentPreviewPanel({ filePreview, operation, busyAction, canMutate, onInspect, onExtract, onPlanExport, onApplyExport, onPlanEdit, onApplyEdit }: Props) {
   const summary = asRecord(filePreview.parse_summary);
   const metadata = asRecord(summary.metadata);
   const safety = asRecord(summary.safety);
@@ -98,22 +99,23 @@ export default function DocumentPreviewPanel({ filePreview, operation, busyActio
         <button className="ghost" disabled={busyAction === "documentExtract"} onClick={onExtract}>
           {busyAction === "documentExtract" ? "Extracting..." : "Extract preview"}
         </button>
-        <button className="ghost" disabled={!exportable || busyAction === "documentExportPlan"} onClick={() => onPlanExport("markdown")}>
+        <button className="ghost" disabled={!canMutate || !exportable || busyAction === "documentExportPlan"} onClick={() => onPlanExport("markdown")}>
           Plan Markdown export
         </button>
-        <button className="ghost" disabled={!exportable || busyAction === "documentExportPlan"} onClick={() => onPlanExport("text")}>
+        <button className="ghost" disabled={!canMutate || !exportable || busyAction === "documentExportPlan"} onClick={() => onPlanExport("text")}>
           Plan text export
         </button>
-        <button className="ghost" disabled={!exportReady || busyAction === "documentExportApply"} onClick={onApplyExport}>
+        <button className="ghost" disabled={!canMutate || !exportReady || busyAction === "documentExportApply"} onClick={onApplyExport}>
           Approve export
         </button>
-        <button className="ghost" disabled={!editable || Boolean(edit.reason) || busyAction === "documentEditPlan"} onClick={() => onPlanEdit(edit.operation, edit.parameters)}>
+        <button className="ghost" disabled={!canMutate || !editable || Boolean(edit.reason) || busyAction === "documentEditPlan"} onClick={() => onPlanEdit(edit.operation, edit.parameters)}>
           {edit.label}
         </button>
-        <button className="ghost" disabled={!editReady || busyAction === "documentEditApply"} onClick={onApplyEdit}>
+        <button className="ghost" disabled={!canMutate || !editReady || busyAction === "documentEditApply"} onClick={onApplyEdit}>
           Approve document operation
         </button>
       </div>
+      {!canMutate ? <p className="muted">Export and edit planning is hidden until apply-with-approval or test-with-approval mode is selected.</p> : null}
       {!exportable ? <p className="muted">Export is not supported for this document type.</p> : null}
       {edit.reason ? <p className="muted">{edit.reason}</p> : null}
       {operation?.exportPlan ? (
@@ -139,6 +141,8 @@ export default function DocumentPreviewPanel({ filePreview, operation, busyActio
           <p className="muted">
             {operation.applyResult.action} {operation.applyResult.status} · mutation {operation.applyResult.mutation_performed ? "yes" : "no"} · audit {operation.applyResult.audit_written ? "yes" : "no"}
           </p>
+          <p className="muted">Request {operation.applyResult.request_id ?? "not returned"} · approval {operation.applyResult.approval_id ?? "not returned"}</p>
+          {operation.applyResult.backup_relative_path ? <p className="muted">Backup {operation.applyResult.backup_relative_path} · receipt {operation.applyResult.rollback_receipt_id ?? "not returned"}</p> : null}
           {operation.applyResult.blocked_reason ? <p className="error-note">Blocked: {operation.applyResult.blocked_reason}</p> : null}
           <p className="muted">{operation.applyResult.rollback_note}</p>
           {operation.applyResult.operation_details ? <pre className="source-preview source-preview--compact">{JSON.stringify(operation.applyResult.operation_details, null, 2)}</pre> : null}

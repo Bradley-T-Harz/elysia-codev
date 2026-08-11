@@ -10,7 +10,7 @@ This extension is not Elysia core and does not require Marketplace sign-in. It c
 - Coding Room webview shell.
 - Local Elysia coding bridge connection status through `/coding/status`.
 - Local governed coding session creation through `/coding/session/start`.
-- Chat pane wired to `/coding/chat` for safe planning responses.
+- Chat pane wired to `/coding/chat` for bounded deterministic planning responses. It is not yet a general coding-reasoning model; the Fibonacci transform is an explicitly contained contract fixture.
 - Metadata-only workspace preview through `/coding/repo/inspect-preview`.
 - Approved selected-file preview through `/coding/file/read-preview`, including
   Elysia core file type, adapter, capability, risk, hash, encoding, parse, and
@@ -20,19 +20,22 @@ This extension is not Elysia core and does not require Marketplace sign-in. It c
   core `/coding/data/*` endpoints.
 - Guarded patch proposal/apply surfaces when Elysia core policy and approval
   mode allow them.
-- Exact approved check output surfaces for allowlisted commands only.
+- Exact approved output for the read-only `git diff --check` lane; workspace-controlled npm/Cargo script buttons stay hidden and policy-disabled pending isolated, state-bound execution.
+- Generic text/code create, full-content edit/replace, recoverable delete, and same-type rename/move through Elysia core plan/approval/apply services.
+- Document, science/data/geospatial, and image/OCR/SVG panels with adapter-specific capability and dependency truth.
+- Sanitized coding audit records with request, operation, approval, relative-path, hash, mutation, shell, backup, and persistence truth.
 - Local UI sessions stored in VS Code state, with backend session IDs when available.
 - Workspace/trust status.
-- Git and changed-files placeholders.
+- Read-only Git and changed-file status surfaces.
 - Approval mode controls.
-- Patch preview placeholder.
+- Live patch proposal/review/apply surface with exact source and patch hashes.
 - Settings panel.
 
 ## Intentionally Disabled
 
 - No silent patch application.
 - No arbitrary command or test execution.
-- No shell, package manager, Git mutation, or worker execution from Codev.
+- No shell, package manager mutation, Git mutation, or arbitrary worker execution from Codev. The read-only diff check uses exact direct argv with `shell=false`; npm/Cargo scripts and build hooks are not executable through Codev.
 - No cloud upload.
 - No Marketplace account requirement.
 - No source-code contents returned by the repo preview or stored by default.
@@ -40,7 +43,7 @@ This extension is not Elysia core and does not require Marketplace sign-in. It c
 
 ## Local-First Boundary
 
-The extension uses VS Code UI APIs, the extension host, local extension state, and the local Elysia bridge. The webview does not fetch the local API directly. It does not send source code to Marketplace or cloud services. Any future patch or command capability must go through explicit Elysia governance, exact approval, ledger truth, and rollback notes.
+The extension uses VS Code UI APIs, the extension host, local extension state, and the local Elysia bridge. The webview does not fetch the local API directly. It does not send source code to Marketplace or cloud services. Patch, file, document, data, visual, and command capabilities go through Elysia core planning, exact expiring one-time approval, source/plan hash checks, audit/trace truth, and backup or derived-output rules.
 
 ## Local Bridge Endpoints
 
@@ -51,6 +54,11 @@ The current MVP uses:
 - `POST /coding/chat`
 - `POST /coding/repo/inspect-preview`
 - `POST /coding/file/read-preview`
+- `POST /coding/file/operation-plan`
+- `POST /coding/file/operation-execute-approved`
+- `POST /coding/operation/approve`
+- `GET /coding/operation/audit`
+- `POST /coding/document/*`
 - `GET /coding/data-types`
 - `POST /coding/data/inspect`
 - `POST /coding/data/preview`
@@ -60,6 +68,7 @@ The current MVP uses:
 - `POST /coding/data/apply-mutation-approved`
 - `POST /coding/patch/propose`
 - `POST /coding/patch/apply-approved`
+- `POST /coding/command/plan`
 - `POST /coding/command/run-approved`
 
 These endpoints are local-only and governed. Repo preview returns bounded
@@ -95,16 +104,11 @@ Packaging a local VSIX does not publish the extension. Public VS Code Marketplac
 
 - `elysia.apiUrl`: local API URL. Default `http://127.0.0.1:8000`.
 - `elysia.approvalMode`: default approval posture. Default `plan_only`.
-- `elysia.allowPatchPreview`: patch preview posture. Apply still requires Elysia
-  core approval mode, exact approval, path guard, hash check, and audit.
-- `elysia.allowCommandExecution`: exact approved commands only when Elysia core
-  policy allows them.
 - `elysia.workspaceTrustMode`: how the companion interprets workspace trust.
 
-## Roadmap
+## Next proof / roadmap
 
-1. Richer read-only repo intelligence through local Elysia governance.
-2. Patch preview with no apply.
-3. Approved VS Code-native patch application.
-4. Approved focused test commands with allowlists/timeouts.
-5. Marketplace packaging as an official add-on.
+1. Run Extension Host proof for restart/reload, preview, exact patch apply, exact checks, generic CRUD, document/data/visual flows, and audit visibility against disposable workspaces.
+2. Replace the bounded deterministic chat bridge with a real governed general local coding reasoner and reviewed patch-generation path.
+3. Add automated extension-host/API client coverage without weakening current approval boundaries.
+4. Marketplace packaging remains a separate official add-on release task.

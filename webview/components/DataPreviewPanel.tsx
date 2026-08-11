@@ -5,6 +5,7 @@ type Props = {
   filePreview: FileReadPreview;
   operation: WebviewState["coding"]["dataOperation"];
   busyAction: WebviewState["coding"]["busyAction"];
+  canMutate: boolean;
   onInspect: () => void;
   onPreview: () => void;
   onPlanExport: (exportFormat: "markdown" | "json") => void;
@@ -55,7 +56,7 @@ function defaultMutationFor(filePreview: FileReadPreview): { operation: string; 
   return { operation: "unsupported", parameters: {}, label: "Plan governed data operation", reason: "This data type currently exposes inspection, bounded preview, and export from Codev. Mutation controls appear only when a stable adapter-specific operation is available." };
 }
 
-export default function DataPreviewPanel({ filePreview, operation, busyAction, onInspect, onPreview, onPlanExport, onApplyExport, onPlanMutation, onApplyMutation }: Props) {
+export default function DataPreviewPanel({ filePreview, operation, busyAction, canMutate, onInspect, onPreview, onPlanExport, onApplyExport, onPlanMutation, onApplyMutation }: Props) {
   const summary = asRecord(filePreview.parse_summary);
   const descriptor = asRecord(summary.descriptor);
   const metadata = asRecord(summary.metadata);
@@ -89,22 +90,23 @@ export default function DataPreviewPanel({ filePreview, operation, busyAction, o
         <button className="ghost" disabled={busyAction === "dataPreview"} onClick={onPreview}>
           {busyAction === "dataPreview" ? "Previewing..." : "Preview data"}
         </button>
-        <button className="ghost" disabled={busyAction === "dataExportPlan"} onClick={() => onPlanExport("markdown")}>
+        <button className="ghost" disabled={!canMutate || busyAction === "dataExportPlan"} onClick={() => onPlanExport("markdown")}>
           Plan Markdown summary
         </button>
-        <button className="ghost" disabled={busyAction === "dataExportPlan"} onClick={() => onPlanExport("json")}>
+        <button className="ghost" disabled={!canMutate || busyAction === "dataExportPlan"} onClick={() => onPlanExport("json")}>
           Plan JSON summary
         </button>
-        <button className="ghost" disabled={!exportReady || busyAction === "dataExportApply"} onClick={onApplyExport}>
+        <button className="ghost" disabled={!canMutate || !exportReady || busyAction === "dataExportApply"} onClick={onApplyExport}>
           Approve data export
         </button>
-        <button className="ghost" disabled={Boolean(mutation.reason) || busyAction === "dataMutationPlan"} onClick={() => onPlanMutation(mutation.operation, mutation.parameters)}>
+        <button className="ghost" disabled={!canMutate || Boolean(mutation.reason) || busyAction === "dataMutationPlan"} onClick={() => onPlanMutation(mutation.operation, mutation.parameters)}>
           {mutation.label}
         </button>
-        <button className="ghost" disabled={!mutationReady || busyAction === "dataMutationApply"} onClick={onApplyMutation}>
+        <button className="ghost" disabled={!canMutate || !mutationReady || busyAction === "dataMutationApply"} onClick={onApplyMutation}>
           Approve data mutation
         </button>
       </div>
+      {!canMutate ? <p className="muted">Export and mutation planning is hidden until apply-with-approval or test-with-approval mode is selected.</p> : null}
       {mutation.reason ? <p className="muted">{mutation.reason}</p> : null}
       {summary.warnings ? <p className="muted">Warnings: {String(summary.warnings)}</p> : null}
       {operation?.exportPlan ? (
@@ -126,6 +128,7 @@ export default function DataPreviewPanel({ filePreview, operation, busyAction, o
         <div className="document-preview__result">
           <strong>Data operation result</strong>
           <p className="muted">{operation.applyResult.action} {operation.applyResult.status} · mutation {operation.applyResult.mutation_performed ? "yes" : "no"} · audit {operation.applyResult.audit_written ? "yes" : "no"}</p>
+          <p className="muted">Request {operation.applyResult.request_id ?? "not returned"} · approval {operation.applyResult.approval_id ?? "not returned"}</p>
           {operation.applyResult.blocked_reason ? <p className="error-note">Blocked: {operation.applyResult.blocked_reason}</p> : null}
           <pre className="source-preview source-preview--compact">{JSON.stringify({ backup: operation.applyResult.backup, details: operation.applyResult.operation_details }, null, 2)}</pre>
         </div>

@@ -40,7 +40,7 @@ const modeCapabilities: Record<ApprovalMode, ApprovalModeCapabilities> = {
     canProposePatch: true,
     canApplyPatch: true,
     canRunChecks: true,
-    description: "Test with approval: apply-with-approval plus exact allowlisted checks after approval."
+    description: "Test with approval: apply-with-approval plus the exact read-only diff check after approval."
   }
 };
 

@@ -2,6 +2,7 @@ import * as React from "react";
 import type { WebviewState } from "../types";
 import DataPreviewPanel from "./DataPreviewPanel";
 import DocumentPreviewPanel from "./DocumentPreviewPanel";
+import FileOperationPanel from "./FileOperationPanel";
 import VisualPreviewPanel from "./VisualPreviewPanel";
 
 type Props = {
@@ -9,7 +10,11 @@ type Props = {
   filePreview: WebviewState["coding"]["filePreview"];
   busyAction: WebviewState["coding"]["busyAction"];
   canReadWorkspace: boolean;
+  canMutate: boolean;
   onReadPreview: () => void;
+  fileOperation: WebviewState["coding"]["fileOperation"];
+  onPlanFileOperation: (operationKind: "create" | "edit" | "replace" | "delete" | "rename" | "move", targetPath: string, destinationPath?: string, newText?: string) => void;
+  onApplyFileOperation: () => void;
   documentOperation: WebviewState["coding"]["documentOperation"];
   onInspectDocument: () => void;
   onExtractDocument: () => void;
@@ -35,7 +40,7 @@ type Props = {
   onApplyVisualEdit: () => void;
 };
 
-export default function ActiveFilePanel({ activeFile, filePreview, busyAction, canReadWorkspace, onReadPreview, documentOperation, onInspectDocument, onExtractDocument, onPlanExport, onApplyExport, onPlanEdit, onApplyEdit, dataOperation, onInspectData, onPreviewData, onPlanDataExport, onApplyDataExport, onPlanDataMutation, onApplyDataMutation, visualOperation, onInspectVisual, onPreviewVisual, onVisualOcr, onVisualAnalysis, onPlanVisualExport, onApplyVisualExport, onPlanVisualEdit, onApplyVisualEdit }: Props) {
+export default function ActiveFilePanel({ activeFile, filePreview, busyAction, canReadWorkspace, canMutate, onReadPreview, fileOperation, onPlanFileOperation, onApplyFileOperation, documentOperation, onInspectDocument, onExtractDocument, onPlanExport, onApplyExport, onPlanEdit, onApplyEdit, dataOperation, onInspectData, onPreviewData, onPlanDataExport, onApplyDataExport, onPlanDataMutation, onApplyDataMutation, visualOperation, onInspectVisual, onPreviewVisual, onVisualOcr, onVisualAnalysis, onPlanVisualExport, onApplyVisualExport, onPlanVisualEdit, onApplyVisualEdit }: Props) {
   const busy = busyAction === "filePreview";
   const fileBacked = activeFile?.scheme === "file";
   const previewApproved = filePreview?.status === "completed";
@@ -109,6 +114,7 @@ export default function ActiveFilePanel({ activeFile, filePreview, busyAction, c
               filePreview={filePreview}
               operation={documentOperation}
               busyAction={busyAction}
+              canMutate={canMutate}
               onInspect={onInspectDocument}
               onExtract={onExtractDocument}
               onPlanExport={onPlanExport}
@@ -122,6 +128,7 @@ export default function ActiveFilePanel({ activeFile, filePreview, busyAction, c
               filePreview={filePreview}
               operation={dataOperation}
               busyAction={busyAction}
+              canMutate={canMutate}
               onInspect={onInspectData}
               onPreview={onPreviewData}
               onPlanExport={onPlanDataExport}
@@ -135,6 +142,7 @@ export default function ActiveFilePanel({ activeFile, filePreview, busyAction, c
               filePreview={filePreview}
               operation={visualOperation}
               busyAction={busyAction}
+              canMutate={canMutate}
               onInspect={onInspectVisual}
               onPreview={onPreviewVisual}
               onOcr={onVisualOcr}
@@ -149,6 +157,14 @@ export default function ActiveFilePanel({ activeFile, filePreview, busyAction, c
           {filePreview.content_preview ? <pre className="source-preview">{filePreview.content_preview}</pre> : null}
         </div>
       ) : null}
+      <FileOperationPanel
+        activeRelativePath={activeFile?.relativePath}
+        canMutate={canMutate}
+        busyAction={busyAction}
+        operation={fileOperation}
+        onPlan={onPlanFileOperation}
+        onApply={onApplyFileOperation}
+      />
     </section>
   );
 }

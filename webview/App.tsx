@@ -8,6 +8,7 @@ import ChatPane from "./components/ChatPane";
 import GitStatusPanel from "./components/GitStatusPanel";
 import GoalWorkflowPanel from "./components/GoalWorkflowPanel";
 import IdeContextPanel from "./components/IdeContextPanel";
+import OperationAuditPanel from "./components/OperationAuditPanel";
 import PatchPreview from "./components/PatchPreview";
 import ReviewWorkflowPanel from "./components/ReviewWorkflowPanel";
 import SessionList from "./components/SessionList";
@@ -58,7 +59,7 @@ const emptyState: WebviewState = {
   git: { branch: "Not inspected", dirtyState: "unknown", changedCount: 0, summary: "No repo inspected." },
   changedFiles: [],
   patchPreview: { state: "empty", summary: "No patch proposed.", files: [], canApply: false },
-  coding: { bridge: null, repoPreview: null, filePreview: null, patchApplyResult: null, commandResult: null, documentOperation: null, dataOperation: null, visualOperation: null }
+  coding: { bridge: null, repoPreview: null, filePreview: null, patchApplyResult: null, commandResult: null, documentOperation: null, dataOperation: null, visualOperation: null, fileOperation: null, operationAudits: [] }
 };
 
 export default function App({ vscode }: AppProps) {
@@ -141,7 +142,11 @@ export default function App({ vscode }: AppProps) {
             filePreview={state.coding.filePreview}
             busyAction={state.coding.busyAction}
             canReadWorkspace={state.workspace.canReadWorkspace}
+            canMutate={state.approvalModeCapabilities.canApplyPatch}
             onReadPreview={() => vscode.postMessage({ type: "readActiveFilePreview" })}
+            fileOperation={state.coding.fileOperation}
+            onPlanFileOperation={(operationKind, targetPath, destinationPath, newText) => vscode.postMessage({ type: "planFileOperation", operationKind, targetPath, destinationPath, newText })}
+            onApplyFileOperation={() => vscode.postMessage({ type: "applyApprovedFileOperation" })}
             documentOperation={state.coding.documentOperation}
             onInspectDocument={() => vscode.postMessage({ type: "inspectActiveDocument" })}
             onExtractDocument={() => vscode.postMessage({ type: "extractActiveDocument" })}
@@ -189,6 +194,7 @@ export default function App({ vscode }: AppProps) {
             busyAction={state.coding.busyAction}
             onRun={(commandId) => vscode.postMessage({ type: "runApprovedCheck", commandId })}
           />
+          <OperationAuditPanel records={state.coding.operationAudits} />
           <ToolsPanel bridge={state.coding.bridge} />
           <SettingsPanel connection={state.connection} workspace={state.workspace} />
         </aside>

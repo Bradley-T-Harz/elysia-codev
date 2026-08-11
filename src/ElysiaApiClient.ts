@@ -1,9 +1,11 @@
 import * as http from "node:http";
 import * as https from "node:https";
 import * as vscode from "vscode";
+import { buildLoopbackUrl } from "./localUrlPolicy";
 import type {
   CodingBridgeStatus,
   CodingChatReply,
+  CodingCommandPlan,
   CodingCommandRunResult,
   CodingDataApplyResult,
   CodingDataPlan,
@@ -11,13 +13,18 @@ import type {
   CodingDocumentPlan,
   CodingPatchApplyResult,
   CodingPatchProposal,
+  CodingOperationApproval,
+  CodingOperationAudit,
   ElysiaConnectionStatus,
   FileReadPreview,
+  CodingFileOperationPlan,
+  CodingFileOperationResult,
   RepoInspectPreview
 } from "./types";
 
 type Envelope<T> = {
   status?: string;
+  request_id?: string;
   data?: T;
   errors?: string[];
   detail?: unknown;
@@ -47,6 +54,11 @@ type VisualEditPlanData = { visual_edit_plan?: CodingDocumentPlan };
 type VisualEditResultData = { visual_apply_result?: CodingDocumentApplyResult };
 type PatchApplyData = { patch_apply?: CodingPatchApplyResult };
 type CommandRunData = { command_run?: CodingCommandRunResult };
+type CommandPlanData = { command_plan?: CodingCommandPlan };
+type OperationApprovalData = { operation_approval?: CodingOperationApproval };
+type OperationAuditData = { operation_audits?: CodingOperationAudit[] };
+type FileOperationPlanData = { file_operation_plan?: CodingFileOperationPlan };
+type FileOperationResultData = { file_operation_result?: CodingFileOperationResult };
 type LocalRequestInit = {
   method: "GET" | "POST";
   body?: string;
@@ -150,6 +162,47 @@ export class ElysiaApiClient {
     return envelope.data.file_preview;
   }
 
+  public async planFileOperation(request: {
+    session_id?: string;
+    approval_mode: string;
+    workspace_root: string;
+    operation_kind: "create" | "edit" | "replace" | "delete" | "rename" | "move";
+    target_path: string;
+    destination_path?: string;
+    summary: string;
+    new_text?: string;
+  }): Promise<CodingFileOperationPlan> {
+    const envelope = await this.request<FileOperationPlanData>("/coding/file/operation-plan", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.file_operation_plan) throw new Error("Local Elysia did not return a file operation plan.");
+    return envelope.data.file_operation_plan;
+  }
+
+  public async applyApprovedFileOperation(request: {
+    session_id?: string;
+    approval_mode: string;
+    workspace_root: string;
+    operation_kind: "create" | "edit" | "replace" | "delete" | "rename" | "move";
+    target_path: string;
+    destination_path?: string;
+    summary: string;
+    new_text?: string;
+    expected_content_hash?: string;
+    approval_id: string;
+    approval_token: string;
+    operator_approved: boolean;
+    approval_phrase: string;
+  }): Promise<CodingFileOperationResult> {
+    const envelope = await this.request<FileOperationResultData>("/coding/file/operation-execute-approved", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.file_operation_result) throw new Error("Local Elysia did not return a file operation result.");
+    return this.withEnvelopeTruth(envelope.data.file_operation_result, envelope);
+  }
+
   public async inspectDocument(request: {
     workspace_root: string;
     file_path: string;
@@ -216,6 +269,9 @@ export class ElysiaApiClient {
     target_path?: string;
     expected_source_hash?: string;
     overwrite_existing?: boolean;
+    expected_target_hash?: string;
+    approval_id: string;
+    approval_token: string;
   }): Promise<CodingDocumentApplyResult> {
     const envelope = await this.request<DocumentExportResultData>("/coding/document/export-approved", {
       method: "POST",
@@ -224,7 +280,7 @@ export class ElysiaApiClient {
     if (!envelope.data?.document_export_result) {
       throw new Error("Local Elysia did not return document export result data.");
     }
-    return envelope.data.document_export_result;
+    return this.withEnvelopeTruth(envelope.data.document_export_result, envelope);
   }
 
   public async planDocumentEdit(request: {
@@ -255,6 +311,8 @@ export class ElysiaApiClient {
     operation: string;
     parameters: Record<string, unknown>;
     expected_source_hash?: string;
+    approval_id: string;
+    approval_token: string;
   }): Promise<CodingDocumentApplyResult> {
     const envelope = await this.request<DocumentEditResultData>("/coding/document/apply-approved", {
       method: "POST",
@@ -263,7 +321,7 @@ export class ElysiaApiClient {
     if (!envelope.data?.document_edit_result) {
       throw new Error("Local Elysia did not return document edit result data.");
     }
-    return envelope.data.document_edit_result;
+    return this.withEnvelopeTruth(envelope.data.document_edit_result, envelope);
   }
 
   public async inspectData(request: {
@@ -332,6 +390,9 @@ export class ElysiaApiClient {
     target_path?: string;
     expected_source_hash?: string;
     overwrite_existing?: boolean;
+    expected_target_hash?: string;
+    approval_id: string;
+    approval_token: string;
   }): Promise<CodingDataApplyResult> {
     const envelope = await this.request<DataExportResultData>("/coding/data/export-approved", {
       method: "POST",
@@ -340,7 +401,7 @@ export class ElysiaApiClient {
     if (!envelope.data?.data_export_result) {
       throw new Error("Local Elysia did not return data export result data.");
     }
-    return envelope.data.data_export_result;
+    return this.withEnvelopeTruth(envelope.data.data_export_result, envelope);
   }
 
   public async planDataMutation(request: {
@@ -371,6 +432,8 @@ export class ElysiaApiClient {
     operation: string;
     parameters: Record<string, unknown>;
     expected_source_hash?: string;
+    approval_id: string;
+    approval_token: string;
   }): Promise<CodingDataApplyResult> {
     const envelope = await this.request<DataMutationResultData>("/coding/data/apply-mutation-approved", {
       method: "POST",
@@ -379,7 +442,7 @@ export class ElysiaApiClient {
     if (!envelope.data?.data_mutation_result) {
       throw new Error("Local Elysia did not return data mutation result data.");
     }
-    return envelope.data.data_mutation_result;
+    return this.withEnvelopeTruth(envelope.data.data_mutation_result, envelope);
   }
 
   public async inspectVisual(request: {
@@ -481,6 +544,9 @@ export class ElysiaApiClient {
     target_path?: string;
     expected_source_hash?: string;
     overwrite_existing?: boolean;
+    expected_target_hash?: string;
+    approval_id: string;
+    approval_token: string;
   }): Promise<CodingDocumentApplyResult> {
     const envelope = await this.request<VisualExportResultData>("/coding/visual/export-approved", {
       method: "POST",
@@ -489,7 +555,7 @@ export class ElysiaApiClient {
     if (!envelope.data?.visual_export_result) {
       throw new Error("Local Elysia did not return visual export result data.");
     }
-    return envelope.data.visual_export_result;
+    return this.withEnvelopeTruth(envelope.data.visual_export_result, envelope);
   }
 
   public async planVisualEdit(request: {
@@ -520,6 +586,10 @@ export class ElysiaApiClient {
     operation: string;
     parameters: Record<string, unknown>;
     expected_source_hash?: string;
+    expected_target_hash?: string;
+    overwrite_existing?: boolean;
+    approval_id: string;
+    approval_token: string;
   }): Promise<CodingDocumentApplyResult> {
     const envelope = await this.request<VisualEditResultData>("/coding/visual/apply-approved", {
       method: "POST",
@@ -528,7 +598,7 @@ export class ElysiaApiClient {
     if (!envelope.data?.visual_apply_result) {
       throw new Error("Local Elysia did not return visual edit result data.");
     }
-    return envelope.data.visual_apply_result;
+    return this.withEnvelopeTruth(envelope.data.visual_apply_result, envelope);
   }
 
   public async applyApprovedPatch(request: {
@@ -541,6 +611,8 @@ export class ElysiaApiClient {
     patch_hash: string;
     operator_approved: boolean;
     approval_phrase?: string;
+    approval_id: string;
+    approval_token: string;
   }): Promise<CodingPatchApplyResult> {
     const envelope = await this.request<PatchApplyData>("/coding/patch/apply-approved", {
       method: "POST",
@@ -549,7 +621,53 @@ export class ElysiaApiClient {
     if (!envelope.data?.patch_apply) {
       throw new Error("Local Elysia did not return patch apply result data.");
     }
-    return envelope.data.patch_apply;
+    return this.withEnvelopeTruth(envelope.data.patch_apply, envelope);
+  }
+
+  public async planCommand(request: {
+    session_id?: string;
+    approval_mode: string;
+    workspace_root: string;
+    command: string[];
+    purpose: string;
+  }): Promise<CodingCommandPlan> {
+    const envelope = await this.request<CommandPlanData>("/coding/command/plan", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.command_plan) throw new Error("Local Elysia did not return a command plan.");
+    return envelope.data.command_plan;
+  }
+
+  public async approveOperation(request: {
+    session_id?: string;
+    operation_kind: string;
+    operation_summary: string;
+    workspace_root: string;
+    exact_files: string[];
+    source_hash?: string;
+    plan_hash: string;
+    allowed_mutation_class: string;
+    expires_in_seconds?: number;
+    operator_approved: boolean;
+    approval_phrase: string;
+    rollback_note: string;
+  }): Promise<CodingOperationApproval> {
+    const envelope = await this.request<OperationApprovalData>("/coding/operation/approve", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.operation_approval) throw new Error("Local Elysia did not issue an operation approval.");
+    const approval = this.withEnvelopeTruth(envelope.data.operation_approval, envelope);
+    if (approval.status !== "approved" || !approval.approval_token) {
+      throw new Error(`Operation approval was not issued (${approval.status}).`);
+    }
+    return approval;
+  }
+
+  public async listOperationAudits(limit = 20): Promise<CodingOperationAudit[]> {
+    const envelope = await this.request<OperationAuditData>(`/coding/operation/audit?limit=${Math.max(1, Math.min(limit, 50))}`, { method: "GET" });
+    return envelope.data?.operation_audits ?? [];
   }
 
   public async runApprovedCommand(request: {
@@ -567,7 +685,11 @@ export class ElysiaApiClient {
     if (!envelope.data?.command_run) {
       throw new Error("Local Elysia did not return command run data.");
     }
-    return envelope.data.command_run;
+    return this.withEnvelopeTruth(envelope.data.command_run, envelope);
+  }
+
+  private withEnvelopeTruth<T extends object>(result: T, envelope: Envelope<unknown>): T {
+    return envelope.request_id ? { ...result, request_id: envelope.request_id } : result;
   }
 
   private async request<T>(path: string, init: LocalRequestInit): Promise<Envelope<T>> {
@@ -681,27 +803,7 @@ export class ElysiaApiClient {
   }
 
   private buildLocalUrl(path: string): URL {
-    let parsed: URL;
-    try {
-      parsed = new URL(this.apiUrl.replace(/\/$/, ""));
-    } catch (error) {
-      const detail = error instanceof Error ? error.message : String(error);
-      throw new Error(`Invalid Elysia API URL "${this.apiUrl}": ${detail}`);
-    }
-
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-      throw new Error(`Rejected Elysia API URL scheme "${parsed.protocol}". Only http/https loopback URLs are allowed.`);
-    }
-
-    if (parsed.hostname === "localhost") {
-      parsed.hostname = "127.0.0.1";
-    }
-
-    if (parsed.hostname !== "127.0.0.1" && parsed.hostname !== "::1" && parsed.hostname !== "[::1]") {
-      throw new Error(`Rejected non-loopback Elysia API host "${parsed.hostname}". Use http://127.0.0.1:<port>.`);
-    }
-
-    return new URL(path, parsed.toString().replace(/\/$/, "/"));
+    return buildLoopbackUrl(this.apiUrl, path);
   }
 
   private async localHttpRequest(target: URL, init: LocalRequestInit): Promise<LocalResponse> {

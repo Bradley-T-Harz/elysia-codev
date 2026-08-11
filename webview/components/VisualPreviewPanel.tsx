@@ -5,6 +5,7 @@ type Props = {
   filePreview: FileReadPreview;
   operation: WebviewState["coding"]["visualOperation"];
   busyAction: WebviewState["coding"]["busyAction"];
+  canMutate: boolean;
   onInspect: () => void;
   onPreview: () => void;
   onOcr: () => void;
@@ -39,7 +40,7 @@ function defaultVisualEdit(filePreview: FileReadPreview): { operation: string; p
   return { operation: "unsupported", parameters: {}, label: "Plan visual edit", reason: `${relative} has no stable visual edit operation surfaced.` };
 }
 
-export default function VisualPreviewPanel({ filePreview, operation, busyAction, onInspect, onPreview, onOcr, onAnalyze, onPlanExport, onApplyExport, onPlanEdit, onApplyEdit }: Props) {
+export default function VisualPreviewPanel({ filePreview, operation, busyAction, canMutate, onInspect, onPreview, onOcr, onAnalyze, onPlanExport, onApplyExport, onPlanEdit, onApplyEdit }: Props) {
   const summary = asRecord(filePreview.parse_summary);
   const metadata = asRecord(summary.metadata);
   const visualPreview = asRecord(summary.preview);
@@ -79,22 +80,23 @@ export default function VisualPreviewPanel({ filePreview, operation, busyAction,
         <button className="ghost" disabled={busyAction === "visualAnalysis"} onClick={onAnalyze}>
           {busyAction === "visualAnalysis" ? "Analyzing..." : "Analyze visual"}
         </button>
-        <button className="ghost" disabled={busyAction === "visualExportPlan"} onClick={() => onPlanExport("markdown")}>
+        <button className="ghost" disabled={!canMutate || busyAction === "visualExportPlan"} onClick={() => onPlanExport("markdown")}>
           Plan Markdown export
         </button>
-        <button className="ghost" disabled={busyAction === "visualExportPlan"} onClick={() => onPlanExport(filePreview.adapter === "svg" ? "png" : "webp")}>
+        <button className="ghost" disabled={!canMutate || busyAction === "visualExportPlan"} onClick={() => onPlanExport(filePreview.adapter === "svg" ? "png" : "webp")}>
           Plan image export
         </button>
-        <button className="ghost" disabled={!exportReady || busyAction === "visualExportApply"} onClick={onApplyExport}>
+        <button className="ghost" disabled={!canMutate || !exportReady || busyAction === "visualExportApply"} onClick={onApplyExport}>
           Approve export
         </button>
-        <button className="ghost" disabled={Boolean(edit.reason) || busyAction === "visualEditPlan"} onClick={() => onPlanEdit(edit.operation, edit.parameters)}>
+        <button className="ghost" disabled={!canMutate || Boolean(edit.reason) || busyAction === "visualEditPlan"} onClick={() => onPlanEdit(edit.operation, edit.parameters)}>
           {edit.label}
         </button>
-        <button className="ghost" disabled={!editReady || busyAction === "visualEditApply"} onClick={onApplyEdit}>
+        <button className="ghost" disabled={!canMutate || !editReady || busyAction === "visualEditApply"} onClick={onApplyEdit}>
           Approve visual edit
         </button>
       </div>
+      {!canMutate ? <p className="muted">Export and derived-edit planning is hidden until apply-with-approval or test-with-approval mode is selected.</p> : null}
       {edit.reason ? <p className="muted">{edit.reason}</p> : null}
       {operation?.ocrResult ? <pre className="source-preview source-preview--compact">{JSON.stringify(operation.ocrResult, null, 2)}</pre> : null}
       {operation?.analysisResult ? <pre className="source-preview source-preview--compact">{JSON.stringify(operation.analysisResult, null, 2)}</pre> : null}
@@ -116,6 +118,8 @@ export default function VisualPreviewPanel({ filePreview, operation, busyAction,
         <div className="document-preview__result">
           <strong>Visual result</strong>
           <p className="muted">{operation.applyResult.action} {operation.applyResult.status} · mutation {operation.applyResult.mutation_performed ? "yes" : "no"} · audit {operation.applyResult.audit_written ? "yes" : "no"}</p>
+          <p className="muted">Request {operation.applyResult.request_id ?? "not returned"} · approval {operation.applyResult.approval_id ?? "not returned"}</p>
+          {operation.applyResult.backup_relative_path ? <p className="muted">Backup {operation.applyResult.backup_relative_path} · receipt {operation.applyResult.rollback_receipt_id ?? "not returned"}</p> : null}
           {operation.applyResult.blocked_reason ? <p className="error-note">Blocked: {operation.applyResult.blocked_reason}</p> : null}
           <p className="muted">{operation.applyResult.rollback_note}</p>
         </div>

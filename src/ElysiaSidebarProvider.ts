@@ -4,7 +4,7 @@ import { ElysiaApiClient } from "./ElysiaApiClient";
 import { FileDiffProvider } from "./FileDiffProvider";
 import { SessionStore } from "./SessionStore";
 import { WorkspaceTrust } from "./WorkspaceTrust";
-import type { ApprovalMode, CodingBridgeStatus, CodingCommandRunResult, CodingDataOperationState, CodingDocumentOperationState, CodingPatchApplyResult, CodingPatchProposal, CodingVisualOperationState, ElysiaMessage, ExtensionToWebviewMessage, FileReadPreview, GoalWorkflowState, IdeContextSettings, PatchPreview, RepoInspectPreview, WebviewState, WebviewToExtensionMessage, WorkModeState } from "./types";
+import type { ApprovalMode, CodingBridgeStatus, CodingCommandRunResult, CodingDataOperationState, CodingDocumentOperationState, CodingFileOperationState, CodingOperationAudit, CodingPatchApplyResult, CodingPatchProposal, CodingVisualOperationState, ElysiaMessage, ExtensionToWebviewMessage, FileReadPreview, GoalWorkflowState, IdeContextSettings, PatchPreview, RepoInspectPreview, WebviewState, WebviewToExtensionMessage, WorkModeState } from "./types";
 
 export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   private view: vscode.WebviewView | undefined;
@@ -18,9 +18,12 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   private dataMutationRequests = new Map<string, { operation: string; parameters: Record<string, unknown> }>();
   private visualOperations = new Map<string, CodingVisualOperationState>();
   private visualEditRequests = new Map<string, { operation: string; parameters: Record<string, unknown> }>();
+  private fileOperations = new Map<string, CodingFileOperationState>();
+  private fileOperationRequests = new Map<string, { operationKind: "create" | "edit" | "replace" | "delete" | "rename" | "move"; targetPath: string; destinationPath?: string; newText?: string }>();
   private patchProposals = new Map<string, CodingPatchProposal>();
   private patchApplyResults = new Map<string, CodingPatchApplyResult>();
   private commandResults = new Map<string, CodingCommandRunResult>();
+  private operationAudits: CodingOperationAudit[] = [];
   private codingError: string | undefined;
   private busyAction: WebviewState["coding"]["busyAction"];
   private lastAction: string | undefined;
@@ -120,9 +123,12 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     this.patchProposals.clear();
     this.patchApplyResults.clear();
     this.commandResults.clear();
+    this.operationAudits = [];
     this.documentOperations.clear();
     this.dataOperations.clear();
     this.visualOperations.clear();
+    this.fileOperations.clear();
+    this.fileOperationRequests.clear();
     this.documentEditRequests.clear();
     this.visualEditRequests.clear();
     this.lastAction = "Local sessions cleared.";
@@ -147,6 +153,8 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     this.documentOperations.delete(sessionId);
     this.dataOperations.delete(sessionId);
     this.visualOperations.delete(sessionId);
+    this.fileOperations.delete(sessionId);
+    this.fileOperationRequests.delete(sessionId);
     this.documentEditRequests.delete(sessionId);
     this.visualEditRequests.delete(sessionId);
     this.patchProposals.delete(sessionId);
@@ -260,6 +268,14 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     }
     if (message.type === "readActiveFilePreview") {
       await this.readActiveFilePreview();
+      return;
+    }
+    if (message.type === "planFileOperation") {
+      await this.planFileOperation(message);
+      return;
+    }
+    if (message.type === "applyApprovedFileOperation") {
+      await this.applyApprovedFileOperation();
       return;
     }
     if (message.type === "inspectActiveDocument") {
@@ -492,6 +508,122 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     await this.postState();
   }
 
+  private async planFileOperation(message: Extract<WebviewToExtensionMessage, { type: "planFileOperation" }>): Promise<void> {
+    const sessionId = this.activeSessionId;
+    const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
+    if (!this.requireMutationMode("File operation planning") || !sessionId || !workspaceRoot) {
+      if (!sessionId || !workspaceRoot) this.codingError = "Create a Codev session in a trusted approved workspace first.";
+      await this.postState();
+      return;
+    }
+    const targetPath = message.targetPath.trim();
+    if (!targetPath) {
+      this.codingError = "Enter the exact workspace-relative target path.";
+      await this.postState();
+      return;
+    }
+    const session = this.sessions.getSessions().find((item) => item.id === sessionId);
+    this.busyAction = "fileOperationPlan";
+    this.lastAction = `Planning governed ${message.operationKind}...`;
+    await this.postState();
+    try {
+      const plan = await this.api.planFileOperation({
+        session_id: session?.backendSessionId,
+        approval_mode: this.approvals.getMode(),
+        workspace_root: workspaceRoot,
+        operation_kind: message.operationKind,
+        target_path: targetPath,
+        destination_path: message.destinationPath?.trim() || undefined,
+        summary: `Codev planned ${message.operationKind} for ${targetPath}`,
+        new_text: message.newText
+      });
+      this.fileOperations.set(sessionId, { plan, result: null });
+      this.fileOperationRequests.set(sessionId, {
+        operationKind: message.operationKind,
+        targetPath,
+        destinationPath: message.destinationPath?.trim() || undefined,
+        newText: message.newText
+      });
+      this.codingError = plan.status === "preview_only" ? undefined : plan.blocked_reason ?? plan.status;
+      this.lastAction = `File operation plan ${plan.status}.`;
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "File operation planning failed.";
+      this.fileOperations.set(sessionId, { plan: null, result: null, lastError: this.codingError });
+      this.lastAction = "File operation planning failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async applyApprovedFileOperation(): Promise<void> {
+    const sessionId = this.activeSessionId;
+    const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
+    if (!this.requireMutationMode("File operation") || !sessionId || !workspaceRoot) {
+      if (!sessionId || !workspaceRoot) this.codingError = "Create a Codev session in a trusted approved workspace first.";
+      await this.postState();
+      return;
+    }
+    const state = this.fileOperations.get(sessionId);
+    const plan = state?.plan;
+    const request = this.fileOperationRequests.get(sessionId);
+    if (!plan?.plan_hash || plan.status !== "preview_only" || !request) {
+      this.codingError = "Create a current, unblocked file operation plan before approval.";
+      await this.postState();
+      return;
+    }
+    const approval = await vscode.window.showWarningMessage(
+      `Apply exact ${request.operationKind} operation to ${plan.target_relative_path ?? request.targetPath}${plan.destination_relative_path ? ` → ${plan.destination_relative_path}` : ""}?`,
+      { modal: true },
+      "Approve exact file operation"
+    );
+    if (approval !== "Approve exact file operation") {
+      this.lastAction = "File operation cancelled.";
+      await this.postState();
+      return;
+    }
+    const session = this.sessions.getSessions().find((item) => item.id === sessionId);
+    this.busyAction = "fileOperationApply";
+    this.lastAction = `Applying approved ${request.operationKind}...`;
+    await this.postState();
+    try {
+      const exactApproval = await this.issueExactApproval({
+        sessionId: session?.backendSessionId,
+        operationKind: `file_operation:${request.operationKind}`,
+        operationSummary: `Apply ${request.operationKind} to ${plan.target_relative_path ?? request.targetPath}`,
+        workspaceRoot,
+        exactFiles: [request.targetPath, request.operationKind === "rename" || request.operationKind === "move" ? request.destinationPath ?? "" : ""],
+        sourceHash: plan.source_hash,
+        planHash: plan.plan_hash,
+        mutationClass: `file_${request.operationKind}`,
+        rollbackNote: request.operationKind === "create" ? "The exact created file can be removed to roll back." : "A recoverable pre-mutation backup and rollback receipt are required."
+      });
+      const result = await this.api.applyApprovedFileOperation({
+        session_id: session?.backendSessionId,
+        approval_mode: this.approvals.getMode(),
+        workspace_root: workspaceRoot,
+        operation_kind: request.operationKind,
+        target_path: request.targetPath,
+        destination_path: request.destinationPath,
+        summary: `Codev approved ${request.operationKind} for ${request.targetPath}`,
+        new_text: request.newText,
+        expected_content_hash: plan.source_hash,
+        operator_approved: true,
+        approval_phrase: "Approve exact file operation",
+        ...exactApproval
+      });
+      this.fileOperations.set(sessionId, { plan, result });
+      this.codingError = result.mutation_performed ? undefined : result.blocked_reason ?? result.status;
+      this.lastAction = `File operation ${result.status}.`;
+      await this.refreshOperationAudits();
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "File operation failed.";
+      this.fileOperations.set(sessionId, { plan, result: null, lastError: this.codingError });
+      this.lastAction = "File operation failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
   private getDocumentOperation(sessionId: string): CodingDocumentOperationState {
     const existing = this.documentOperations.get(sessionId);
     if (existing) return existing;
@@ -621,6 +753,10 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   }
 
   private async applyApprovedDocumentExport(): Promise<void> {
+    if (!this.requireMutationMode("Document export")) {
+      await this.postState();
+      return;
+    }
     const context = this.getActiveDocumentContext();
     if ("error" in context) {
       this.codingError = context.error;
@@ -649,6 +785,17 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     await this.postState();
     try {
       const format = plan.target_relative_path?.endsWith(".txt") ? "text" : "markdown";
+      const exactApproval = await this.issueExactApproval({
+        sessionId: context.backendSessionId,
+        operationKind: "document_export",
+        operationSummary: `Export ${plan.relative_path ?? plan.file_label} to ${plan.target_relative_path ?? "derived output"}`,
+        workspaceRoot: context.workspaceRoot,
+        exactFiles: [context.filePath, plan.target_relative_path ?? ""],
+        sourceHash: plan.source_hash,
+        planHash: plan.plan_hash,
+        mutationClass: "document_export",
+        rollbackNote: "The source document remains unchanged; a new derived export is created."
+      });
       const result = await this.api.applyApprovedDocumentExport({
         workspace_root: context.workspaceRoot,
         file_path: context.filePath,
@@ -658,11 +805,13 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
         export_format: format,
         target_path: plan.target_relative_path,
         expected_source_hash: plan.source_hash,
-        overwrite_existing: false
+        overwrite_existing: false,
+        ...exactApproval
       });
       this.documentOperations.set(context.sessionId, { ...operation, applyResult: result, lastError: undefined });
       this.codingError = result.status === "applied" ? undefined : result.blocked_reason ?? result.status;
       this.lastAction = `Document export ${result.status}.`;
+      await this.refreshOperationAudits();
     } catch (error) {
       this.codingError = error instanceof Error ? error.message : "Document export failed.";
       this.documentOperations.set(context.sessionId, { ...operation, lastError: this.codingError });
@@ -707,6 +856,10 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   }
 
   private async applyApprovedDocumentEdit(): Promise<void> {
+    if (!this.requireMutationMode("Document edit")) {
+      await this.postState();
+      return;
+    }
     const context = this.getActiveDocumentContext();
     if ("error" in context) {
       this.codingError = context.error;
@@ -740,6 +893,17 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     this.lastAction = "Applying approved document edit...";
     await this.postState();
     try {
+      const exactApproval = await this.issueExactApproval({
+        sessionId: context.backendSessionId,
+        operationKind: "document_edit",
+        operationSummary: `Apply ${request.operation} to ${plan.relative_path ?? plan.file_label}`,
+        workspaceRoot: context.workspaceRoot,
+        exactFiles: [context.filePath, plan.target_relative_path && plan.target_relative_path !== plan.relative_path ? plan.target_relative_path : ""],
+        sourceHash: plan.source_hash,
+        planHash: plan.plan_hash,
+        mutationClass: "document_edit",
+        rollbackNote: plan.target_relative_path && plan.target_relative_path !== plan.relative_path ? "A derived output is created." : "A pre-mutation backup and rollback receipt are required."
+      });
       const result = await this.api.applyApprovedDocumentEdit({
         workspace_root: context.workspaceRoot,
         file_path: context.filePath,
@@ -748,11 +912,13 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
         operator_approved: true,
         operation: request.operation,
         parameters: request.parameters,
-        expected_source_hash: plan.source_hash
+        expected_source_hash: plan.source_hash,
+        ...exactApproval
       });
       this.documentOperations.set(context.sessionId, { ...operation, applyResult: result, lastError: undefined });
       this.codingError = result.status === "applied" ? undefined : result.blocked_reason ?? result.status;
       this.lastAction = `Document edit ${result.status}.`;
+      await this.refreshOperationAudits();
     } catch (error) {
       this.codingError = error instanceof Error ? error.message : "Document edit failed.";
       this.documentOperations.set(context.sessionId, { ...operation, lastError: this.codingError });
@@ -804,6 +970,64 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     }
     const session = this.sessions.getSessions().find((item) => item.id === sessionId);
     return { sessionId, workspaceRoot, filePath, backendSessionId: session?.backendSessionId };
+  }
+
+  private getActiveVisualContext(): { sessionId: string; workspaceRoot: string; filePath: string; backendSessionId?: string } | { error: string } {
+    const sessionId = this.activeSessionId;
+    const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
+    const filePath = this.diffs.getActiveFilePath();
+    if (!sessionId) return { error: "Create or select a Codev session first." };
+    if (!workspaceRoot || !filePath) return { error: "Open a file-backed visual file in the workspace first." };
+    const preview = this.filePreviews.get(sessionId);
+    if (preview?.category !== "visual" && preview?.adapter !== "visual" && preview?.adapter !== "svg") {
+      return { error: "Read an approved preview of a supported visual file first." };
+    }
+    const session = this.sessions.getSessions().find((item) => item.id === sessionId);
+    return { sessionId, workspaceRoot, filePath, backendSessionId: session?.backendSessionId };
+  }
+
+  private requireMutationMode(label: string): boolean {
+    if (this.approvals.canApplyPatch()) return true;
+    this.codingError = `${label} requires apply with approval or test with approval mode.`;
+    this.lastAction = `${label} blocked by approval mode.`;
+    return false;
+  }
+
+  private async issueExactApproval(input: {
+    sessionId?: string;
+    operationKind: string;
+    operationSummary: string;
+    workspaceRoot: string;
+    exactFiles: string[];
+    sourceHash?: string;
+    planHash?: string;
+    mutationClass: string;
+    rollbackNote: string;
+  }): Promise<{ approval_id: string; approval_token: string }> {
+    if (!input.planHash) throw new Error("The backend plan did not include the exact plan hash required for approval.");
+    const approval = await this.api.approveOperation({
+      session_id: input.sessionId,
+      operation_kind: input.operationKind,
+      operation_summary: input.operationSummary,
+      workspace_root: input.workspaceRoot,
+      exact_files: input.exactFiles.filter(Boolean),
+      source_hash: input.sourceHash,
+      plan_hash: input.planHash,
+      allowed_mutation_class: input.mutationClass,
+      expires_in_seconds: 300,
+      operator_approved: true,
+      approval_phrase: "Approved in Codev modal",
+      rollback_note: input.rollbackNote
+    });
+    return { approval_id: approval.approval_id, approval_token: approval.approval_token as string };
+  }
+
+  private async refreshOperationAudits(): Promise<void> {
+    try {
+      this.operationAudits = await this.api.listOperationAudits(20);
+    } catch {
+      // The operation result remains authoritative even if the compact audit read surface is unavailable.
+    }
   }
 
   private async inspectActiveData(): Promise<void> {
@@ -909,6 +1133,10 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   }
 
   private async applyApprovedDataExport(): Promise<void> {
+    if (!this.requireMutationMode("Data export")) {
+      await this.postState();
+      return;
+    }
     const context = this.getActiveDataContext();
     if ("error" in context) {
       this.codingError = context.error;
@@ -937,6 +1165,17 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     await this.postState();
     try {
       const format = plan.target_relative_path?.endsWith(".json") ? "json" : "markdown";
+      const exactApproval = await this.issueExactApproval({
+        sessionId: context.backendSessionId,
+        operationKind: "data_export",
+        operationSummary: `Export ${plan.relative_path ?? plan.file_label} to ${plan.target_relative_path ?? "derived output"}`,
+        workspaceRoot: context.workspaceRoot,
+        exactFiles: [context.filePath, plan.target_relative_path ?? ""],
+        sourceHash: plan.source_hash,
+        planHash: plan.plan_hash,
+        mutationClass: "data_export",
+        rollbackNote: "The source dataset remains unchanged; a new bounded summary export is created."
+      });
       const result = await this.api.applyApprovedDataExport({
         workspace_root: context.workspaceRoot,
         file_path: context.filePath,
@@ -946,11 +1185,13 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
         export_format: format,
         target_path: plan.target_relative_path,
         expected_source_hash: plan.source_hash,
-        overwrite_existing: false
+        overwrite_existing: false,
+        ...exactApproval
       });
       this.dataOperations.set(context.sessionId, { ...operation, applyResult: result, lastError: undefined });
       this.codingError = result.status === "applied" ? undefined : result.blocked_reason ?? result.status;
       this.lastAction = `Data export ${result.status}.`;
+      await this.refreshOperationAudits();
     } catch (error) {
       this.codingError = error instanceof Error ? error.message : "Data export failed.";
       this.dataOperations.set(context.sessionId, { ...operation, lastError: this.codingError });
@@ -995,6 +1236,10 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   }
 
   private async applyApprovedDataMutation(): Promise<void> {
+    if (!this.requireMutationMode("Data mutation")) {
+      await this.postState();
+      return;
+    }
     const context = this.getActiveDataContext();
     if ("error" in context) {
       this.codingError = context.error;
@@ -1028,6 +1273,17 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     this.lastAction = "Applying approved data mutation...";
     await this.postState();
     try {
+      const exactApproval = await this.issueExactApproval({
+        sessionId: context.backendSessionId,
+        operationKind: "data_edit",
+        operationSummary: `Apply ${request.operation} to ${plan.relative_path ?? plan.file_label}`,
+        workspaceRoot: context.workspaceRoot,
+        exactFiles: [context.filePath, plan.target_relative_path ?? ""],
+        sourceHash: plan.source_hash,
+        planHash: plan.plan_hash,
+        mutationClass: "data_edit",
+        rollbackNote: plan.target_relative_path ? "A derived output is created." : "The backend must create an adapter-appropriate backup or transaction receipt."
+      });
       const result = await this.api.applyApprovedDataMutation({
         workspace_root: context.workspaceRoot,
         file_path: context.filePath,
@@ -1036,11 +1292,13 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
         operator_approved: true,
         operation: request.operation,
         parameters: request.parameters,
-        expected_source_hash: plan.source_hash
+        expected_source_hash: plan.source_hash,
+        ...exactApproval
       });
       this.dataOperations.set(context.sessionId, { ...operation, applyResult: result, lastError: undefined });
       this.codingError = result.status === "applied" ? undefined : result.blocked_reason ?? result.status;
       this.lastAction = `Data mutation ${result.status}.`;
+      await this.refreshOperationAudits();
     } catch (error) {
       this.codingError = error instanceof Error ? error.message : "Data mutation failed.";
       this.dataOperations.set(context.sessionId, { ...operation, lastError: this.codingError });
@@ -1051,7 +1309,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   }
 
   private async inspectActiveVisual(): Promise<void> {
-    const context = this.getActiveDataContext();
+    const context = this.getActiveVisualContext();
     if ("error" in context) {
       this.codingError = context.error;
       await this.postState();
@@ -1082,7 +1340,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   }
 
   private async previewActiveVisual(): Promise<void> {
-    const context = this.getActiveDataContext();
+    const context = this.getActiveVisualContext();
     if ("error" in context) {
       this.codingError = context.error;
       await this.postState();
@@ -1113,7 +1371,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   }
 
   private async runVisualOcr(): Promise<void> {
-    const context = this.getActiveDataContext();
+    const context = this.getActiveVisualContext();
     if ("error" in context) {
       this.codingError = context.error;
       await this.postState();
@@ -1145,7 +1403,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   }
 
   private async runVisualAnalysis(): Promise<void> {
-    const context = this.getActiveDataContext();
+    const context = this.getActiveVisualContext();
     if ("error" in context) {
       this.codingError = context.error;
       await this.postState();
@@ -1177,7 +1435,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   }
 
   private async planVisualExport(exportFormat: "markdown" | "json" | "png" | "jpg" | "webp" | "tiff" | "svg"): Promise<void> {
-    const context = this.getActiveDataContext();
+    const context = this.getActiveVisualContext();
     if ("error" in context) {
       this.codingError = context.error;
       await this.postState();
@@ -1212,7 +1470,11 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   }
 
   private async applyApprovedVisualExport(): Promise<void> {
-    const context = this.getActiveDataContext();
+    if (!this.requireMutationMode("Visual export")) {
+      await this.postState();
+      return;
+    }
+    const context = this.getActiveVisualContext();
     if ("error" in context) {
       this.codingError = context.error;
       await this.postState();
@@ -1240,6 +1502,17 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     await this.postState();
     try {
       const exportFormat = String(plan.operation_details?.export_format ?? "markdown") as "markdown" | "json" | "png" | "jpg" | "webp" | "tiff" | "svg";
+      const exactApproval = await this.issueExactApproval({
+        sessionId: context.backendSessionId,
+        operationKind: "visual_export",
+        operationSummary: `Export ${plan.relative_path ?? plan.file_label} to ${plan.target_relative_path ?? "derived output"}`,
+        workspaceRoot: context.workspaceRoot,
+        exactFiles: [context.filePath, plan.target_relative_path ?? ""],
+        sourceHash: plan.source_hash,
+        planHash: plan.plan_hash,
+        mutationClass: "visual_export",
+        rollbackNote: "The source visual remains unchanged; a governed derived copy is created."
+      });
       const result = await this.api.applyApprovedVisualExport({
         workspace_root: context.workspaceRoot,
         file_path: context.filePath,
@@ -1248,11 +1521,13 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
         operator_approved: true,
         export_format: exportFormat,
         target_path: plan.target_relative_path,
-        expected_source_hash: plan.source_hash
+        expected_source_hash: plan.source_hash,
+        ...exactApproval
       });
       this.visualOperations.set(context.sessionId, { ...operation, applyResult: result, lastError: undefined });
       this.codingError = result.status === "applied" ? undefined : result.blocked_reason ?? result.status;
       this.lastAction = `Visual export ${result.status}.`;
+      await this.refreshOperationAudits();
     } catch (error) {
       this.codingError = error instanceof Error ? error.message : "Visual export failed.";
       this.visualOperations.set(context.sessionId, { ...operation, lastError: this.codingError });
@@ -1263,7 +1538,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   }
 
   private async planVisualEdit(operationName: string, parameters: Record<string, unknown>): Promise<void> {
-    const context = this.getActiveDataContext();
+    const context = this.getActiveVisualContext();
     if ("error" in context) {
       this.codingError = context.error;
       await this.postState();
@@ -1297,7 +1572,11 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   }
 
   private async applyApprovedVisualEdit(): Promise<void> {
-    const context = this.getActiveDataContext();
+    if (!this.requireMutationMode("Visual edit")) {
+      await this.postState();
+      return;
+    }
+    const context = this.getActiveVisualContext();
     if ("error" in context) {
       this.codingError = context.error;
       await this.postState();
@@ -1330,6 +1609,17 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     this.lastAction = "Applying approved visual edit...";
     await this.postState();
     try {
+      const exactApproval = await this.issueExactApproval({
+        sessionId: context.backendSessionId,
+        operationKind: "visual_edit",
+        operationSummary: `Apply ${request.operation} to ${plan.relative_path ?? plan.file_label}`,
+        workspaceRoot: context.workspaceRoot,
+        exactFiles: [context.filePath, plan.target_relative_path ?? ""],
+        sourceHash: plan.source_hash,
+        planHash: plan.plan_hash,
+        mutationClass: "visual_edit",
+        rollbackNote: "The source visual remains unchanged; a privacy-preserving derived copy is created."
+      });
       const result = await this.api.applyApprovedVisualEdit({
         workspace_root: context.workspaceRoot,
         file_path: context.filePath,
@@ -1338,11 +1628,13 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
         operator_approved: true,
         operation: request.operation,
         parameters: request.parameters,
-        expected_source_hash: plan.source_hash
+        expected_source_hash: plan.source_hash,
+        ...exactApproval
       });
       this.visualOperations.set(context.sessionId, { ...operation, applyResult: result, lastError: undefined });
       this.codingError = result.status === "applied" ? undefined : result.blocked_reason ?? result.status;
       this.lastAction = `Visual edit ${result.status}.`;
+      await this.refreshOperationAudits();
     } catch (error) {
       this.codingError = error instanceof Error ? error.message : "Visual edit failed.";
       this.visualOperations.set(context.sessionId, { ...operation, lastError: this.codingError });
@@ -1384,20 +1676,34 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     await this.postState();
     const session = this.sessions.getSessions().find((item) => item.id === sessionId);
     try {
+      const expectedHash = proposal.expected_content_hash ?? preview.content_hash;
+      const exactApproval = await this.issueExactApproval({
+        sessionId: session?.backendSessionId,
+        operationKind: "patch_apply",
+        operationSummary: `Apply patch ${proposal.patch_hash} to ${preview.relative_path ?? preview.file_label}`,
+        workspaceRoot,
+        exactFiles: [preview.relative_path ?? preview.file_label],
+        sourceHash: expectedHash,
+        planHash: proposal.patch_hash,
+        mutationClass: "text_patch",
+        rollbackNote: "A pre-mutation backup and rollback receipt are required."
+      });
       const result = await this.api.applyApprovedPatch({
         session_id: session?.backendSessionId,
         approval_mode: this.approvals.getMode(),
         workspace_root: workspaceRoot,
         target_file: preview.relative_path ?? preview.file_label,
         proposed_diff: proposal.diff_preview,
-        expected_content_hash: proposal.expected_content_hash ?? preview.content_hash,
+        expected_content_hash: expectedHash,
         patch_hash: proposal.patch_hash,
         operator_approved: true,
-        approval_phrase: "Apply approved patch"
+        approval_phrase: "Apply approved patch",
+        ...exactApproval
       });
       this.patchApplyResults.set(sessionId, result);
       this.codingError = result.mutation_performed ? undefined : result.blocked_reason ?? result.status;
       this.lastAction = result.mutation_performed ? "Approved patch applied." : "Patch apply blocked.";
+      await this.refreshOperationAudits();
     } catch (error) {
       this.codingError = error instanceof Error ? error.message : "Patch apply failed.";
       this.lastAction = "Patch apply failed.";
@@ -1434,8 +1740,34 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     this.lastAction = "Running approved check...";
     await this.postState();
     try {
+      const allowedCommands: Record<string, string[]> = {
+        git_diff_check: ["git", "diff", "--check"]
+      };
+      const command = allowedCommands[commandId];
+      if (!command) throw new Error(`Codev does not recognize the allowlisted check id "${commandId}".`);
+      const session = this.sessions.getSessions().find((item) => item.id === sessionId);
+      const plan = await this.api.planCommand({
+        session_id: session?.backendSessionId,
+        approval_mode: this.approvals.getMode(),
+        workspace_root: workspaceRoot,
+        command,
+        purpose: `Codev approved check: ${commandId}`
+      });
+      if (!plan.execution_enabled || !plan.plan_hash || plan.command_id !== commandId) {
+        throw new Error(plan.blocked_reason ?? `Command plan was not executable (${plan.status}).`);
+      }
+      const exactApproval = await this.issueExactApproval({
+        sessionId: session?.backendSessionId,
+        operationKind: "command_run",
+        operationSummary: `Run exact allowlisted check ${commandId}`,
+        workspaceRoot,
+        exactFiles: [],
+        planHash: plan.plan_hash,
+        mutationClass: "command_check",
+        rollbackNote: "This read-only diff check cannot invoke a shell, install packages, or mutate git."
+      });
       const result = await this.api.runApprovedCommand({
-        approval_id: `codev_${Date.now().toString(36)}`,
+        ...exactApproval,
         approval_mode: this.approvals.getMode(),
         command_id: commandId,
         workspace_root: workspaceRoot,
@@ -1444,6 +1776,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
       this.commandResults.set(sessionId, result);
       this.codingError = result.status === "completed" ? undefined : result.blocked_reason ?? result.status;
       this.lastAction = `Approved check ${result.status}.`;
+      await this.refreshOperationAudits();
     } catch (error) {
       this.codingError = error instanceof Error ? error.message : "Approved check failed.";
       this.lastAction = "Approved check failed.";
@@ -1458,6 +1791,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     await this.postState();
     try {
       this.codingBridge = await this.api.getCodingStatus();
+      await this.refreshOperationAudits();
       this.codingError = undefined;
       this.lastAction = "Coding bridge refreshed.";
     } catch (error) {
@@ -1556,6 +1890,8 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
         documentOperation: this.activeSessionId ? this.documentOperations.get(this.activeSessionId) ?? null : null,
         dataOperation: this.activeSessionId ? this.dataOperations.get(this.activeSessionId) ?? null : null,
         visualOperation: this.activeSessionId ? this.visualOperations.get(this.activeSessionId) ?? null : null,
+        fileOperation: this.activeSessionId ? this.fileOperations.get(this.activeSessionId) ?? null : null,
+        operationAudits: this.operationAudits,
         lastError: this.codingError,
         busyAction: this.busyAction,
         lastAction: this.lastAction

@@ -10,6 +10,10 @@ type Props = {
     status: string;
     mutation_performed: boolean;
     audit_written: boolean;
+    approval_id?: string;
+    request_id?: string;
+    backup_relative_path?: string;
+    rollback_receipt_id?: string;
     blocked_reason?: string;
     rollback_note: string;
     warnings: string[];
@@ -47,6 +51,8 @@ export default function PatchPreview({ preview, capabilities, applyResult, busyA
           <strong>{applyResult.status}</strong>
           {applyResult.blocked_reason ? <p>Blocked: {applyResult.blocked_reason}</p> : null}
           <p>Mutation performed: {applyResult.mutation_performed ? "yes" : "no"} · Audit written: {applyResult.audit_written ? "yes" : "no"}</p>
+          <p>Request {applyResult.request_id ?? "not returned"} · approval {applyResult.approval_id ?? "not returned"}</p>
+          {applyResult.backup_relative_path ? <p>Backup {applyResult.backup_relative_path} · receipt {applyResult.rollback_receipt_id ?? "not returned"}</p> : null}
           <p>{applyResult.rollback_note}</p>
         </div>
       ) : null}

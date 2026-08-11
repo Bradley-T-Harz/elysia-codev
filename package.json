@@ -1,7 +1,7 @@
 {
   "name": "elysia-codev",
   "displayName": "Elysia Codev",
-  "description": "Local-first Elysia coding companion for VS Code. Plan-only by default; patch apply and command execution are disabled placeholders.",
+  "description": "Local-first governed Elysia companion for VS Code. Plan-only by default; exact patch, file, document, data, visual, and read-only diff-check actions require explicit approval.",
   "version": "0.1.0",
   "publisher": "ecosyneva-commons",
   "license": "Apache-2.0",
@@ -44,16 +44,6 @@
           "enum": ["read_only", "plan_only", "path_preview", "apply_with_approval", "test_with_approval"],
           "default": "plan_only",
           "description": "Default approval posture for the companion. Mutating actions and checks require explicit local approval in the matching mode."
-        },
-        "elysia.allowPatchPreview": {
-          "type": "boolean",
-          "default": false,
-          "description": "Show patch preview surfaces. Patch apply still requires apply_with_approval or test_with_approval plus exact local approval."
-        },
-        "elysia.allowCommandExecution": {
-          "type": "boolean",
-          "default": false,
-          "description": "Reserved for exact approved allowlisted checks in test_with_approval mode. No arbitrary command execution is allowed."
         },
         "elysia.workspaceTrustMode": {
           "type": "string",
@@ -116,6 +106,7 @@
     "build:webview": "esbuild webview/main.tsx --bundle --format=iife --outfile=dist/webview.js --loader:.tsx=tsx --loader:.ts=ts --platform=browser",
     "compile": "npm run clean && npm run build:extension && npm run build:webview",
     "check": "npm run compile",
+    "test:unit": "npm run build:extension && node --test tests/*.test.mjs",
     "watch": "tsc -watch -p ./tsconfig.json",
     "package": "vsce package",
     "vscode:package": "vsce package"

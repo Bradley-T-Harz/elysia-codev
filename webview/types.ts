@@ -206,6 +206,11 @@ export type WebviewState = {
       target_relative_path?: string;
       mutation_performed: boolean;
       audit_written: boolean;
+      approval_id?: string;
+      request_id?: string;
+      operation_id?: string;
+      backup_relative_path?: string;
+      rollback_receipt_id?: string;
       blocked_reason?: string;
       rollback_note: string;
       warnings: string[];
@@ -219,6 +224,9 @@ export type WebviewState = {
       stderr_preview?: string;
       blocked_reason?: string;
       audit_written: boolean;
+      approval_id?: string;
+      request_id?: string;
+      operation_id?: string;
       warnings: string[];
     } | null;
     documentOperation: {
@@ -233,6 +241,7 @@ export type WebviewState = {
         blocked_reason?: string;
         plan_summary: string;
         source_hash?: string;
+        plan_hash?: string;
         preview?: string;
         warnings: string[];
         operation_details?: Record<string, unknown>;
@@ -247,6 +256,7 @@ export type WebviewState = {
         blocked_reason?: string;
         plan_summary: string;
         source_hash?: string;
+        plan_hash?: string;
         preview?: string;
         warnings: string[];
         operation_details?: Record<string, unknown>;
@@ -263,6 +273,11 @@ export type WebviewState = {
         audit_written: boolean;
         previous_hash?: string;
         new_hash?: string;
+        approval_id?: string;
+        request_id?: string;
+        operation_id?: string;
+        backup_relative_path?: string;
+        rollback_receipt_id?: string;
         warnings: string[];
         operation_details?: Record<string, unknown>;
         rollback_note: string;
@@ -281,6 +296,7 @@ export type WebviewState = {
         blocked_reason?: string;
         plan_summary: string;
         source_hash?: string;
+        plan_hash?: string;
         preview?: string;
         warnings: string[];
         operation_details?: Record<string, unknown>;
@@ -297,6 +313,7 @@ export type WebviewState = {
         blocked_reason?: string;
         plan_summary: string;
         source_hash?: string;
+        plan_hash?: string;
         preview?: string;
         warnings: string[];
         operation_details?: Record<string, unknown>;
@@ -315,6 +332,11 @@ export type WebviewState = {
         audit_written: boolean;
         previous_hash?: string;
         new_hash?: string;
+        approval_id?: string;
+        request_id?: string;
+        operation_id?: string;
+        backup_relative_path?: string;
+        rollback_receipt_id?: string;
         warnings: string[];
         operation_details?: Record<string, unknown>;
         transaction?: Record<string, unknown>;
@@ -337,6 +359,7 @@ export type WebviewState = {
         blocked_reason?: string;
         plan_summary: string;
         source_hash?: string;
+        plan_hash?: string;
         preview?: string;
         warnings: string[];
         operation_details?: Record<string, unknown>;
@@ -351,6 +374,7 @@ export type WebviewState = {
         blocked_reason?: string;
         plan_summary: string;
         source_hash?: string;
+        plan_hash?: string;
         preview?: string;
         warnings: string[];
         operation_details?: Record<string, unknown>;
@@ -367,14 +391,68 @@ export type WebviewState = {
         audit_written: boolean;
         previous_hash?: string;
         new_hash?: string;
+        approval_id?: string;
+        request_id?: string;
+        operation_id?: string;
+        backup_relative_path?: string;
+        rollback_receipt_id?: string;
         warnings: string[];
         operation_details?: Record<string, unknown>;
         rollback_note: string;
       } | null;
       lastError?: string;
     } | null;
+    fileOperation: {
+      plan: {
+        status: string;
+        operation_kind: string;
+        target_relative_path?: string;
+        destination_relative_path?: string;
+        blocked_reason?: string;
+        source_hash?: string;
+        plan_hash?: string;
+        plan_steps: string[];
+        risk_labels: string[];
+        warnings: string[];
+      } | null;
+      result: {
+        status: string;
+        operation_kind: string;
+        target_relative_path?: string;
+        destination_relative_path?: string;
+        previous_content_hash?: string;
+        new_content_hash?: string;
+        backup_relative_path?: string;
+        rollback_receipt_id?: string;
+        mutation_performed: boolean;
+        audit_written: boolean;
+        blocked_reason?: string;
+        rollback_note: string;
+        warnings: string[];
+        request_id?: string;
+      } | null;
+      lastError?: string;
+    } | null;
+    operationAudits: Array<{
+      timestamp_utc?: string;
+      kind?: string;
+      status?: string;
+      request_id?: string;
+      session_id?: string;
+      operation_id?: string;
+      approval_id?: string;
+      operation_kind?: string;
+      relative_paths?: string[];
+      source_hash?: string;
+      plan_hash?: string;
+      result_hash?: string;
+      mutation_performed?: boolean;
+      shell_execution?: boolean;
+      backup?: Record<string, unknown>;
+      audit_persisted?: boolean;
+    }>;
     lastError?: string;
-    busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions" | "documentInspect" | "documentExtract" | "documentExportPlan" | "documentExportApply" | "documentEditPlan" | "documentEditApply" | "dataInspect" | "dataPreview" | "dataExportPlan" | "dataExportApply" | "dataMutationPlan" | "dataMutationApply" | "visualInspect" | "visualPreview" | "visualOcr" | "visualAnalysis" | "visualExportPlan" | "visualExportApply" | "visualEditPlan" | "visualEditApply";
+    busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions" | "fileOperationPlan" | "fileOperationApply" | "documentInspect" | "documentExtract" | "documentExportPlan" | "documentExportApply" | "documentEditPlan" | "documentEditApply" | "dataInspect" | "dataPreview" | "dataExportPlan" | "dataExportApply" | "dataMutationPlan" | "dataMutationApply" | "visualInspect" | "visualPreview" | "visualOcr" | "visualAnalysis" | "visualExportPlan" | "visualExportApply" | "visualEditPlan" | "visualEditApply";
     lastAction?: string;
   };
 };

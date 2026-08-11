@@ -246,6 +246,11 @@ export type CodingPatchApplyResult = {
   expected_content_hash: string;
   previous_content_hash?: string;
   new_content_hash?: string;
+  backup_relative_path?: string;
+  rollback_receipt_id?: string;
+  approval_id?: string;
+  request_id?: string;
+  operation_id?: string;
   mutation_performed: boolean;
   audit_written: boolean;
   blocked_reason?: string;
@@ -263,7 +268,58 @@ export type CodingCommandRunResult = {
   stderr_preview?: string;
   blocked_reason?: string;
   audit_written: boolean;
+  approval_id?: string;
+  request_id?: string;
+  operation_id?: string;
   warnings: string[];
+};
+
+export type CodingCommandPlan = {
+  status: string;
+  command_id?: string;
+  command: string[];
+  purpose: string;
+  allowlist_match: boolean;
+  approval_required: boolean;
+  execution_enabled: boolean;
+  plan_hash?: string;
+  blocked_reason?: string;
+  warnings: string[];
+};
+
+export type CodingOperationApproval = {
+  status: string;
+  approval_id: string;
+  approval_token?: string;
+  operation_kind: string;
+  exact_files: string[];
+  workspace_root_hash?: string;
+  source_hash?: string;
+  plan_hash?: string;
+  allowed_mutation_class?: string;
+  expires_at_utc: string;
+  one_time_use: boolean;
+  audit_written: boolean;
+  request_id?: string;
+};
+
+export type CodingOperationAudit = {
+  timestamp_utc?: string;
+  kind?: string;
+  status?: string;
+  request_id?: string;
+  session_id?: string;
+  operation_id?: string;
+  approval_id?: string;
+  operation_kind?: string;
+  relative_paths?: string[];
+  source_hash?: string;
+  plan_hash?: string;
+  result_hash?: string;
+  mutation_performed?: boolean;
+  shell_execution?: boolean;
+  backup?: Record<string, unknown>;
+  audit_persisted?: boolean;
 };
 
 export type CodingDocumentPlan = {
@@ -275,6 +331,7 @@ export type CodingDocumentPlan = {
   blocked_reason?: string;
   plan_summary: string;
   source_hash?: string;
+  plan_hash?: string;
   preview?: string;
   warnings: string[];
   operation_details?: Record<string, unknown>;
@@ -292,6 +349,11 @@ export type CodingDocumentApplyResult = {
   audit_written: boolean;
   previous_hash?: string;
   new_hash?: string;
+  approval_id?: string;
+  request_id?: string;
+  operation_id?: string;
+  backup_relative_path?: string;
+  rollback_receipt_id?: string;
   warnings: string[];
   operation_details?: Record<string, unknown>;
   rollback_note: string;
@@ -305,6 +367,42 @@ export type CodingDataPlan = CodingDocumentPlan & {
 export type CodingDataApplyResult = CodingDocumentApplyResult & {
   transaction?: Record<string, unknown>;
   backup?: Record<string, unknown>;
+};
+
+export type CodingFileOperationPlan = {
+  status: string;
+  operation_kind: string;
+  target_relative_path?: string;
+  destination_relative_path?: string;
+  blocked_reason?: string;
+  source_hash?: string;
+  plan_hash?: string;
+  plan_steps: string[];
+  risk_labels: string[];
+  warnings: string[];
+};
+
+export type CodingFileOperationResult = {
+  status: string;
+  operation_kind: string;
+  target_relative_path?: string;
+  destination_relative_path?: string;
+  previous_content_hash?: string;
+  new_content_hash?: string;
+  backup_relative_path?: string;
+  rollback_receipt_id?: string;
+  mutation_performed: boolean;
+  audit_written: boolean;
+  blocked_reason?: string;
+  rollback_note: string;
+  warnings: string[];
+  request_id?: string;
+};
+
+export type CodingFileOperationState = {
+  plan: CodingFileOperationPlan | null;
+  result: CodingFileOperationResult | null;
+  lastError?: string;
 };
 
 export type CodingDocumentOperationState = {
@@ -350,8 +448,10 @@ export type CodingState = {
   documentOperation: CodingDocumentOperationState | null;
   dataOperation: CodingDataOperationState | null;
   visualOperation: CodingVisualOperationState | null;
+  fileOperation: CodingFileOperationState | null;
+  operationAudits: CodingOperationAudit[];
   lastError?: string;
-  busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions" | "documentInspect" | "documentExtract" | "documentExportPlan" | "documentExportApply" | "documentEditPlan" | "documentEditApply" | "dataInspect" | "dataPreview" | "dataExportPlan" | "dataExportApply" | "dataMutationPlan" | "dataMutationApply" | "visualInspect" | "visualPreview" | "visualOcr" | "visualAnalysis" | "visualExportPlan" | "visualExportApply" | "visualEditPlan" | "visualEditApply";
+  busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions" | "fileOperationPlan" | "fileOperationApply" | "documentInspect" | "documentExtract" | "documentExportPlan" | "documentExportApply" | "documentEditPlan" | "documentEditApply" | "dataInspect" | "dataPreview" | "dataExportPlan" | "dataExportApply" | "dataMutationPlan" | "dataMutationApply" | "visualInspect" | "visualPreview" | "visualOcr" | "visualAnalysis" | "visualExportPlan" | "visualExportApply" | "visualEditPlan" | "visualEditApply";
   lastAction?: string;
 };
 
@@ -394,6 +494,8 @@ export type WebviewToExtensionMessage =
   | { type: "sendChatMessage"; text: string }
   | { type: "inspectRepoPreview" }
   | { type: "readActiveFilePreview" }
+  | { type: "planFileOperation"; operationKind: "create" | "edit" | "replace" | "delete" | "rename" | "move"; targetPath: string; destinationPath?: string; newText?: string }
+  | { type: "applyApprovedFileOperation" }
   | { type: "inspectActiveDocument" }
   | { type: "extractActiveDocument" }
   | { type: "planDocumentExport"; exportFormat: "markdown" | "text" }
