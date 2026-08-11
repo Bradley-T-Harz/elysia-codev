@@ -23,6 +23,7 @@ This extension is not Elysia core and does not require Marketplace sign-in. It c
 - Exact approved output for the read-only `git diff --check` lane; workspace-controlled npm/Cargo script buttons stay hidden and policy-disabled pending isolated, state-bound execution.
 - Generic text/code create, full-content edit/replace, recoverable delete, and same-type rename/move through Elysia core plan/approval/apply services.
 - Document, science/data/geospatial, and image/OCR/SVG panels with adapter-specific capability and dependency truth.
+- Read-only WAV/MP3/FLAC/OGG/M4A and MP4/MOV/MKV/WebM metadata panels, with fixed local video thumbnails, privacy/safety flags, dependency truth, and request/operation/audit IDs. Transcription, TTS, mutation, transcoding, and media generation are not live.
 - Sanitized coding audit records with request, operation, approval, relative-path, hash, mutation, shell, backup, and persistence truth.
 - Local UI sessions stored in VS Code state, with backend session IDs when available.
 - Workspace/trust status.
@@ -39,6 +40,7 @@ This extension is not Elysia core and does not require Marketplace sign-in. It c
 - No cloud upload.
 - No Marketplace account requirement.
 - No source-code contents returned by the repo preview or stored by default.
+- No media transcription, TTS, voice cloning/generation, transcoding, media mutation, or image/video generation route in this slice.
 - No secrets, service-role keys, tokens, or local private data storage.
 
 ## Local-First Boundary
@@ -66,6 +68,9 @@ The current MVP uses:
 - `POST /coding/data/export-approved`
 - `POST /coding/data/mutation-plan`
 - `POST /coding/data/apply-mutation-approved`
+- `GET /coding/media-types`
+- `POST /coding/media/inspect`
+- `POST /coding/media/thumbnail`
 - `POST /coding/patch/propose`
 - `POST /coding/patch/apply-approved`
 - `POST /coding/command/plan`

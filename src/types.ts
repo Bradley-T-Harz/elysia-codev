@@ -194,16 +194,20 @@ export type FileReadPreview = {
   descriptor?: {
     type_id: string;
     label: string;
-    extension: string;
-    family: string;
-    adapter: string;
-    readable: boolean;
-    extractable: boolean;
-    exportable: boolean;
-    editable: boolean;
-    stable_edit_operations: string[];
-    risk_flags: Record<string, boolean>;
-    notes: string[];
+    extension?: string;
+    extensions?: string[];
+    family?: string;
+    media_family?: string;
+    mime_types?: string[];
+    adapter?: string;
+    readable?: boolean;
+    extractable?: boolean;
+    exportable?: boolean;
+    editable?: boolean;
+    stable_edit_operations?: string[];
+    risk_flags?: Record<string, boolean>;
+    capabilities?: Record<string, boolean>;
+    notes?: string[];
   };
   safety?: Record<string, unknown>;
   metadata?: Record<string, unknown>;
@@ -215,11 +219,27 @@ export type FileReadPreview = {
   variables?: Array<Record<string, unknown>>;
   redaction_count?: number;
   preview_truncated?: boolean;
-  dependencies?: Record<string, string>;
+  dependencies?: Record<string, unknown>;
   text_preview?: string;
   tables?: Array<Record<string, unknown>>;
   outline?: Array<Record<string, unknown>>;
   provenance?: Array<Record<string, unknown>>;
+  size_bytes?: number;
+  media_family?: string;
+  container?: string;
+  duration_seconds?: number;
+  bitrate_bps?: number;
+  stream_count?: number;
+  audio?: Record<string, unknown>;
+  video?: Record<string, unknown>;
+  privacy_flags?: Record<string, boolean>;
+  safety_flags?: Record<string, boolean>;
+  thumbnail_status?: string;
+  thumbnail_data_url?: string;
+  thumbnail_path?: string;
+  operation_id?: string;
+  request_id?: string;
+  audit_written?: boolean;
 };
 
 export type CodingPatchProposal = {
@@ -305,6 +325,7 @@ export type CodingOperationApproval = {
 
 export type CodingOperationAudit = {
   timestamp_utc?: string;
+  recorded_at_utc?: string;
   kind?: string;
   status?: string;
   request_id?: string;
@@ -313,6 +334,7 @@ export type CodingOperationAudit = {
   approval_id?: string;
   operation_kind?: string;
   relative_paths?: string[];
+  relative_path?: string;
   source_hash?: string;
   plan_hash?: string;
   result_hash?: string;
@@ -320,6 +342,14 @@ export type CodingOperationAudit = {
   shell_execution?: boolean;
   backup?: Record<string, unknown>;
   audit_persisted?: boolean;
+  media_family?: string;
+  size_bytes?: number;
+  duration_seconds?: number;
+  stream_count?: number;
+  thumbnail_status?: string;
+  privacy_flags_present?: boolean;
+  approval_required?: boolean;
+  operator_approved?: boolean;
 };
 
 export type CodingDocumentPlan = {
@@ -434,6 +464,12 @@ export type CodingVisualOperationState = {
   lastError?: string;
 };
 
+export type CodingMediaOperationState = {
+  inspectPreview: FileReadPreview | null;
+  thumbnailPreview: FileReadPreview | null;
+  lastError?: string;
+};
+
 export type CodingChatReply = {
   assistantText: string;
   patchProposal?: CodingPatchProposal;
@@ -448,10 +484,11 @@ export type CodingState = {
   documentOperation: CodingDocumentOperationState | null;
   dataOperation: CodingDataOperationState | null;
   visualOperation: CodingVisualOperationState | null;
+  mediaOperation: CodingMediaOperationState | null;
   fileOperation: CodingFileOperationState | null;
   operationAudits: CodingOperationAudit[];
   lastError?: string;
-  busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions" | "fileOperationPlan" | "fileOperationApply" | "documentInspect" | "documentExtract" | "documentExportPlan" | "documentExportApply" | "documentEditPlan" | "documentEditApply" | "dataInspect" | "dataPreview" | "dataExportPlan" | "dataExportApply" | "dataMutationPlan" | "dataMutationApply" | "visualInspect" | "visualPreview" | "visualOcr" | "visualAnalysis" | "visualExportPlan" | "visualExportApply" | "visualEditPlan" | "visualEditApply";
+  busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions" | "fileOperationPlan" | "fileOperationApply" | "documentInspect" | "documentExtract" | "documentExportPlan" | "documentExportApply" | "documentEditPlan" | "documentEditApply" | "dataInspect" | "dataPreview" | "dataExportPlan" | "dataExportApply" | "dataMutationPlan" | "dataMutationApply" | "visualInspect" | "visualPreview" | "visualOcr" | "visualAnalysis" | "visualExportPlan" | "visualExportApply" | "visualEditPlan" | "visualEditApply" | "mediaInspect" | "mediaThumbnail";
   lastAction?: string;
 };
 
@@ -516,6 +553,8 @@ export type WebviewToExtensionMessage =
   | { type: "applyApprovedVisualExport" }
   | { type: "planVisualEdit"; operation: string; parameters: Record<string, unknown> }
   | { type: "applyApprovedVisualEdit" }
+  | { type: "inspectActiveMedia" }
+  | { type: "thumbnailActiveMedia" }
   | { type: "applyApprovedPatch" }
   | { type: "runApprovedCheck"; commandId: string };
 

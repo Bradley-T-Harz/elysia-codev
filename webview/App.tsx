@@ -59,7 +59,7 @@ const emptyState: WebviewState = {
   git: { branch: "Not inspected", dirtyState: "unknown", changedCount: 0, summary: "No repo inspected." },
   changedFiles: [],
   patchPreview: { state: "empty", summary: "No patch proposed.", files: [], canApply: false },
-  coding: { bridge: null, repoPreview: null, filePreview: null, patchApplyResult: null, commandResult: null, documentOperation: null, dataOperation: null, visualOperation: null, fileOperation: null, operationAudits: [] }
+  coding: { bridge: null, repoPreview: null, filePreview: null, patchApplyResult: null, commandResult: null, documentOperation: null, dataOperation: null, visualOperation: null, mediaOperation: null, fileOperation: null, operationAudits: [] }
 };
 
 export default function App({ vscode }: AppProps) {
@@ -170,6 +170,9 @@ export default function App({ vscode }: AppProps) {
             onApplyVisualExport={() => vscode.postMessage({ type: "applyApprovedVisualExport" })}
             onPlanVisualEdit={(operation, parameters) => vscode.postMessage({ type: "planVisualEdit", operation, parameters })}
             onApplyVisualEdit={() => vscode.postMessage({ type: "applyApprovedVisualEdit" })}
+            mediaOperation={state.coding.mediaOperation}
+            onInspectMedia={() => vscode.postMessage({ type: "inspectActiveMedia" })}
+            onThumbnailMedia={() => vscode.postMessage({ type: "thumbnailActiveMedia" })}
           />
           <GitStatusPanel git={state.git} />
           <ChangedFilesPanel files={state.changedFiles} />

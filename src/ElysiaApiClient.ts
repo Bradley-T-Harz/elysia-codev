@@ -52,6 +52,7 @@ type VisualExportPlanData = { visual_export_plan?: CodingDocumentPlan };
 type VisualExportResultData = { visual_export_result?: CodingDocumentApplyResult };
 type VisualEditPlanData = { visual_edit_plan?: CodingDocumentPlan };
 type VisualEditResultData = { visual_apply_result?: CodingDocumentApplyResult };
+type MediaPreviewData = { media?: FileReadPreview };
 type PatchApplyData = { patch_apply?: CodingPatchApplyResult };
 type CommandRunData = { command_run?: CodingCommandRunResult };
 type CommandPlanData = { command_plan?: CodingCommandPlan };
@@ -601,6 +602,40 @@ export class ElysiaApiClient {
     return this.withEnvelopeTruth(envelope.data.visual_apply_result, envelope);
   }
 
+  public async inspectMedia(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+  }): Promise<FileReadPreview> {
+    const envelope = await this.request<MediaPreviewData>("/coding/media/inspect", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.media) {
+      throw new Error("Local Elysia did not return media inspect data.");
+    }
+    return this.normalizeMediaPreview(this.withEnvelopeTruth(envelope.data.media, envelope));
+  }
+
+  public async thumbnailMedia(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+  }): Promise<FileReadPreview> {
+    const envelope = await this.request<MediaPreviewData>("/coding/media/thumbnail", {
+      method: "POST",
+      body: JSON.stringify(request)
+    });
+    if (!envelope.data?.media) {
+      throw new Error("Local Elysia did not return media thumbnail data.");
+    }
+    return this.normalizeMediaPreview(this.withEnvelopeTruth(envelope.data.media, envelope));
+  }
+
   public async applyApprovedPatch(request: {
     session_id?: string;
     approval_mode: string;
@@ -799,6 +834,48 @@ export class ElysiaApiClient {
       warnings: visual.warnings ?? [],
       secret_scan_findings: visual.secret_scan_findings ?? [],
       redactions: visual.redactions ?? []
+    };
+  }
+
+  private normalizeMediaPreview(media: FileReadPreview): FileReadPreview {
+    return {
+      ...media,
+      file_type_id: media.descriptor?.type_id ?? media.file_type_id,
+      file_type_label: media.descriptor?.label ?? media.file_type_label,
+      category: "media",
+      adapter: "media",
+      content_preview:
+        media.content_preview ??
+        `Media ${media.descriptor?.label ?? media.file_label}: bounded local metadata only; raw media, embedded tag values, transcription, mutation, and generation are not included.`,
+      parse_summary: {
+        ...(media.parse_summary ?? {}),
+        descriptor: media.descriptor ?? {},
+        media_family: media.media_family,
+        container: media.container,
+        duration_seconds: media.duration_seconds,
+        bitrate_bps: media.bitrate_bps,
+        stream_count: media.stream_count,
+        audio: media.audio ?? {},
+        video: media.video ?? {},
+        privacy_flags: media.privacy_flags ?? {},
+        safety_flags: media.safety_flags ?? {},
+        thumbnail_status: media.thumbnail_status,
+        request_id: media.request_id,
+        operation_id: media.operation_id,
+        audit_written: media.audit_written === true
+      },
+      preview: {
+        ...(media.preview ?? {}),
+        thumbnail_data_url: media.thumbnail_data_url,
+        thumbnail_status: media.thumbnail_status
+      },
+      source_contents_included: false,
+      bytes_returned: 0,
+      lines_returned: 0,
+      truncated: false,
+      warnings: media.warnings ?? [],
+      secret_scan_findings: [],
+      redactions: []
     };
   }
 

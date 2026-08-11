@@ -4,7 +4,7 @@ import { ElysiaApiClient } from "./ElysiaApiClient";
 import { FileDiffProvider } from "./FileDiffProvider";
 import { SessionStore } from "./SessionStore";
 import { WorkspaceTrust } from "./WorkspaceTrust";
-import type { ApprovalMode, CodingBridgeStatus, CodingCommandRunResult, CodingDataOperationState, CodingDocumentOperationState, CodingFileOperationState, CodingOperationAudit, CodingPatchApplyResult, CodingPatchProposal, CodingVisualOperationState, ElysiaMessage, ExtensionToWebviewMessage, FileReadPreview, GoalWorkflowState, IdeContextSettings, PatchPreview, RepoInspectPreview, WebviewState, WebviewToExtensionMessage, WorkModeState } from "./types";
+import type { ApprovalMode, CodingBridgeStatus, CodingCommandRunResult, CodingDataOperationState, CodingDocumentOperationState, CodingFileOperationState, CodingMediaOperationState, CodingOperationAudit, CodingPatchApplyResult, CodingPatchProposal, CodingVisualOperationState, ElysiaMessage, ExtensionToWebviewMessage, FileReadPreview, GoalWorkflowState, IdeContextSettings, PatchPreview, RepoInspectPreview, WebviewState, WebviewToExtensionMessage, WorkModeState } from "./types";
 
 export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   private view: vscode.WebviewView | undefined;
@@ -17,6 +17,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   private dataOperations = new Map<string, CodingDataOperationState>();
   private dataMutationRequests = new Map<string, { operation: string; parameters: Record<string, unknown> }>();
   private visualOperations = new Map<string, CodingVisualOperationState>();
+  private mediaOperations = new Map<string, CodingMediaOperationState>();
   private visualEditRequests = new Map<string, { operation: string; parameters: Record<string, unknown> }>();
   private fileOperations = new Map<string, CodingFileOperationState>();
   private fileOperationRequests = new Map<string, { operationKind: "create" | "edit" | "replace" | "delete" | "rename" | "move"; targetPath: string; destinationPath?: string; newText?: string }>();
@@ -127,6 +128,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     this.documentOperations.clear();
     this.dataOperations.clear();
     this.visualOperations.clear();
+    this.mediaOperations.clear();
     this.fileOperations.clear();
     this.fileOperationRequests.clear();
     this.documentEditRequests.clear();
@@ -153,6 +155,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     this.documentOperations.delete(sessionId);
     this.dataOperations.delete(sessionId);
     this.visualOperations.delete(sessionId);
+    this.mediaOperations.delete(sessionId);
     this.fileOperations.delete(sessionId);
     this.fileOperationRequests.delete(sessionId);
     this.documentEditRequests.delete(sessionId);
@@ -358,6 +361,14 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
       await this.applyApprovedVisualEdit();
       return;
     }
+    if (message.type === "inspectActiveMedia") {
+      await this.inspectActiveMedia();
+      return;
+    }
+    if (message.type === "thumbnailActiveMedia") {
+      await this.thumbnailActiveMedia();
+      return;
+    }
     if (message.type === "applyApprovedPatch") {
       await this.applyApprovedPatch();
       return;
@@ -499,6 +510,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
         if (preview.category !== "document") this.documentOperations.delete(activeSessionId);
         if (preview.category !== "science_data" && preview.adapter !== "data") this.dataOperations.delete(activeSessionId);
         if (preview.category !== "visual") this.visualOperations.delete(activeSessionId);
+        if (preview.category !== "media" && preview.adapter !== "media") this.mediaOperations.delete(activeSessionId);
       }
     } catch (error) {
       this.codingError = error instanceof Error ? error.message : "Selected-file preview failed.";
@@ -958,6 +970,17 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     return created;
   }
 
+  private getMediaOperation(sessionId: string): CodingMediaOperationState {
+    const existing = this.mediaOperations.get(sessionId);
+    if (existing) return existing;
+    const created: CodingMediaOperationState = {
+      inspectPreview: null,
+      thumbnailPreview: null
+    };
+    this.mediaOperations.set(sessionId, created);
+    return created;
+  }
+
   private getActiveDataContext(): { sessionId: string; workspaceRoot: string; filePath: string; backendSessionId?: string } | { error: string } {
     const sessionId = this.activeSessionId;
     const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
@@ -981,6 +1004,20 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     const preview = this.filePreviews.get(sessionId);
     if (preview?.category !== "visual" && preview?.adapter !== "visual" && preview?.adapter !== "svg") {
       return { error: "Read an approved preview of a supported visual file first." };
+    }
+    const session = this.sessions.getSessions().find((item) => item.id === sessionId);
+    return { sessionId, workspaceRoot, filePath, backendSessionId: session?.backendSessionId };
+  }
+
+  private getActiveMediaContext(): { sessionId: string; workspaceRoot: string; filePath: string; backendSessionId?: string } | { error: string } {
+    const sessionId = this.activeSessionId;
+    const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
+    const filePath = this.diffs.getActiveFilePath();
+    if (!sessionId) return { error: "Create or select a Codev session first." };
+    if (!workspaceRoot || !filePath) return { error: "Open a file-backed media file in the workspace first." };
+    const preview = this.filePreviews.get(sessionId);
+    if (preview?.category !== "media" && preview?.adapter !== "media") {
+      return { error: "Read an approved preview of a supported audio/video file first." };
     }
     const session = this.sessions.getSessions().find((item) => item.id === sessionId);
     return { sessionId, workspaceRoot, filePath, backendSessionId: session?.backendSessionId };
@@ -1644,6 +1681,83 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     await this.postState();
   }
 
+  private async inspectActiveMedia(): Promise<void> {
+    const context = this.getActiveMediaContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    this.busyAction = "mediaInspect";
+    this.lastAction = "Inspecting local media metadata...";
+    await this.postState();
+    try {
+      const preview = await this.api.inspectMedia({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        approval_reason: "operator_confirmed_in_vscode"
+      });
+      const operation = this.getMediaOperation(context.sessionId);
+      this.mediaOperations.set(context.sessionId, { ...operation, inspectPreview: preview, lastError: undefined });
+      this.codingError = preview.status === "completed" ? undefined : preview.blocked_reason ?? preview.status;
+      this.lastAction = `Media inspection ${preview.status}.`;
+      await this.refreshOperationAudits();
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Media inspection failed.";
+      this.mediaOperations.set(context.sessionId, { ...this.getMediaOperation(context.sessionId), lastError: this.codingError });
+      this.lastAction = "Media inspection failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async thumbnailActiveMedia(): Promise<void> {
+    const context = this.getActiveMediaContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    const approvedPreview = this.filePreviews.get(context.sessionId);
+    const summaryDescriptor = approvedPreview?.parse_summary?.descriptor;
+    const summarizedFamily = typeof approvedPreview?.parse_summary?.media_family === "string"
+      ? approvedPreview.parse_summary.media_family
+      : typeof summaryDescriptor === "object" && summaryDescriptor !== null && "media_family" in summaryDescriptor
+        ? String((summaryDescriptor as { media_family?: unknown }).media_family ?? "")
+        : approvedPreview?.descriptor?.media_family;
+    if (summarizedFamily !== "video") {
+      this.codingError = "Safe thumbnails are available only for supported video files.";
+      this.lastAction = "Media thumbnail not applicable.";
+      await this.postState();
+      return;
+    }
+    this.busyAction = "mediaThumbnail";
+    this.lastAction = "Deriving approved local video thumbnail...";
+    await this.postState();
+    try {
+      const preview = await this.api.thumbnailMedia({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        approval_reason: "operator_confirmed_in_vscode"
+      });
+      const operation = this.getMediaOperation(context.sessionId);
+      this.mediaOperations.set(context.sessionId, { ...operation, inspectPreview: preview, thumbnailPreview: preview, lastError: undefined });
+      this.codingError = preview.thumbnail_status === "completed" ? undefined : preview.blocked_reason ?? preview.thumbnail_status;
+      this.lastAction = `Media thumbnail ${preview.thumbnail_status ?? preview.status}.`;
+      await this.refreshOperationAudits();
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Media thumbnail failed.";
+      this.mediaOperations.set(context.sessionId, { ...this.getMediaOperation(context.sessionId), lastError: this.codingError });
+      this.lastAction = "Media thumbnail failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
   private async applyApprovedPatch(): Promise<void> {
     const sessionId = this.activeSessionId;
     if (!sessionId) return;
@@ -1890,6 +2004,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
         documentOperation: this.activeSessionId ? this.documentOperations.get(this.activeSessionId) ?? null : null,
         dataOperation: this.activeSessionId ? this.dataOperations.get(this.activeSessionId) ?? null : null,
         visualOperation: this.activeSessionId ? this.visualOperations.get(this.activeSessionId) ?? null : null,
+        mediaOperation: this.activeSessionId ? this.mediaOperations.get(this.activeSessionId) ?? null : null,
         fileOperation: this.activeSessionId ? this.fileOperations.get(this.activeSessionId) ?? null : null,
         operationAudits: this.operationAudits,
         lastError: this.codingError,

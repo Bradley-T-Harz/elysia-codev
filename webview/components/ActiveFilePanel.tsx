@@ -3,6 +3,7 @@ import type { WebviewState } from "../types";
 import DataPreviewPanel from "./DataPreviewPanel";
 import DocumentPreviewPanel from "./DocumentPreviewPanel";
 import FileOperationPanel from "./FileOperationPanel";
+import MediaPreviewPanel from "./MediaPreviewPanel";
 import VisualPreviewPanel from "./VisualPreviewPanel";
 
 type Props = {
@@ -38,9 +39,12 @@ type Props = {
   onApplyVisualExport: () => void;
   onPlanVisualEdit: (operation: string, parameters: Record<string, unknown>) => void;
   onApplyVisualEdit: () => void;
+  mediaOperation: WebviewState["coding"]["mediaOperation"];
+  onInspectMedia: () => void;
+  onThumbnailMedia: () => void;
 };
 
-export default function ActiveFilePanel({ activeFile, filePreview, busyAction, canReadWorkspace, canMutate, onReadPreview, fileOperation, onPlanFileOperation, onApplyFileOperation, documentOperation, onInspectDocument, onExtractDocument, onPlanExport, onApplyExport, onPlanEdit, onApplyEdit, dataOperation, onInspectData, onPreviewData, onPlanDataExport, onApplyDataExport, onPlanDataMutation, onApplyDataMutation, visualOperation, onInspectVisual, onPreviewVisual, onVisualOcr, onVisualAnalysis, onPlanVisualExport, onApplyVisualExport, onPlanVisualEdit, onApplyVisualEdit }: Props) {
+export default function ActiveFilePanel({ activeFile, filePreview, busyAction, canReadWorkspace, canMutate, onReadPreview, fileOperation, onPlanFileOperation, onApplyFileOperation, documentOperation, onInspectDocument, onExtractDocument, onPlanExport, onApplyExport, onPlanEdit, onApplyEdit, dataOperation, onInspectData, onPreviewData, onPlanDataExport, onApplyDataExport, onPlanDataMutation, onApplyDataMutation, visualOperation, onInspectVisual, onPreviewVisual, onVisualOcr, onVisualAnalysis, onPlanVisualExport, onApplyVisualExport, onPlanVisualEdit, onApplyVisualEdit, mediaOperation, onInspectMedia, onThumbnailMedia }: Props) {
   const busy = busyAction === "filePreview";
   const fileBacked = activeFile?.scheme === "file";
   const previewApproved = filePreview?.status === "completed";
@@ -153,18 +157,31 @@ export default function ActiveFilePanel({ activeFile, filePreview, busyAction, c
               onApplyEdit={onApplyVisualEdit}
             />
           ) : null}
+          {filePreview.category === "media" || filePreview.adapter === "media" ? (
+            <MediaPreviewPanel
+              filePreview={filePreview}
+              operation={mediaOperation}
+              busyAction={busyAction}
+              onInspect={onInspectMedia}
+              onThumbnail={onThumbnailMedia}
+            />
+          ) : null}
           {parseSummary ? <pre className="source-preview source-preview--compact">{parseSummary}</pre> : null}
           {filePreview.content_preview ? <pre className="source-preview">{filePreview.content_preview}</pre> : null}
         </div>
       ) : null}
-      <FileOperationPanel
-        activeRelativePath={activeFile?.relativePath}
-        canMutate={canMutate}
-        busyAction={busyAction}
-        operation={fileOperation}
-        onPlan={onPlanFileOperation}
-        onApply={onApplyFileOperation}
-      />
+      {filePreview?.category === "media" || filePreview?.adapter === "media" ? (
+        <p className="muted">Media create/edit/delete/rename/move controls are intentionally hidden in this read-only slice.</p>
+      ) : (
+        <FileOperationPanel
+          activeRelativePath={activeFile?.relativePath}
+          canMutate={canMutate}
+          busyAction={busyAction}
+          operation={fileOperation}
+          onPlan={onPlanFileOperation}
+          onApply={onApplyFileOperation}
+        />
+      )}
     </section>
   );
 }
