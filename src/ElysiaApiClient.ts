@@ -19,6 +19,12 @@ import type {
   FileReadPreview,
   CodingFileOperationPlan,
   CodingFileOperationResult,
+  MediaWorkerTruth,
+  SpeechTranscriptionPlan,
+  SpeechTranscriptionResult,
+  SpeechTtsPlan,
+  SpeechTtsResult,
+  TtsVoice,
   RepoInspectPreview
 } from "./types";
 
@@ -53,6 +59,12 @@ type VisualExportResultData = { visual_export_result?: CodingDocumentApplyResult
 type VisualEditPlanData = { visual_edit_plan?: CodingDocumentPlan };
 type VisualEditResultData = { visual_apply_result?: CodingDocumentApplyResult };
 type MediaPreviewData = { media?: FileReadPreview };
+type MediaWorkerTruthData = { media_workers?: MediaWorkerTruth };
+type TtsVoiceData = { voices?: TtsVoice[]; voice_cloning_available?: boolean };
+type SpeechTtsPlanData = { tts_plan?: SpeechTtsPlan };
+type SpeechTtsResultData = { tts_result?: SpeechTtsResult };
+type SpeechTranscriptionPlanData = { transcription_plan?: SpeechTranscriptionPlan };
+type SpeechTranscriptionResultData = { transcription_result?: SpeechTranscriptionResult };
 type PatchApplyData = { patch_apply?: CodingPatchApplyResult };
 type CommandRunData = { command_run?: CodingCommandRunResult };
 type CommandPlanData = { command_plan?: CodingCommandPlan };
@@ -636,6 +648,52 @@ export class ElysiaApiClient {
     return this.normalizeMediaPreview(this.withEnvelopeTruth(envelope.data.media, envelope));
   }
 
+  public async getMediaWorkerTruth(): Promise<MediaWorkerTruth> {
+    const envelope = await this.request<MediaWorkerTruthData>("/coding/media/workers", { method: "GET" });
+    if (!envelope.data?.media_workers) throw new Error("Local Elysia did not return media worker truth.");
+    return envelope.data.media_workers;
+  }
+
+  public async getTtsVoices(): Promise<{ voices: TtsVoice[]; voiceCloningAvailable: false }> {
+    const envelope = await this.request<TtsVoiceData>("/coding/media/tts/voices", { method: "GET" });
+    return { voices: envelope.data?.voices ?? [], voiceCloningAvailable: false };
+  }
+
+  public async planSpeechTts(request: {
+    session_id?: string; workspace_root: string; text: string; voice_id: string; speed?: number;
+    target_path?: string; approval_granted: boolean; approval_reason?: string; purpose_category?: string;
+  }): Promise<SpeechTtsPlan> {
+    const envelope = await this.request<SpeechTtsPlanData>("/coding/media/tts/preview", { method: "POST", body: JSON.stringify(request) });
+    if (!envelope.data?.tts_plan) throw new Error("Local Elysia did not return a TTS plan.");
+    return envelope.data.tts_plan;
+  }
+
+  public async applyApprovedSpeechTts(request: Parameters<ElysiaApiClient["planSpeechTts"]>[0] & {
+    expected_text_hash: string; expected_plan_hash: string; approval_id: string; approval_token: string;
+  }): Promise<SpeechTtsResult> {
+    const envelope = await this.request<SpeechTtsResultData>("/coding/media/tts/apply", { method: "POST", body: JSON.stringify(request) });
+    if (!envelope.data?.tts_result) throw new Error("Local Elysia did not return a TTS result.");
+    return this.withEnvelopeTruth(envelope.data.tts_result, envelope);
+  }
+
+  public async planSpeechTranscription(request: {
+    session_id?: string; workspace_root: string; file_path: string; target_path?: string; output_format?: "txt" | "json" | "srt" | "vtt";
+    approval_granted: boolean; approval_reason?: string; operator_has_processing_rights: boolean; contains_other_people: boolean;
+    other_people_consent_confirmed: boolean; private_local_use: boolean; redact_sensitive_text: boolean;
+  }): Promise<SpeechTranscriptionPlan> {
+    const envelope = await this.request<SpeechTranscriptionPlanData>("/coding/media/transcribe/preview", { method: "POST", body: JSON.stringify(request) });
+    if (!envelope.data?.transcription_plan) throw new Error("Local Elysia did not return a transcription plan.");
+    return envelope.data.transcription_plan;
+  }
+
+  public async applyApprovedSpeechTranscription(request: Parameters<ElysiaApiClient["planSpeechTranscription"]>[0] & {
+    expected_source_hash: string; expected_plan_hash: string; approval_id: string; approval_token: string;
+  }): Promise<SpeechTranscriptionResult> {
+    const envelope = await this.request<SpeechTranscriptionResultData>("/coding/media/transcribe/apply", { method: "POST", body: JSON.stringify(request) });
+    if (!envelope.data?.transcription_result) throw new Error("Local Elysia did not return a transcription result.");
+    return this.withEnvelopeTruth(envelope.data.transcription_result, envelope);
+  }
+
   public async applyApprovedPatch(request: {
     session_id?: string;
     approval_mode: string;
@@ -846,7 +904,7 @@ export class ElysiaApiClient {
       adapter: "media",
       content_preview:
         media.content_preview ??
-        `Media ${media.descriptor?.label ?? media.file_label}: bounded local metadata only; raw media, embedded tag values, transcription, mutation, and generation are not included.`,
+        `Media ${media.descriptor?.label ?? media.file_label}: bounded local metadata; raw media and embedded tag values are excluded. Governed STT and non-cloning TTS use separate exact-approved worker routes.`,
       parse_summary: {
         ...(media.parse_summary ?? {}),
         descriptor: media.descriptor ?? {},

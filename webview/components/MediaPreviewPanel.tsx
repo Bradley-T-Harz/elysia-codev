@@ -4,6 +4,7 @@ import type { FileReadPreview, WebviewState } from "../types";
 type Props = {
   filePreview: FileReadPreview;
   operation: WebviewState["coding"]["mediaOperation"];
+  workerTruth: WebviewState["coding"]["mediaWorkerTruth"];
   busyAction: WebviewState["coding"]["busyAction"];
   onInspect: () => void;
   onThumbnail: () => void;
@@ -20,7 +21,7 @@ function shortFacts(value: Record<string, unknown>): string {
     .join(" · ") || "not surfaced";
 }
 
-export default function MediaPreviewPanel({ filePreview, operation, busyAction, onInspect, onThumbnail }: Props) {
+export default function MediaPreviewPanel({ filePreview, operation, workerTruth, busyAction, onInspect, onThumbnail }: Props) {
   const result = operation?.thumbnailPreview ?? operation?.inspectPreview ?? filePreview;
   const initialSummary = asRecord(filePreview.parse_summary);
   const resultSummary = asRecord(result.parse_summary);
@@ -73,9 +74,20 @@ export default function MediaPreviewPanel({ filePreview, operation, busyAction, 
       </div>
       {result.blocked_reason ? <p className="error-note">Blocked: {result.blocked_reason}</p> : null}
       {operation?.lastError ? <p className="error-note">{operation.lastError}</p> : null}
+      <details>
+        <summary>Governed media worker truth</summary>
+        <dl className="facts facts--single">
+          <div><dt>SpeechForge STT</dt><dd>{workerTruth?.speechforge?.stt_enabled === true ? "available locally · exact approval and consent required" : "unavailable"}</dd></div>
+          <div><dt>Kokoro TTS</dt><dd>{workerTruth?.speechforge?.tts_enabled === true ? "available locally · synthetic catalog reading voices only" : "unavailable"}</dd></div>
+          <div><dt>ImageForge</dt><dd>{String(workerTruth?.imageforge?.state ?? "unknown")} · no production-enabled model</dd></div>
+          <div><dt>VideoForge</dt><dd>{String(workerTruth?.videoforge?.state ?? "unknown")} · Wan smoke/contract only; no live route</dd></div>
+          <div><dt>Voice cloning</dt><dd>deliberately unavailable · no reference-voice input</dd></div>
+        </dl>
+      </details>
       <p className="muted">
-        Raw media and embedded tag values are not shown or audited. Transcription, TTS, voice generation/cloning,
-        transcoding, mutation, image generation, and video generation are not live in this slice.
+        Raw media and embedded tag values are not shown or audited. Governed STT and non-cloning TTS are available
+        through local exact-approved API flows; Codev exposes their truth without adding unreviewed action controls.
+        Transcoding and media mutation remain unavailable; image/video generation is lab-only or route-disabled.
       </p>
     </div>
   );

@@ -27,7 +27,10 @@ export default function OperationAuditPanel({ records }: Props) {
             <div><dt>Approval state</dt><dd>{record.approval_required ? (record.operator_approved ? "approved operator action" : "required/not approved") : "not required"}</dd></div>
             <div><dt>Paths</dt><dd>{record.relative_paths?.join(", ") || record.relative_path || "none recorded"}</dd></div>
             <div><dt>Source/plan/result</dt><dd>{short(record.source_hash)} · {short(record.plan_hash)} · {short(record.result_hash)}</dd></div>
-            <div><dt>Effect</dt><dd>mutation {record.mutation_performed ? "yes" : "no"} · shell {record.shell_execution ? "yes" : "no"} · durable audit {record.audit_persisted === false ? "no" : "yes"}</dd></div>
+            <div><dt>Effect</dt><dd>mutation {record.mutation_performed ? "yes" : "no"} · shell {record.shell_execution || record.shell ? "yes" : "no"} · durable audit {record.audit_persisted === false ? "no" : "yes"}</dd></div>
+            {record.artifact_id ? <div><dt>Artifact/model</dt><dd>{short(record.artifact_id)} · {record.model_id ?? "model not recorded"}</dd></div> : null}
+            {record.voice_id ? <div><dt>Reading voice</dt><dd>{record.voice_id} · synthetic {record.synthetic_media ? "yes" : "not reported"}</dd></div> : null}
+            {record.segment_count !== undefined ? <div><dt>Transcript</dt><dd>{record.language ?? "unknown language"} · {record.segment_count} segments · raw content logged {record.raw_content_logged ? "yes" : "no"}</dd></div> : null}
           </dl>
           {record.media_family ? (
             <p className="muted">Media {record.media_family} · {record.duration_seconds ?? "unknown"} seconds · {record.stream_count ?? "unknown"} streams · thumbnail {record.thumbnail_status ?? "not requested"} · privacy tags {record.privacy_flags_present ? "present" : "not reported"}</p>

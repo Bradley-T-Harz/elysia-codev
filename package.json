@@ -1,7 +1,7 @@
 {
   "name": "elysia-codev",
   "displayName": "Elysia Codev",
-  "description": "Local-first governed Elysia companion for VS Code. Plan-only by default; exact file, document, data, visual, media-metadata, patch, and read-only diff-check actions require explicit approval.",
+  "description": "Local-first governed Elysia companion for VS Code. Plan-only by default; exact file, document, data, visual, media, patch, and check actions require explicit approval. Local STT/TTS truth is surfaced; cloning and production media generation remain unavailable.",
   "version": "0.1.0",
   "publisher": "ecosyneva-commons",
   "license": "Apache-2.0",

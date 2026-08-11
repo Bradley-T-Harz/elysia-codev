@@ -4,12 +4,13 @@ import { ElysiaApiClient } from "./ElysiaApiClient";
 import { FileDiffProvider } from "./FileDiffProvider";
 import { SessionStore } from "./SessionStore";
 import { WorkspaceTrust } from "./WorkspaceTrust";
-import type { ApprovalMode, CodingBridgeStatus, CodingCommandRunResult, CodingDataOperationState, CodingDocumentOperationState, CodingFileOperationState, CodingMediaOperationState, CodingOperationAudit, CodingPatchApplyResult, CodingPatchProposal, CodingVisualOperationState, ElysiaMessage, ExtensionToWebviewMessage, FileReadPreview, GoalWorkflowState, IdeContextSettings, PatchPreview, RepoInspectPreview, WebviewState, WebviewToExtensionMessage, WorkModeState } from "./types";
+import type { ApprovalMode, CodingBridgeStatus, CodingCommandRunResult, CodingDataOperationState, CodingDocumentOperationState, CodingFileOperationState, CodingMediaOperationState, CodingOperationAudit, CodingPatchApplyResult, CodingPatchProposal, CodingVisualOperationState, ElysiaMessage, ExtensionToWebviewMessage, FileReadPreview, GoalWorkflowState, IdeContextSettings, MediaWorkerTruth, PatchPreview, RepoInspectPreview, WebviewState, WebviewToExtensionMessage, WorkModeState } from "./types";
 
 export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   private view: vscode.WebviewView | undefined;
   private activeSessionId: string | null = null;
   private codingBridge: CodingBridgeStatus | null = null;
+  private mediaWorkerTruth: MediaWorkerTruth | null = null;
   private repoPreviews = new Map<string, RepoInspectPreview>();
   private filePreviews = new Map<string, FileReadPreview>();
   private documentOperations = new Map<string, CodingDocumentOperationState>();
@@ -1905,6 +1906,11 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     await this.postState();
     try {
       this.codingBridge = await this.api.getCodingStatus();
+      try {
+        this.mediaWorkerTruth = await this.api.getMediaWorkerTruth();
+      } catch {
+        this.mediaWorkerTruth = null;
+      }
       await this.refreshOperationAudits();
       this.codingError = undefined;
       this.lastAction = "Coding bridge refreshed.";
@@ -2005,6 +2011,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
         dataOperation: this.activeSessionId ? this.dataOperations.get(this.activeSessionId) ?? null : null,
         visualOperation: this.activeSessionId ? this.visualOperations.get(this.activeSessionId) ?? null : null,
         mediaOperation: this.activeSessionId ? this.mediaOperations.get(this.activeSessionId) ?? null : null,
+        mediaWorkerTruth: this.mediaWorkerTruth,
         fileOperation: this.activeSessionId ? this.fileOperations.get(this.activeSessionId) ?? null : null,
         operationAudits: this.operationAudits,
         lastError: this.codingError,

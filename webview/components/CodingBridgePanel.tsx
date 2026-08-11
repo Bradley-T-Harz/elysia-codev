@@ -30,6 +30,16 @@ export default function CodingBridgePanel({ coding, workspace, onInspectRepo, on
       {bridge?.disabled_capabilities.length ? (
         <p className="muted">Disabled: {bridge.disabled_capabilities.join(", ")}</p>
       ) : null}
+      <details>
+        <summary>Governed media worker truth</summary>
+        <dl className="facts facts--single">
+          <div><dt>SpeechForge STT</dt><dd>{coding.mediaWorkerTruth?.speechforge?.stt_enabled === true ? "local · approval and consent required" : "unavailable"}</dd></div>
+          <div><dt>Kokoro TTS</dt><dd>{coding.mediaWorkerTruth?.speechforge?.tts_enabled === true ? "local synthetic reading voices" : "unavailable"}</dd></div>
+          <div><dt>ImageForge</dt><dd>{String(coding.mediaWorkerTruth?.imageforge?.state ?? "unknown")} · no production-enabled model</dd></div>
+          <div><dt>VideoForge</dt><dd>{String(coding.mediaWorkerTruth?.videoforge?.state ?? "unknown")} · no live generation route</dd></div>
+          <div><dt>Voice cloning</dt><dd>deliberately unavailable</dd></div>
+        </dl>
+      </details>
       <div className="button-row">
         <button className="ghost" disabled={busy} onClick={onRefresh}>{coding.busyAction === "refresh" ? "Refreshing..." : "Refresh bridge"}</button>
         <button className="ghost" disabled={busy || !workspace.canReadWorkspace} onClick={onInspectRepo}>{coding.busyAction === "repoPreview" ? "Inspecting..." : "Inspect repo preview"}</button>

@@ -340,6 +340,7 @@ export type CodingOperationAudit = {
   result_hash?: string;
   mutation_performed?: boolean;
   shell_execution?: boolean;
+  shell?: boolean;
   backup?: Record<string, unknown>;
   audit_persisted?: boolean;
   media_family?: string;
@@ -350,6 +351,15 @@ export type CodingOperationAudit = {
   privacy_flags_present?: boolean;
   approval_required?: boolean;
   operator_approved?: boolean;
+  artifact_id?: string;
+  model_id?: string;
+  language?: string;
+  segment_count?: number;
+  text_length?: number;
+  voice_id?: string;
+  synthetic_media?: boolean;
+  production_enabled?: boolean;
+  raw_content_logged?: boolean;
 };
 
 export type CodingDocumentPlan = {
@@ -470,6 +480,88 @@ export type CodingMediaOperationState = {
   lastError?: string;
 };
 
+export type MediaWorkerModelTruth = {
+  id?: string;
+  display_name?: string;
+  capability?: string;
+  state?: string;
+  enabled_state?: string;
+  local_assets_present?: boolean;
+  voice_assets_present?: boolean;
+  license?: string;
+  license_review_status?: string;
+  provenance_review_status?: string;
+  production_blockers?: string[];
+  known_failure_modes?: string[];
+};
+
+export type MediaWorkerTruth = {
+  speechforge?: Record<string, unknown> & { models?: MediaWorkerModelTruth[] };
+  imageforge?: Record<string, unknown> & { models?: MediaWorkerModelTruth[] };
+  videoforge?: Record<string, unknown> & { models?: MediaWorkerModelTruth[] };
+  voice_cloning?: Record<string, unknown>;
+};
+
+export type TtsVoice = { id: string; display_name?: string; language?: string; style?: string; enabled?: boolean };
+
+export type SpeechTtsPlan = {
+  status: string;
+  voice_id: string;
+  voice_label?: string;
+  text_hash: string;
+  text_length: number;
+  speed: number;
+  purpose_category: string;
+  target_relative_path?: string;
+  sidecar_relative_path?: string;
+  plan_hash?: string;
+  model_id?: string;
+  voice_cloning_available: false;
+  blocked_reason?: string;
+  warnings: string[];
+};
+
+export type SpeechTtsResult = SpeechTtsPlan & {
+  artifact_id?: string;
+  output_sha256?: string;
+  output_bytes?: number;
+  sample_rate_hz?: number;
+  duration_seconds?: number;
+  audio_data_url?: string;
+  operation_id?: string;
+  request_id?: string;
+  approval_id?: string;
+  audit_written: boolean;
+};
+
+export type SpeechTranscriptionPlan = {
+  status: string;
+  file_label: string;
+  relative_path?: string;
+  target_relative_path?: string;
+  sidecar_relative_path?: string;
+  source_hash?: string;
+  plan_hash?: string;
+  model_id?: string;
+  duration_seconds?: number;
+  output_format: string;
+  consent_state: string;
+  blocked_reason?: string;
+  warnings: string[];
+};
+
+export type SpeechTranscriptionResult = SpeechTranscriptionPlan & {
+  artifact_id?: string;
+  transcript_sha256?: string;
+  transcript_bytes?: number;
+  segment_count?: number;
+  operation_id?: string;
+  request_id?: string;
+  approval_id?: string;
+  audit_written: boolean;
+  raw_transcript_returned: false;
+};
+
 export type CodingChatReply = {
   assistantText: string;
   patchProposal?: CodingPatchProposal;
@@ -485,6 +577,7 @@ export type CodingState = {
   dataOperation: CodingDataOperationState | null;
   visualOperation: CodingVisualOperationState | null;
   mediaOperation: CodingMediaOperationState | null;
+  mediaWorkerTruth: MediaWorkerTruth | null;
   fileOperation: CodingFileOperationState | null;
   operationAudits: CodingOperationAudit[];
   lastError?: string;

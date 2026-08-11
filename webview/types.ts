@@ -153,6 +153,28 @@ export type FileReadPreview = {
   audit_written?: boolean;
 };
 
+export type MediaWorkerModelTruth = {
+  id?: string;
+  display_name?: string;
+  capability?: string;
+  state?: string;
+  enabled_state?: string;
+  local_assets_present?: boolean;
+  voice_assets_present?: boolean;
+  license?: string;
+  license_review_status?: string;
+  provenance_review_status?: string;
+  production_blockers?: string[];
+  known_failure_modes?: string[];
+};
+
+export type MediaWorkerTruth = {
+  speechforge?: Record<string, unknown> & { models?: MediaWorkerModelTruth[] };
+  imageforge?: Record<string, unknown> & { models?: MediaWorkerModelTruth[] };
+  videoforge?: Record<string, unknown> & { models?: MediaWorkerModelTruth[] };
+  voice_cloning?: Record<string, unknown>;
+};
+
 export type UiMessage = {
   id: string;
   role: "user" | "elysia" | "system";
@@ -427,6 +449,7 @@ export type WebviewState = {
       thumbnailPreview: FileReadPreview | null;
       lastError?: string;
     } | null;
+    mediaWorkerTruth: MediaWorkerTruth | null;
     fileOperation: {
       plan: {
         status: string;
@@ -475,6 +498,7 @@ export type WebviewState = {
       result_hash?: string;
       mutation_performed?: boolean;
       shell_execution?: boolean;
+      shell?: boolean;
       backup?: Record<string, unknown>;
       audit_persisted?: boolean;
       media_family?: string;
@@ -485,6 +509,15 @@ export type WebviewState = {
       privacy_flags_present?: boolean;
       approval_required?: boolean;
       operator_approved?: boolean;
+      artifact_id?: string;
+      model_id?: string;
+      language?: string;
+      segment_count?: number;
+      text_length?: number;
+      voice_id?: string;
+      synthetic_media?: boolean;
+      production_enabled?: boolean;
+      raw_content_logged?: boolean;
     }>;
     lastError?: string;
     busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions" | "fileOperationPlan" | "fileOperationApply" | "documentInspect" | "documentExtract" | "documentExportPlan" | "documentExportApply" | "documentEditPlan" | "documentEditApply" | "dataInspect" | "dataPreview" | "dataExportPlan" | "dataExportApply" | "dataMutationPlan" | "dataMutationApply" | "visualInspect" | "visualPreview" | "visualOcr" | "visualAnalysis" | "visualExportPlan" | "visualExportApply" | "visualEditPlan" | "visualEditApply" | "mediaInspect" | "mediaThumbnail";
