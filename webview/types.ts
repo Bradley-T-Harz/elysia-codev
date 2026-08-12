@@ -186,6 +186,64 @@ export type UiMessage = {
   createdAt: string;
 };
 
+export type ArchiveContainerPreview = {
+  status: string;
+  operation_id: string;
+  request_id?: string;
+  file_label: string;
+  relative_path?: string;
+  path_hash: string;
+  archive_sha256?: string;
+  archive_size_bytes: number;
+  detected_type: string;
+  extension_content_match: boolean;
+  descriptor: { label: string; inspection_state: string; extraction_state: string; package_container: boolean; selected_sandbox_extraction_supported: boolean; install_state: string; execute_state: string; tool_license_status: string };
+  member_count: number;
+  projected_uncompressed_bytes: number;
+  nested_archive_count: number;
+  compression_ratio: number;
+  encrypted: boolean;
+  members: Array<{ index: number; display_path: string; path_hash: string; uncompressed_size: number; is_regular_file: boolean; extractable: boolean; blocked_reason?: string; risk_flags: string[] }>;
+  risk_flags: Array<{ code: string; severity: string; count: number; blocks_extraction: boolean; summary: string }>;
+  package_metadata?: Record<string, unknown>;
+  manifest_digest?: string;
+  policy_version: string;
+  tool_used: string;
+  blocked_reason?: string;
+  audit_written: boolean;
+};
+
+export type ArchiveExtractionPlan = {
+  status: string;
+  operation_id: string;
+  archive_type: string;
+  archive_sha256: string;
+  manifest_digest: string;
+  selected_member_indexes: number[];
+  selected_file_count: number;
+  projected_write_bytes: number;
+  sandbox_id: string;
+  sandbox_destination_hash: string;
+  plan_hash: string;
+  blocked_reason?: string;
+};
+
+export type ArchiveExtractionResult = {
+  status: string;
+  operation_id: string;
+  request_id?: string;
+  approval_id?: string;
+  extracted_file_count: number;
+  extracted_bytes: number;
+  sandbox_destination_hash: string;
+  audit_written: boolean;
+  source_mutated: false;
+  project_root_written: false;
+  install_performed: false;
+  execution_performed: false;
+  blocked_reason?: string;
+};
+
 export type WebviewState = {
   connection: { state: ConnectionState; apiUrl: string; summary: string; checkedAt?: string };
   workspace: {
@@ -453,6 +511,12 @@ export type WebviewState = {
       thumbnailPreview: FileReadPreview | null;
       lastError?: string;
     } | null;
+    archiveOperation: {
+      inspectPreview: ArchiveContainerPreview | null;
+      extractionPlan: ArchiveExtractionPlan | null;
+      extractionResult: ArchiveExtractionResult | null;
+      lastError?: string;
+    } | null;
     mediaWorkerTruth: MediaWorkerTruth | null;
     fileOperation: {
       plan: {
@@ -524,7 +588,7 @@ export type WebviewState = {
       raw_content_logged?: boolean;
     }>;
     lastError?: string;
-    busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions" | "fileOperationPlan" | "fileOperationApply" | "documentInspect" | "documentExtract" | "documentExportPlan" | "documentExportApply" | "documentEditPlan" | "documentEditApply" | "dataInspect" | "dataPreview" | "dataExportPlan" | "dataExportApply" | "dataMutationPlan" | "dataMutationApply" | "visualInspect" | "visualPreview" | "visualOcr" | "visualAnalysis" | "visualExportPlan" | "visualExportApply" | "visualEditPlan" | "visualEditApply" | "mediaInspect" | "mediaThumbnail";
+    busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions" | "fileOperationPlan" | "fileOperationApply" | "documentInspect" | "documentExtract" | "documentExportPlan" | "documentExportApply" | "documentEditPlan" | "documentEditApply" | "dataInspect" | "dataPreview" | "dataExportPlan" | "dataExportApply" | "dataMutationPlan" | "dataMutationApply" | "visualInspect" | "visualPreview" | "visualOcr" | "visualAnalysis" | "visualExportPlan" | "visualExportApply" | "visualEditPlan" | "visualEditApply" | "mediaInspect" | "mediaThumbnail" | "archiveInspect" | "archivePlan" | "archiveApply";
     lastAction?: string;
   };
 };

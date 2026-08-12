@@ -8,6 +8,8 @@ Allowed now:
 - session creation
 - planning chat
 - metadata-only repo preview
+- archive type/risk truth through Elysia core
+- exact-approved selected archive extraction into an Elysia-owned non-project disposable sandbox
 
 Not allowed in Codev itself:
 
@@ -15,4 +17,6 @@ Not allowed in Codev itself:
 - Marketplace account requirement
 - direct shell/process execution
 - direct file mutation
+- direct archive parsing, extraction, install, execution, activation, or project merge
 - autonomous workspace scanning
+- autonomous archive extraction

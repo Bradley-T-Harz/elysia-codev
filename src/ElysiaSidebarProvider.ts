@@ -4,7 +4,7 @@ import { ElysiaApiClient } from "./ElysiaApiClient";
 import { FileDiffProvider } from "./FileDiffProvider";
 import { SessionStore } from "./SessionStore";
 import { WorkspaceTrust } from "./WorkspaceTrust";
-import type { ApprovalMode, CodingBridgeStatus, CodingCommandRunResult, CodingDataOperationState, CodingDocumentOperationState, CodingFileOperationState, CodingMediaOperationState, CodingOperationAudit, CodingPatchApplyResult, CodingPatchProposal, CodingVisualOperationState, ElysiaMessage, ExtensionToWebviewMessage, FileReadPreview, GoalWorkflowState, IdeContextSettings, MediaWorkerTruth, PatchPreview, RepoInspectPreview, WebviewState, WebviewToExtensionMessage, WorkModeState } from "./types";
+import type { ApprovalMode, CodingArchiveOperationState, CodingBridgeStatus, CodingCommandRunResult, CodingDataOperationState, CodingDocumentOperationState, CodingFileOperationState, CodingMediaOperationState, CodingOperationAudit, CodingPatchApplyResult, CodingPatchProposal, CodingVisualOperationState, ElysiaMessage, ExtensionToWebviewMessage, FileReadPreview, GoalWorkflowState, IdeContextSettings, MediaWorkerTruth, PatchPreview, RepoInspectPreview, WebviewState, WebviewToExtensionMessage, WorkModeState } from "./types";
 
 export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   private view: vscode.WebviewView | undefined;
@@ -19,6 +19,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   private dataMutationRequests = new Map<string, { operation: string; parameters: Record<string, unknown> }>();
   private visualOperations = new Map<string, CodingVisualOperationState>();
   private mediaOperations = new Map<string, CodingMediaOperationState>();
+  private archiveOperations = new Map<string, CodingArchiveOperationState>();
   private visualEditRequests = new Map<string, { operation: string; parameters: Record<string, unknown> }>();
   private fileOperations = new Map<string, CodingFileOperationState>();
   private fileOperationRequests = new Map<string, { operationKind: "create" | "edit" | "replace" | "delete" | "rename" | "move"; targetPath: string; destinationPath?: string; newText?: string }>();
@@ -130,6 +131,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     this.dataOperations.clear();
     this.visualOperations.clear();
     this.mediaOperations.clear();
+    this.archiveOperations.clear();
     this.fileOperations.clear();
     this.fileOperationRequests.clear();
     this.documentEditRequests.clear();
@@ -157,6 +159,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     this.dataOperations.delete(sessionId);
     this.visualOperations.delete(sessionId);
     this.mediaOperations.delete(sessionId);
+    this.archiveOperations.delete(sessionId);
     this.fileOperations.delete(sessionId);
     this.fileOperationRequests.delete(sessionId);
     this.documentEditRequests.delete(sessionId);
@@ -370,6 +373,18 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
       await this.thumbnailActiveMedia();
       return;
     }
+    if (message.type === "inspectActiveArchive") {
+      await this.inspectActiveArchive();
+      return;
+    }
+    if (message.type === "planArchiveExtraction") {
+      await this.planArchiveExtraction(message.selectedMemberIndexes);
+      return;
+    }
+    if (message.type === "applyApprovedArchiveExtraction") {
+      await this.applyApprovedArchiveExtraction();
+      return;
+    }
     if (message.type === "applyApprovedPatch") {
       await this.applyApprovedPatch();
       return;
@@ -512,6 +527,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
         if (preview.category !== "science_data" && preview.adapter !== "data") this.dataOperations.delete(activeSessionId);
         if (preview.category !== "visual") this.visualOperations.delete(activeSessionId);
         if (preview.category !== "media" && preview.adapter !== "media") this.mediaOperations.delete(activeSessionId);
+        if (preview.category !== "archive" && preview.adapter !== "archive") this.archiveOperations.delete(activeSessionId);
       }
     } catch (error) {
       this.codingError = error instanceof Error ? error.message : "Selected-file preview failed.";
@@ -982,6 +998,18 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     return created;
   }
 
+  private getArchiveOperation(sessionId: string): CodingArchiveOperationState {
+    const existing = this.archiveOperations.get(sessionId);
+    if (existing) return existing;
+    const created: CodingArchiveOperationState = {
+      inspectPreview: null,
+      extractionPlan: null,
+      extractionResult: null
+    };
+    this.archiveOperations.set(sessionId, created);
+    return created;
+  }
+
   private getActiveDataContext(): { sessionId: string; workspaceRoot: string; filePath: string; backendSessionId?: string } | { error: string } {
     const sessionId = this.activeSessionId;
     const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
@@ -1019,6 +1047,20 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     const preview = this.filePreviews.get(sessionId);
     if (preview?.category !== "media" && preview?.adapter !== "media") {
       return { error: "Read an approved preview of a supported audio/video file first." };
+    }
+    const session = this.sessions.getSessions().find((item) => item.id === sessionId);
+    return { sessionId, workspaceRoot, filePath, backendSessionId: session?.backendSessionId };
+  }
+
+  private getActiveArchiveContext(): { sessionId: string; workspaceRoot: string; filePath: string; backendSessionId?: string } | { error: string } {
+    const sessionId = this.activeSessionId;
+    const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
+    const filePath = this.diffs.getActiveFilePath();
+    if (!sessionId) return { error: "Create or select a Codev session first." };
+    if (!workspaceRoot || !filePath) return { error: "Open a file-backed archive/container in the workspace first." };
+    const preview = this.filePreviews.get(sessionId);
+    if (preview?.category !== "archive" && preview?.adapter !== "archive") {
+      return { error: "Read an approved preview of a registered archive/container first." };
     }
     const session = this.sessions.getSessions().find((item) => item.id === sessionId);
     return { sessionId, workspaceRoot, filePath, backendSessionId: session?.backendSessionId };
@@ -1759,6 +1801,149 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     await this.postState();
   }
 
+  private async inspectActiveArchive(): Promise<void> {
+    const context = this.getActiveArchiveContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    this.busyAction = "archiveInspect";
+    this.lastAction = "Listing archive contents and building risk report...";
+    await this.postState();
+    try {
+      const preview = await this.api.inspectArchive({
+        workspace_root: context.workspaceRoot,
+        archive_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        approval_reason: "operator_requested_archive_listing_and_risk_report_in_codev"
+      });
+      this.archiveOperations.set(context.sessionId, {
+        inspectPreview: preview,
+        extractionPlan: null,
+        extractionResult: null
+      });
+      this.codingError = preview.status === "completed" ? undefined : preview.blocked_reason ?? preview.status;
+      this.lastAction = `Archive inspection ${preview.status}; no contents were extracted or executed.`;
+      await this.refreshOperationAudits();
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Archive inspection failed.";
+      this.archiveOperations.set(context.sessionId, { ...this.getArchiveOperation(context.sessionId), lastError: this.codingError });
+      this.lastAction = "Archive inspection failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async planArchiveExtraction(selectedMemberIndexes: number[]): Promise<void> {
+    const context = this.getActiveArchiveContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    if (!selectedMemberIndexes.length) {
+      this.codingError = "Select at least one eligible regular file before planning sandbox extraction.";
+      await this.postState();
+      return;
+    }
+    this.busyAction = "archivePlan";
+    this.lastAction = "Planning exact selected-file sandbox extraction...";
+    await this.postState();
+    try {
+      const plan = await this.api.planArchiveExtraction({
+        workspace_root: context.workspaceRoot,
+        archive_path: context.filePath,
+        session_id: context.backendSessionId,
+        selected_member_indexes: selectedMemberIndexes,
+        approval_granted: true,
+        approval_reason: "operator_requested_selected_sandbox_extraction_plan_in_codev"
+      });
+      const operation = this.getArchiveOperation(context.sessionId);
+      this.archiveOperations.set(context.sessionId, { ...operation, extractionPlan: plan, extractionResult: null, lastError: undefined });
+      this.codingError = plan.status === "planned" ? undefined : plan.blocked_reason ?? plan.status;
+      this.lastAction = `Archive extraction plan ${plan.status}; no files were written.`;
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Archive extraction planning failed.";
+      this.archiveOperations.set(context.sessionId, { ...this.getArchiveOperation(context.sessionId), lastError: this.codingError });
+      this.lastAction = "Archive extraction planning failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async applyApprovedArchiveExtraction(): Promise<void> {
+    if (!this.requireMutationMode("Archive sandbox extraction")) {
+      await this.postState();
+      return;
+    }
+    const context = this.getActiveArchiveContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    const operation = this.getArchiveOperation(context.sessionId);
+    const plan = operation.extractionPlan;
+    if (!plan || plan.status !== "planned") {
+      this.codingError = "Plan selected-file sandbox extraction before approval.";
+      await this.postState();
+      return;
+    }
+    const approval = await vscode.window.showWarningMessage(
+      `Extract exactly ${plan.selected_file_count} selected file(s) into disposable sandbox ${plan.sandbox_id}? No content will be opened, installed, executed, trusted, or moved into the project.`,
+      { modal: true },
+      "Approve selected sandbox extraction"
+    );
+    if (approval !== "Approve selected sandbox extraction") {
+      this.lastAction = "Archive extraction cancelled.";
+      await this.postState();
+      return;
+    }
+    this.busyAction = "archiveApply";
+    this.lastAction = "Applying exact-approved selected sandbox extraction...";
+    await this.postState();
+    try {
+      const exactApproval = await this.issueExactApproval({
+        sessionId: context.backendSessionId,
+        operationKind: "archive_extract",
+        operationSummary: "Extract exact selected archive members into exact disposable sandbox",
+        workspaceRoot: context.workspaceRoot,
+        exactFiles: [context.filePath],
+        sourceHash: plan.archive_sha256,
+        planHash: plan.plan_hash,
+        mutationClass: "archive_sandbox_extract",
+        rollbackNote: "Abort cleanup removes partial sandbox output; the source archive remains unchanged."
+      });
+      const result = await this.api.applyApprovedArchiveExtraction({
+        operation_id: plan.operation_id,
+        workspace_root: context.workspaceRoot,
+        archive_path: context.filePath,
+        session_id: context.backendSessionId,
+        selected_member_indexes: plan.selected_member_indexes,
+        sandbox_id: plan.sandbox_id,
+        approval_granted: true,
+        approval_reason: "operator_exact_approved_selected_sandbox_extraction_in_codev",
+        operator_approved: true,
+        expected_archive_sha256: plan.archive_sha256,
+        expected_manifest_digest: plan.manifest_digest,
+        expected_plan_hash: plan.plan_hash,
+        ...exactApproval
+      });
+      this.archiveOperations.set(context.sessionId, { ...operation, extractionResult: result, lastError: undefined });
+      this.codingError = result.status === "completed" ? undefined : result.blocked_reason ?? result.status;
+      this.lastAction = `Archive sandbox extraction ${result.status}.`;
+      await this.refreshOperationAudits();
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Archive sandbox extraction failed.";
+      this.archiveOperations.set(context.sessionId, { ...operation, lastError: this.codingError });
+      this.lastAction = "Archive sandbox extraction failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
   private async applyApprovedPatch(): Promise<void> {
     const sessionId = this.activeSessionId;
     if (!sessionId) return;
@@ -2011,6 +2196,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
         dataOperation: this.activeSessionId ? this.dataOperations.get(this.activeSessionId) ?? null : null,
         visualOperation: this.activeSessionId ? this.visualOperations.get(this.activeSessionId) ?? null : null,
         mediaOperation: this.activeSessionId ? this.mediaOperations.get(this.activeSessionId) ?? null : null,
+        archiveOperation: this.activeSessionId ? this.archiveOperations.get(this.activeSessionId) ?? null : null,
         mediaWorkerTruth: this.mediaWorkerTruth,
         fileOperation: this.activeSessionId ? this.fileOperations.get(this.activeSessionId) ?? null : null,
         operationAudits: this.operationAudits,

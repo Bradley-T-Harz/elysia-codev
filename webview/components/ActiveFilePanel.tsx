@@ -5,6 +5,7 @@ import DocumentPreviewPanel from "./DocumentPreviewPanel";
 import FileOperationPanel from "./FileOperationPanel";
 import MediaPreviewPanel from "./MediaPreviewPanel";
 import VisualPreviewPanel from "./VisualPreviewPanel";
+import ArchiveContainerPanel from "./ArchiveContainerPanel";
 
 type Props = {
   activeFile: WebviewState["activeFile"];
@@ -43,12 +44,17 @@ type Props = {
   mediaWorkerTruth: WebviewState["coding"]["mediaWorkerTruth"];
   onInspectMedia: () => void;
   onThumbnailMedia: () => void;
+  archiveOperation: WebviewState["coding"]["archiveOperation"];
+  onInspectArchive: () => void;
+  onPlanArchive: (selectedMemberIndexes: number[]) => void;
+  onApplyArchive: () => void;
 };
 
-export default function ActiveFilePanel({ activeFile, filePreview, busyAction, canReadWorkspace, canMutate, onReadPreview, fileOperation, onPlanFileOperation, onApplyFileOperation, documentOperation, onInspectDocument, onExtractDocument, onPlanExport, onApplyExport, onPlanEdit, onApplyEdit, dataOperation, onInspectData, onPreviewData, onPlanDataExport, onApplyDataExport, onPlanDataMutation, onApplyDataMutation, visualOperation, onInspectVisual, onPreviewVisual, onVisualOcr, onVisualAnalysis, onPlanVisualExport, onApplyVisualExport, onPlanVisualEdit, onApplyVisualEdit, mediaOperation, mediaWorkerTruth, onInspectMedia, onThumbnailMedia }: Props) {
+export default function ActiveFilePanel({ activeFile, filePreview, busyAction, canReadWorkspace, canMutate, onReadPreview, fileOperation, onPlanFileOperation, onApplyFileOperation, documentOperation, onInspectDocument, onExtractDocument, onPlanExport, onApplyExport, onPlanEdit, onApplyEdit, dataOperation, onInspectData, onPreviewData, onPlanDataExport, onApplyDataExport, onPlanDataMutation, onApplyDataMutation, visualOperation, onInspectVisual, onPreviewVisual, onVisualOcr, onVisualAnalysis, onPlanVisualExport, onApplyVisualExport, onPlanVisualEdit, onApplyVisualEdit, mediaOperation, mediaWorkerTruth, onInspectMedia, onThumbnailMedia, archiveOperation, onInspectArchive, onPlanArchive, onApplyArchive }: Props) {
   const busy = busyAction === "filePreview";
   const fileBacked = activeFile?.scheme === "file";
   const previewApproved = filePreview?.status === "completed";
+  const archivePreview = filePreview?.category === "archive" || filePreview?.adapter === "archive";
   const capabilities = filePreview?.capabilities;
   const risks = filePreview?.risk_flags;
   const parseSummary = filePreview?.parse_summary ? JSON.stringify(filePreview.parse_summary, null, 2) : "";
@@ -168,12 +174,22 @@ export default function ActiveFilePanel({ activeFile, filePreview, busyAction, c
               onThumbnail={onThumbnailMedia}
             />
           ) : null}
-          {parseSummary ? <pre className="source-preview source-preview--compact">{parseSummary}</pre> : null}
-          {filePreview.content_preview ? <pre className="source-preview">{filePreview.content_preview}</pre> : null}
+          {filePreview.category === "archive" || filePreview.adapter === "archive" ? (
+            <ArchiveContainerPanel
+              operation={archiveOperation}
+              busyAction={busyAction}
+              canMutate={canMutate}
+              onInspect={onInspectArchive}
+              onPlan={onPlanArchive}
+              onApply={onApplyArchive}
+            />
+          ) : null}
+          {parseSummary && !archivePreview ? <pre className="source-preview source-preview--compact">{parseSummary}</pre> : null}
+          {filePreview.content_preview && !archivePreview ? <pre className="source-preview">{filePreview.content_preview}</pre> : null}
         </div>
       ) : null}
-      {filePreview?.category === "media" || filePreview?.adapter === "media" ? (
-        <p className="muted">Media create/edit/delete/rename/move controls are intentionally hidden in this read-only slice.</p>
+      {filePreview?.category === "media" || filePreview?.adapter === "media" || filePreview?.category === "archive" || filePreview?.adapter === "archive" ? (
+        <p className="muted">Media and archive create/edit/delete/rename/move controls are intentionally hidden. Archive writes are limited to exact-approved disposable sandbox extraction.</p>
       ) : (
         <FileOperationPanel
           activeRelativePath={activeFile?.relativePath}

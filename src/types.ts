@@ -480,6 +480,127 @@ export type CodingMediaOperationState = {
   lastError?: string;
 };
 
+export type ArchiveMemberRecord = {
+  index: number;
+  display_path: string;
+  path_hash: string;
+  normalized_relative_path?: string;
+  kind: string;
+  uncompressed_size: number;
+  is_regular_file: boolean;
+  is_directory: boolean;
+  is_symlink: boolean;
+  is_hardlink: boolean;
+  is_device: boolean;
+  is_fifo: boolean;
+  is_socket: boolean;
+  is_encrypted: boolean;
+  is_nested_archive_candidate: boolean;
+  extractable: boolean;
+  blocked_reason?: string;
+  risk_flags: string[];
+};
+
+export type ArchiveContainerPreview = {
+  status: string;
+  operation_id: string;
+  request_id?: string;
+  file_label: string;
+  relative_path?: string;
+  path_hash: string;
+  archive_sha256?: string;
+  archive_size_bytes: number;
+  extension_type: string;
+  detected_type: string;
+  extension_content_match: boolean;
+  descriptor: {
+    type_id: string;
+    label: string;
+    inspection_state: string;
+    extraction_state: string;
+    package_container: boolean;
+    selected_sandbox_extraction_supported: boolean;
+    install_state: string;
+    execute_state: string;
+    tool_license_status: string;
+    notes: string[];
+  };
+  member_count: number;
+  directory_count: number;
+  projected_uncompressed_bytes: number;
+  largest_member_bytes: number;
+  nested_archive_count: number;
+  compression_ratio: number;
+  encrypted: boolean;
+  members: ArchiveMemberRecord[];
+  member_list_truncated: boolean;
+  risk_flags: Array<{ code: string; severity: string; count: number; blocks_extraction: boolean; summary: string }>;
+  risk_counts: Record<string, number>;
+  package_metadata?: Record<string, unknown>;
+  manifest_digest?: string;
+  policy_version: string;
+  tool_used: string;
+  blocked_reason?: string;
+  audit_written: boolean;
+  warnings: string[];
+};
+
+export type ArchiveExtractionPlan = {
+  status: string;
+  operation_id: string;
+  request_id?: string;
+  file_label: string;
+  relative_path?: string;
+  archive_type: string;
+  archive_sha256: string;
+  archive_size_bytes: number;
+  manifest_digest: string;
+  selected_member_indexes: number[];
+  selected_members_digest: string;
+  selected_file_count: number;
+  projected_write_bytes: number;
+  sandbox_id: string;
+  sandbox_destination_hash: string;
+  plan_hash: string;
+  policy_version: string;
+  approval_required: true;
+  blocked_reason?: string;
+  warnings: string[];
+};
+
+export type ArchiveExtractionResult = {
+  status: string;
+  operation_id: string;
+  request_id?: string;
+  approval_id?: string;
+  archive_type: string;
+  archive_sha256: string;
+  manifest_digest: string;
+  plan_hash: string;
+  sandbox_id: string;
+  sandbox_destination_hash: string;
+  extracted_file_count: number;
+  extracted_bytes: number;
+  blocked_member_count: number;
+  skipped_member_count: number;
+  audit_written: boolean;
+  mutation_performed: boolean;
+  source_mutated: false;
+  project_root_written: false;
+  install_performed: false;
+  execution_performed: false;
+  cleanup_performed: boolean;
+  blocked_reason?: string;
+  warnings: string[];
+};
+
+export type CodingArchiveOperationState = {
+  inspectPreview: ArchiveContainerPreview | null;
+  extractionPlan: ArchiveExtractionPlan | null;
+  extractionResult: ArchiveExtractionResult | null;
+  lastError?: string;
+};
+
 export type MediaWorkerModelTruth = {
   id?: string;
   display_name?: string;
@@ -621,11 +742,12 @@ export type CodingState = {
   dataOperation: CodingDataOperationState | null;
   visualOperation: CodingVisualOperationState | null;
   mediaOperation: CodingMediaOperationState | null;
+  archiveOperation: CodingArchiveOperationState | null;
   mediaWorkerTruth: MediaWorkerTruth | null;
   fileOperation: CodingFileOperationState | null;
   operationAudits: CodingOperationAudit[];
   lastError?: string;
-  busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions" | "fileOperationPlan" | "fileOperationApply" | "documentInspect" | "documentExtract" | "documentExportPlan" | "documentExportApply" | "documentEditPlan" | "documentEditApply" | "dataInspect" | "dataPreview" | "dataExportPlan" | "dataExportApply" | "dataMutationPlan" | "dataMutationApply" | "visualInspect" | "visualPreview" | "visualOcr" | "visualAnalysis" | "visualExportPlan" | "visualExportApply" | "visualEditPlan" | "visualEditApply" | "mediaInspect" | "mediaThumbnail";
+  busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions" | "fileOperationPlan" | "fileOperationApply" | "documentInspect" | "documentExtract" | "documentExportPlan" | "documentExportApply" | "documentEditPlan" | "documentEditApply" | "dataInspect" | "dataPreview" | "dataExportPlan" | "dataExportApply" | "dataMutationPlan" | "dataMutationApply" | "visualInspect" | "visualPreview" | "visualOcr" | "visualAnalysis" | "visualExportPlan" | "visualExportApply" | "visualEditPlan" | "visualEditApply" | "mediaInspect" | "mediaThumbnail" | "archiveInspect" | "archivePlan" | "archiveApply";
   lastAction?: string;
 };
 
@@ -692,6 +814,9 @@ export type WebviewToExtensionMessage =
   | { type: "applyApprovedVisualEdit" }
   | { type: "inspectActiveMedia" }
   | { type: "thumbnailActiveMedia" }
+  | { type: "inspectActiveArchive" }
+  | { type: "planArchiveExtraction"; selectedMemberIndexes: number[] }
+  | { type: "applyApprovedArchiveExtraction" }
   | { type: "applyApprovedPatch" }
   | { type: "runApprovedCheck"; commandId: string };
 

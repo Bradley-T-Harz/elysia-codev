@@ -24,6 +24,7 @@ This extension is not Elysia core and does not require Marketplace sign-in. It c
 - Generic text/code create, full-content edit/replace, recoverable delete, and same-type rename/move through Elysia core plan/approval/apply services.
 - Document, science/data/geospatial, and image/OCR/SVG panels with adapter-specific capability and dependency truth.
 - Read-only WAV/MP3/FLAC/OGG/M4A and MP4/MOV/MKV/WebM metadata panels, with fixed local video thumbnails, privacy/safety flags, dependency truth, and request/operation/audit IDs. Governed local STT and non-cloning Kokoro TTS API flows are available through Elysia core; Codev surfaces their live/disabled truth without adding unreviewed action controls.
+- ArchiveForge panels for approved local ZIP, TAR, TAR.GZ, 7Z, RAR, WHL, JAR, VSIX, AppImage, and DEB listing/risk truth. ZIP/TAR/TAR.GZ expose selected-file planning and exact-approved extraction into an Elysia-owned disposable sandbox outside the workspace.
 - Sanitized coding audit records with request, operation, approval, relative-path, hash, mutation, shell, backup, and persistence truth.
 - Local UI sessions stored in VS Code state, with backend session IDs when available.
 - Workspace/trust status.
@@ -41,11 +42,12 @@ This extension is not Elysia core and does not require Marketplace sign-in. It c
 - No Marketplace account requirement.
 - No source-code contents returned by the repo preview or stored by default.
 - Voice cloning/reference-voice input is unavailable by design; transcoding and media mutation are unavailable. ImageForge remains disabled-by-default lab-only. VideoForge exposes a fixed-profile, exact-approved, cancellable Wan lab route through Elysia core, also disabled by default. Neither forge is production-enabled.
+- No archive install, execute, import, trust, executable-open, extract-all, project merge, autonomous extraction, or link/device materialization. 7Z is list-only, RAR extraction is license-sensitive lab-only, and WHL/JAR/VSIX/AppImage/DEB are inspect-only.
 - No secrets, service-role keys, tokens, or local private data storage.
 
 ## Local-First Boundary
 
-The extension uses VS Code UI APIs, the extension host, local extension state, and the local Elysia bridge. The webview does not fetch the local API directly. It does not send source code to Marketplace or cloud services. Patch, file, document, data, visual, and command capabilities go through Elysia core planning, exact expiring one-time approval, source/plan hash checks, audit/trace truth, and backup or derived-output rules.
+The extension uses VS Code UI APIs, the extension host, local extension state, and the local Elysia bridge. The webview does not fetch the local API directly. It does not send source code to Marketplace or cloud services. Patch, file, document, data, visual, archive-sandbox, and command capabilities go through Elysia core planning, exact expiring one-time approval, source/plan hash checks, audit/trace truth, and backup, derived-output, or disposable-sandbox rules.
 
 ## Local Bridge Endpoints
 
@@ -77,6 +79,12 @@ The current MVP uses:
 - `POST /coding/media/tts/*`
 - `POST /coding/media/imageforge/*` (disabled-by-default lab lane)
 - `POST /coding/media/videoforge/*` and `GET /coding/media/videoforge/jobs/*` (disabled-by-default lab lane)
+- `GET /coding/archive/types`
+- `POST /coding/archive/inspect`
+- `POST /coding/archive/extract/plan`
+- `POST /coding/archive/extract/apply`
+- `GET /coding/archive/jobs/*`
+- `GET /coding/archive/artifacts/*`
 - `POST /coding/patch/propose`
 - `POST /coding/patch/apply-approved`
 - `POST /coding/command/plan`
@@ -119,7 +127,7 @@ Packaging a local VSIX does not publish the extension. Public VS Code Marketplac
 
 ## Next proof / roadmap
 
-1. Run Extension Host proof for restart/reload, preview, exact patch apply, exact checks, generic CRUD, document/data/visual flows, and audit visibility against disposable workspaces.
+1. Run Extension Host proof for restart/reload, preview, exact patch apply, exact checks, generic CRUD, document/data/visual/archive flows, and audit visibility against disposable workspaces.
 2. Replace the bounded deterministic chat bridge with a real governed general local coding reasoner and reviewed patch-generation path.
 3. Add automated extension-host/API client coverage without weakening current approval boundaries.
 4. Marketplace packaging remains a separate official add-on release task.

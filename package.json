@@ -1,7 +1,7 @@
 {
   "name": "elysia-codev",
   "displayName": "Elysia Codev",
-  "description": "Local-first governed Elysia companion for VS Code. Exact file, document, data, visual, media, patch, and check actions require explicit approval. Local speech and lab-media gate truth is surfaced; voice cloning and production media generation remain unavailable.",
+  "description": "Local-first governed Elysia companion for VS Code. Exact file, document, data, visual, media, archive-sandbox, patch, and check actions require explicit approval. Archive install/execute and autonomous extraction remain unavailable.",
   "version": "0.1.0",
   "publisher": "ecosyneva-commons",
   "license": "Apache-2.0",

@@ -4,6 +4,9 @@ import * as vscode from "vscode";
 import { buildLoopbackUrl } from "./localUrlPolicy";
 import type {
   CodingBridgeStatus,
+  ArchiveContainerPreview,
+  ArchiveExtractionPlan,
+  ArchiveExtractionResult,
   CodingChatReply,
   CodingCommandPlan,
   CodingCommandRunResult,
@@ -61,6 +64,9 @@ type VisualExportResultData = { visual_export_result?: CodingDocumentApplyResult
 type VisualEditPlanData = { visual_edit_plan?: CodingDocumentPlan };
 type VisualEditResultData = { visual_apply_result?: CodingDocumentApplyResult };
 type MediaPreviewData = { media?: FileReadPreview };
+type ArchivePreviewData = { archive?: ArchiveContainerPreview };
+type ArchivePlanData = { archive_extraction_plan?: ArchiveExtractionPlan };
+type ArchiveResultData = { archive_extraction_result?: ArchiveExtractionResult };
 type MediaWorkerTruthData = { media_workers?: MediaWorkerTruth };
 type TtsVoiceData = { voices?: TtsVoice[]; voice_cloning_available?: boolean };
 type SpeechTtsPlanData = { tts_plan?: SpeechTtsPlan };
@@ -650,6 +656,53 @@ export class ElysiaApiClient {
       throw new Error("Local Elysia did not return media thumbnail data.");
     }
     return this.normalizeMediaPreview(this.withEnvelopeTruth(envelope.data.media, envelope));
+  }
+
+  public async inspectArchive(request: {
+    workspace_root: string;
+    archive_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+  }): Promise<ArchiveContainerPreview> {
+    const envelope = await this.request<ArchivePreviewData>("/coding/archive/inspect", { method: "POST", body: JSON.stringify(request) });
+    if (!envelope.data?.archive) throw new Error("Local Elysia did not return ArchiveForge inspection data.");
+    return envelope.data.archive;
+  }
+
+  public async planArchiveExtraction(request: {
+    workspace_root: string;
+    archive_path: string;
+    session_id?: string;
+    selected_member_indexes: number[];
+    sandbox_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+  }): Promise<ArchiveExtractionPlan> {
+    const envelope = await this.request<ArchivePlanData>("/coding/archive/extract/plan", { method: "POST", body: JSON.stringify(request) });
+    if (!envelope.data?.archive_extraction_plan) throw new Error("Local Elysia did not return an ArchiveForge extraction plan.");
+    return envelope.data.archive_extraction_plan;
+  }
+
+  public async applyApprovedArchiveExtraction(request: {
+    operation_id: string;
+    workspace_root: string;
+    archive_path: string;
+    session_id?: string;
+    selected_member_indexes: number[];
+    sandbox_id: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+    approval_id: string;
+    approval_token: string;
+    operator_approved: boolean;
+    expected_archive_sha256: string;
+    expected_manifest_digest: string;
+    expected_plan_hash: string;
+  }): Promise<ArchiveExtractionResult> {
+    const envelope = await this.request<ArchiveResultData>("/coding/archive/extract/apply", { method: "POST", body: JSON.stringify(request) });
+    if (!envelope.data?.archive_extraction_result) throw new Error("Local Elysia did not return an ArchiveForge extraction result.");
+    return envelope.data.archive_extraction_result;
   }
 
   public async getMediaWorkerTruth(): Promise<MediaWorkerTruth> {
