@@ -159,6 +159,7 @@ export type MediaWorkerModelTruth = {
   capability?: string;
   state?: string;
   enabled_state?: string;
+  gate_status?: string;
   local_assets_present?: boolean;
   voice_assets_present?: boolean;
   license?: string;
@@ -166,6 +167,7 @@ export type MediaWorkerModelTruth = {
   provenance_review_status?: string;
   production_blockers?: string[];
   known_failure_modes?: string[];
+  gates?: Record<string, unknown>;
 };
 
 export type MediaWorkerTruth = {
@@ -173,6 +175,8 @@ export type MediaWorkerTruth = {
   imageforge?: Record<string, unknown> & { models?: MediaWorkerModelTruth[] };
   videoforge?: Record<string, unknown> & { models?: MediaWorkerModelTruth[] };
   voice_cloning?: Record<string, unknown>;
+  gates?: Record<string, unknown>;
+  runtime_registry?: Array<Record<string, unknown>>;
 };
 
 export type UiMessage = {

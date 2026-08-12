@@ -486,6 +486,7 @@ export type MediaWorkerModelTruth = {
   capability?: string;
   state?: string;
   enabled_state?: string;
+  gate_status?: string;
   local_assets_present?: boolean;
   voice_assets_present?: boolean;
   license?: string;
@@ -493,6 +494,7 @@ export type MediaWorkerModelTruth = {
   provenance_review_status?: string;
   production_blockers?: string[];
   known_failure_modes?: string[];
+  gates?: Record<string, unknown>;
 };
 
 export type MediaWorkerTruth = {
@@ -500,6 +502,8 @@ export type MediaWorkerTruth = {
   imageforge?: Record<string, unknown> & { models?: MediaWorkerModelTruth[] };
   videoforge?: Record<string, unknown> & { models?: MediaWorkerModelTruth[] };
   voice_cloning?: Record<string, unknown>;
+  gates?: Record<string, unknown>;
+  runtime_registry?: Array<Record<string, unknown>>;
 };
 
 export type TtsVoice = { id: string; display_name?: string; language?: string; style?: string; enabled?: boolean };
@@ -560,6 +564,46 @@ export type SpeechTranscriptionResult = SpeechTranscriptionPlan & {
   approval_id?: string;
   audit_written: boolean;
   raw_transcript_returned: false;
+};
+
+export type VideoForgePlan = {
+  status: string;
+  model_id: string;
+  model_state: string;
+  prompt_hash: string;
+  prompt_length: number;
+  purpose_category: string;
+  width: number;
+  height: number;
+  frames: number;
+  fps: number;
+  steps: number;
+  seed: number;
+  target_relative_path?: string;
+  sidecar_relative_path?: string;
+  plan_hash?: string;
+  synthetic_media: true;
+  production_enabled: false;
+  approval_required: true;
+  cancellation_supported: boolean;
+  blocked_reason?: string;
+  warnings: string[];
+};
+
+export type VideoForgeJob = VideoForgePlan & {
+  operation_id: string;
+  request_id?: string;
+  approval_id?: string;
+  artifact_id?: string;
+  output_sha256?: string;
+  output_bytes?: number;
+  duration_seconds?: number;
+  runtime_seconds?: number;
+  peak_gpu_memory_mib?: number;
+  audit_written: boolean;
+  cancel_requested: boolean;
+  network_used: false;
+  cloud_used: false;
 };
 
 export type CodingChatReply = {

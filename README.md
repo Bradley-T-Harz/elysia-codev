@@ -40,7 +40,7 @@ This extension is not Elysia core and does not require Marketplace sign-in. It c
 - No cloud upload.
 - No Marketplace account requirement.
 - No source-code contents returned by the repo preview or stored by default.
-- Voice cloning/reference-voice input, transcoding, and media mutation are unavailable. ImageForge remains disabled-by-default lab-only and VideoForge remains smoke/contract-only with no live generation route.
+- Voice cloning/reference-voice input is unavailable by design; transcoding and media mutation are unavailable. ImageForge remains disabled-by-default lab-only. VideoForge exposes a fixed-profile, exact-approved, cancellable Wan lab route through Elysia core, also disabled by default. Neither forge is production-enabled.
 - No secrets, service-role keys, tokens, or local private data storage.
 
 ## Local-First Boundary
@@ -71,6 +71,12 @@ The current MVP uses:
 - `GET /coding/media-types`
 - `POST /coding/media/inspect`
 - `POST /coding/media/thumbnail`
+- `GET /coding/media/workers`
+- `GET /coding/media/gates`
+- `POST /coding/media/transcribe/*`
+- `POST /coding/media/tts/*`
+- `POST /coding/media/imageforge/*` (disabled-by-default lab lane)
+- `POST /coding/media/videoforge/*` and `GET /coding/media/videoforge/jobs/*` (disabled-by-default lab lane)
 - `POST /coding/patch/propose`
 - `POST /coding/patch/apply-approved`
 - `POST /coding/command/plan`

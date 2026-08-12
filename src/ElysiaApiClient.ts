@@ -25,6 +25,8 @@ import type {
   SpeechTtsPlan,
   SpeechTtsResult,
   TtsVoice,
+  VideoForgeJob,
+  VideoForgePlan,
   RepoInspectPreview
 } from "./types";
 
@@ -65,6 +67,8 @@ type SpeechTtsPlanData = { tts_plan?: SpeechTtsPlan };
 type SpeechTtsResultData = { tts_result?: SpeechTtsResult };
 type SpeechTranscriptionPlanData = { transcription_plan?: SpeechTranscriptionPlan };
 type SpeechTranscriptionResultData = { transcription_result?: SpeechTranscriptionResult };
+type VideoForgePlanData = { videoforge_plan?: VideoForgePlan };
+type VideoForgeJobData = { videoforge_job?: VideoForgeJob };
 type PatchApplyData = { patch_apply?: CodingPatchApplyResult };
 type CommandRunData = { command_run?: CodingCommandRunResult };
 type CommandPlanData = { command_plan?: CodingCommandPlan };
@@ -692,6 +696,39 @@ export class ElysiaApiClient {
     const envelope = await this.request<SpeechTranscriptionResultData>("/coding/media/transcribe/apply", { method: "POST", body: JSON.stringify(request) });
     if (!envelope.data?.transcription_result) throw new Error("Local Elysia did not return a transcription result.");
     return this.withEnvelopeTruth(envelope.data.transcription_result, envelope);
+  }
+
+  public async planVideoForge(request: {
+    session_id?: string; workspace_root: string; prompt: string; negative_prompt?: string;
+    purpose_category?: "private_creative" | "documentary_illustration" | "lab_smoke";
+    target_path?: string; approval_granted: boolean; approval_reason?: string;
+    lab_acknowledged: boolean; contains_real_person_request: false;
+  }): Promise<VideoForgePlan> {
+    const envelope = await this.request<VideoForgePlanData>("/coding/media/videoforge/preview", { method: "POST", body: JSON.stringify(request) });
+    if (!envelope.data?.videoforge_plan) throw new Error("Local Elysia did not return a VideoForge plan.");
+    return envelope.data.videoforge_plan;
+  }
+
+  public async applyApprovedVideoForge(request: Parameters<ElysiaApiClient["planVideoForge"]>[0] & {
+    expected_prompt_hash: string; expected_plan_hash: string; approval_id: string; approval_token: string;
+  }): Promise<VideoForgeJob> {
+    const envelope = await this.request<VideoForgeJobData>("/coding/media/videoforge/apply", { method: "POST", body: JSON.stringify(request) });
+    if (!envelope.data?.videoforge_job) throw new Error("Local Elysia did not return a VideoForge job.");
+    return this.withEnvelopeTruth(envelope.data.videoforge_job, envelope);
+  }
+
+  public async getVideoForgeJob(operationId: string): Promise<VideoForgeJob> {
+    const envelope = await this.request<VideoForgeJobData>(`/coding/media/videoforge/jobs/${encodeURIComponent(operationId)}`, { method: "GET" });
+    if (!envelope.data?.videoforge_job) throw new Error("Local Elysia did not return VideoForge job truth.");
+    return this.withEnvelopeTruth(envelope.data.videoforge_job, envelope);
+  }
+
+  public async cancelVideoForgeJob(operationId: string): Promise<VideoForgeJob> {
+    const envelope = await this.request<VideoForgeJobData>(`/coding/media/videoforge/jobs/${encodeURIComponent(operationId)}/cancel`, {
+      method: "POST", body: JSON.stringify({ reason: "codev_operator_cancelled" })
+    });
+    if (!envelope.data?.videoforge_job) throw new Error("Local Elysia did not return VideoForge cancellation truth.");
+    return this.withEnvelopeTruth(envelope.data.videoforge_job, envelope);
   }
 
   public async applyApprovedPatch(request: {

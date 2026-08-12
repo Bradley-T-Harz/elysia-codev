@@ -79,15 +79,24 @@ export default function MediaPreviewPanel({ filePreview, operation, workerTruth,
         <dl className="facts facts--single">
           <div><dt>SpeechForge STT</dt><dd>{workerTruth?.speechforge?.stt_enabled === true ? "available locally · exact approval and consent required" : "unavailable"}</dd></div>
           <div><dt>Kokoro TTS</dt><dd>{workerTruth?.speechforge?.tts_enabled === true ? "available locally · synthetic catalog reading voices only" : "unavailable"}</dd></div>
-          <div><dt>ImageForge</dt><dd>{String(workerTruth?.imageforge?.state ?? "unknown")} · no production-enabled model</dd></div>
-          <div><dt>VideoForge</dt><dd>{String(workerTruth?.videoforge?.state ?? "unknown")} · Wan smoke/contract only; no live route</dd></div>
-          <div><dt>Voice cloning</dt><dd>deliberately unavailable · no reference-voice input</dd></div>
+          <div><dt>ImageForge</dt><dd>{String(workerTruth?.imageforge?.state ?? "unknown")} · governed lab route · no production-enabled model</dd></div>
+          <div><dt>VideoForge</dt><dd>{String(workerTruth?.videoforge?.state ?? "unknown")} · {workerTruth?.videoforge?.routes_live === true ? "governed cancellable Wan lab route" : "route unavailable"} · {workerTruth?.videoforge?.lab_environment_enabled === true ? "lab enabled" : "disabled by default"}</dd></div>
+          <div><dt>Voice cloning</dt><dd>unavailable by design · no reference-voice input</dd></div>
         </dl>
+        <ul className="muted">
+          {[...(workerTruth?.imageforge?.models ?? []), ...(workerTruth?.videoforge?.models ?? [])].map((model) => (
+            <li key={model.id ?? model.display_name}>
+              {model.display_name ?? model.id}: {model.gate_status ?? model.enabled_state ?? model.state ?? "unknown"}
+              {model.production_blockers?.length ? ` · ${model.production_blockers.join("; ")}` : ""}
+            </li>
+          ))}
+        </ul>
       </details>
       <p className="muted">
         Raw media and embedded tag values are not shown or audited. Governed STT and non-cloning TTS are available
         through local exact-approved API flows; Codev exposes their truth without adding unreviewed action controls.
-        Transcoding and media mutation remain unavailable; image/video generation is lab-only or route-disabled.
+        Machine transcripts require human verification for accuracy. Transcoding and media mutation remain unavailable;
+        image/video generation is lab-only, disabled by default, and never presented as production capability.
       </p>
     </div>
   );

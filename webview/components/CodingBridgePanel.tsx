@@ -35,10 +35,19 @@ export default function CodingBridgePanel({ coding, workspace, onInspectRepo, on
         <dl className="facts facts--single">
           <div><dt>SpeechForge STT</dt><dd>{coding.mediaWorkerTruth?.speechforge?.stt_enabled === true ? "local · approval and consent required" : "unavailable"}</dd></div>
           <div><dt>Kokoro TTS</dt><dd>{coding.mediaWorkerTruth?.speechforge?.tts_enabled === true ? "local synthetic reading voices" : "unavailable"}</dd></div>
-          <div><dt>ImageForge</dt><dd>{String(coding.mediaWorkerTruth?.imageforge?.state ?? "unknown")} · no production-enabled model</dd></div>
-          <div><dt>VideoForge</dt><dd>{String(coding.mediaWorkerTruth?.videoforge?.state ?? "unknown")} · no live generation route</dd></div>
-          <div><dt>Voice cloning</dt><dd>deliberately unavailable</dd></div>
+          <div><dt>ImageForge</dt><dd>{String(coding.mediaWorkerTruth?.imageforge?.state ?? "unknown")} · disabled-by-default lab route · no production-enabled model</dd></div>
+          <div><dt>VideoForge</dt><dd>{String(coding.mediaWorkerTruth?.videoforge?.state ?? "unknown")} · {coding.mediaWorkerTruth?.videoforge?.routes_live === true ? "cancellable governed lab route" : "route unavailable"} · {coding.mediaWorkerTruth?.videoforge?.lab_environment_enabled === true ? "lab enabled" : "disabled by default"}</dd></div>
+          <div><dt>Voice cloning</dt><dd>unavailable by design · no reference-voice path</dd></div>
         </dl>
+        <ul className="muted">
+          {[...(coding.mediaWorkerTruth?.imageforge?.models ?? []), ...(coding.mediaWorkerTruth?.videoforge?.models ?? [])].map((model) => (
+            <li key={model.id ?? model.display_name}>
+              {model.display_name ?? model.id}: {model.gate_status ?? model.enabled_state ?? model.state ?? "unknown"}
+              {model.production_blockers?.length ? ` · ${model.production_blockers.join("; ")}` : ""}
+            </li>
+          ))}
+        </ul>
+        <p className="muted">Codev displays worker and gate truth. STT/TTS and generative-lab execution remain governed by Elysia core; no production media-generation controls are presented here.</p>
       </details>
       <div className="button-row">
         <button className="ghost" disabled={busy} onClick={onRefresh}>{coding.busyAction === "refresh" ? "Refreshing..." : "Refresh bridge"}</button>
