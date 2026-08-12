@@ -1,10 +1,11 @@
 import * as vscode from "vscode";
+import * as path from "node:path";
 import { ApprovalController } from "./ApprovalController";
 import { ElysiaApiClient } from "./ElysiaApiClient";
 import { FileDiffProvider } from "./FileDiffProvider";
 import { SessionStore } from "./SessionStore";
 import { WorkspaceTrust } from "./WorkspaceTrust";
-import type { ApprovalMode, CodingArchiveOperationState, CodingBridgeStatus, CodingCommandRunResult, CodingDataOperationState, CodingDocumentOperationState, CodingFileOperationState, CodingMediaOperationState, CodingOperationAudit, CodingPatchApplyResult, CodingPatchProposal, CodingVisualOperationState, ElysiaMessage, ExtensionToWebviewMessage, FileReadPreview, GoalWorkflowState, IdeContextSettings, MediaWorkerTruth, PatchPreview, RepoInspectPreview, WebviewState, WebviewToExtensionMessage, WorkModeState } from "./types";
+import type { ApprovalMode, CodingArchiveOperationState, CodingBinaryOperationState, CodingBridgeStatus, CodingCommandRunResult, CodingDataOperationState, CodingDatabaseOperationState, CodingDocumentOperationState, CodingFileOperationState, CodingMediaOperationState, CodingOperationAudit, CodingPatchApplyResult, CodingPatchProposal, CodingVisualOperationState, ElysiaMessage, ExtensionToWebviewMessage, FileReadPreview, GoalWorkflowState, IdeContextSettings, MediaWorkerTruth, PatchPreview, RepoInspectPreview, WebviewState, WebviewToExtensionMessage, WorkModeState } from "./types";
 
 export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   private view: vscode.WebviewView | undefined;
@@ -20,6 +21,8 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   private visualOperations = new Map<string, CodingVisualOperationState>();
   private mediaOperations = new Map<string, CodingMediaOperationState>();
   private archiveOperations = new Map<string, CodingArchiveOperationState>();
+  private databaseOperations = new Map<string, CodingDatabaseOperationState>();
+  private binaryOperations = new Map<string, CodingBinaryOperationState>();
   private visualEditRequests = new Map<string, { operation: string; parameters: Record<string, unknown> }>();
   private fileOperations = new Map<string, CodingFileOperationState>();
   private fileOperationRequests = new Map<string, { operationKind: "create" | "edit" | "replace" | "delete" | "rename" | "move"; targetPath: string; destinationPath?: string; newText?: string }>();
@@ -132,6 +135,8 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     this.visualOperations.clear();
     this.mediaOperations.clear();
     this.archiveOperations.clear();
+    this.databaseOperations.clear();
+    this.binaryOperations.clear();
     this.fileOperations.clear();
     this.fileOperationRequests.clear();
     this.documentEditRequests.clear();
@@ -160,6 +165,8 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     this.visualOperations.delete(sessionId);
     this.mediaOperations.delete(sessionId);
     this.archiveOperations.delete(sessionId);
+    this.databaseOperations.delete(sessionId);
+    this.binaryOperations.delete(sessionId);
     this.fileOperations.delete(sessionId);
     this.fileOperationRequests.delete(sessionId);
     this.documentEditRequests.delete(sessionId);
@@ -385,6 +392,18 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
       await this.applyApprovedArchiveExtraction();
       return;
     }
+    if (message.type === "inspectActiveDatabase") {
+      await this.inspectActiveDatabase();
+      return;
+    }
+    if (message.type === "previewActiveDatabaseSchema") {
+      await this.previewActiveDatabaseSchema();
+      return;
+    }
+    if (message.type === "inspectActiveBinary") {
+      await this.inspectActiveBinary();
+      return;
+    }
     if (message.type === "applyApprovedPatch") {
       await this.applyApprovedPatch();
       return;
@@ -518,6 +537,18 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
         approval_reason: "operator_confirmed_in_vscode"
       });
       this.filePreviews.set(activeSessionId, preview);
+      const databaseOperation = this.databaseOperations.get(activeSessionId);
+      if (preview.category !== "database" && preview.adapter !== "database") {
+        this.databaseOperations.delete(activeSessionId);
+      } else if (databaseOperation?.inspection?.relative_path !== preview.relative_path) {
+        this.databaseOperations.delete(activeSessionId);
+      }
+      const binaryOperation = this.binaryOperations.get(activeSessionId);
+      if (preview.category !== "binary" && preview.adapter !== "binary") {
+        this.binaryOperations.delete(activeSessionId);
+      } else if (binaryOperation?.inspection?.relative_path !== preview.relative_path) {
+        this.binaryOperations.delete(activeSessionId);
+      }
       this.codingError = preview.status === "completed" ? undefined : preview.blocked_reason ?? preview.status;
       this.lastAction = preview.status === "completed" ? "Selected-file preview updated." : "Selected-file preview blocked.";
       if (preview.status === "completed") {
@@ -1010,6 +1041,22 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     return created;
   }
 
+  private getDatabaseOperation(sessionId: string): CodingDatabaseOperationState {
+    const existing = this.databaseOperations.get(sessionId);
+    if (existing) return existing;
+    const created: CodingDatabaseOperationState = { inspection: null, schemaPreview: null };
+    this.databaseOperations.set(sessionId, created);
+    return created;
+  }
+
+  private getBinaryOperation(sessionId: string): CodingBinaryOperationState {
+    const existing = this.binaryOperations.get(sessionId);
+    if (existing) return existing;
+    const created: CodingBinaryOperationState = { inspection: null };
+    this.binaryOperations.set(sessionId, created);
+    return created;
+  }
+
   private getActiveDataContext(): { sessionId: string; workspaceRoot: string; filePath: string; backendSessionId?: string } | { error: string } {
     const sessionId = this.activeSessionId;
     const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
@@ -1061,6 +1108,42 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     const preview = this.filePreviews.get(sessionId);
     if (preview?.category !== "archive" && preview?.adapter !== "archive") {
       return { error: "Read an approved preview of a registered archive/container first." };
+    }
+    const session = this.sessions.getSessions().find((item) => item.id === sessionId);
+    return { sessionId, workspaceRoot, filePath, backendSessionId: session?.backendSessionId };
+  }
+
+  private getActiveDatabaseContext(): { sessionId: string; workspaceRoot: string; filePath: string; backendSessionId?: string } | { error: string } {
+    const sessionId = this.activeSessionId;
+    const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
+    const filePath = this.diffs.getActiveFilePath();
+    if (!sessionId) return { error: "Create or select a Codev session first." };
+    if (!workspaceRoot || !filePath) return { error: "Open a file-backed database in the workspace first." };
+    const preview = this.filePreviews.get(sessionId);
+    if (preview?.category !== "database" && preview?.adapter !== "database") {
+      return { error: "Read an approved preview of a registered database file first." };
+    }
+    const currentRelativePath = path.relative(workspaceRoot, filePath).split(path.sep).join("/");
+    if (preview.relative_path !== currentRelativePath) {
+      return { error: "The active database changed. Read its approved selected-file preview before requesting DatabaseForge." };
+    }
+    const session = this.sessions.getSessions().find((item) => item.id === sessionId);
+    return { sessionId, workspaceRoot, filePath, backendSessionId: session?.backendSessionId };
+  }
+
+  private getActiveBinaryContext(): { sessionId: string; workspaceRoot: string; filePath: string; backendSessionId?: string } | { error: string } {
+    const sessionId = this.activeSessionId;
+    const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
+    const filePath = this.diffs.getActiveFilePath();
+    if (!sessionId) return { error: "Create or select a Codev session first." };
+    if (!workspaceRoot || !filePath) return { error: "Open a file-backed binary in the workspace first." };
+    const preview = this.filePreviews.get(sessionId);
+    if (preview?.category !== "binary" && preview?.adapter !== "binary") {
+      return { error: "Read an approved preview of a registered binary file first." };
+    }
+    const currentRelativePath = path.relative(workspaceRoot, filePath).split(path.sep).join("/");
+    if (preview.relative_path !== currentRelativePath) {
+      return { error: "The active binary changed. Read its approved selected-file preview before requesting BinaryForge." };
     }
     const session = this.sessions.getSessions().find((item) => item.id === sessionId);
     return { sessionId, workspaceRoot, filePath, backendSessionId: session?.backendSessionId };
@@ -1944,6 +2027,129 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     await this.postState();
   }
 
+  private async inspectActiveDatabase(): Promise<void> {
+    const context = this.getActiveDatabaseContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    this.busyAction = "databaseInspect";
+    this.lastAction = "Identifying database and computing static metadata...";
+    await this.postState();
+    try {
+      const inspection = await this.api.inspectDatabase({
+        workspace_root: context.workspaceRoot,
+        database_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        approval_reason: "operator_requested_static_database_metadata_in_codev"
+      });
+      this.databaseOperations.set(context.sessionId, { inspection, schemaPreview: null });
+      this.codingError = inspection.status === "completed" ? undefined : inspection.blocked_reason ?? inspection.status;
+      this.lastAction = `Database metadata ${inspection.status}; no schema or rows were opened.`;
+      await this.refreshOperationAudits();
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Database metadata inspection failed.";
+      this.databaseOperations.set(context.sessionId, { ...this.getDatabaseOperation(context.sessionId), lastError: this.codingError });
+      this.lastAction = "Database metadata inspection failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async previewActiveDatabaseSchema(): Promise<void> {
+    const context = this.getActiveDatabaseContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    const operation = this.getDatabaseOperation(context.sessionId);
+    const inspection = operation.inspection;
+    if (!inspection?.source_sha256 || !inspection.schema_preview_plan_hash || inspection.descriptor.schema_preview_state !== "approval_required") {
+      this.codingError = "Inspect a supported SQLite or DuckDB file before requesting schema approval.";
+      await this.postState();
+      return;
+    }
+    const approval = await vscode.window.showWarningMessage(
+      "Preview schema names and definitions from a private read-only snapshot of this exact database? Schema names may be sensitive. No rows, arbitrary SQL, extensions, export, or mutation are allowed.",
+      { modal: true },
+      "Approve exact schema preview"
+    );
+    if (approval !== "Approve exact schema preview") {
+      this.lastAction = "Database schema preview cancelled.";
+      await this.postState();
+      return;
+    }
+    this.busyAction = "databaseSchema";
+    this.lastAction = "Creating exact-approved read-only database snapshot...";
+    await this.postState();
+    try {
+      const exactApproval = await this.issueExactApproval({
+        sessionId: context.backendSessionId,
+        operationKind: "database_schema_preview",
+        operationSummary: "Preview schema from exact read-only database snapshot",
+        workspaceRoot: context.workspaceRoot,
+        exactFiles: [context.filePath],
+        sourceHash: inspection.source_sha256,
+        planHash: inspection.schema_preview_plan_hash,
+        mutationClass: "database_schema_preview",
+        rollbackNote: "Read-only snapshot and fixed introspection only; the source is never mutated."
+      });
+      const schemaPreview = await this.api.previewApprovedDatabaseSchema({
+        workspace_root: context.workspaceRoot,
+        database_path: context.filePath,
+        session_id: context.backendSessionId,
+        operator_approved: true,
+        expected_source_sha256: inspection.source_sha256,
+        expected_plan_hash: inspection.schema_preview_plan_hash,
+        ...exactApproval
+      });
+      this.databaseOperations.set(context.sessionId, { ...operation, schemaPreview, lastError: undefined });
+      this.codingError = schemaPreview.status === "completed" ? undefined : schemaPreview.blocked_reason ?? schemaPreview.status;
+      this.lastAction = `Database schema preview ${schemaPreview.status}; rows returned ${schemaPreview.row_data_returned ? "yes" : "no"}.`;
+      await this.refreshOperationAudits();
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Database schema preview failed.";
+      this.databaseOperations.set(context.sessionId, { ...operation, lastError: this.codingError });
+      this.lastAction = "Database schema preview failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async inspectActiveBinary(): Promise<void> {
+    const context = this.getActiveBinaryContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    this.busyAction = "binaryInspect";
+    this.lastAction = "Performing bounded static binary inspection...";
+    await this.postState();
+    try {
+      const inspection = await this.api.inspectBinary({
+        workspace_root: context.workspaceRoot,
+        binary_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        approval_reason: "operator_requested_static_binary_metadata_in_codev"
+      });
+      this.binaryOperations.set(context.sessionId, { inspection });
+      this.codingError = inspection.status === "completed" ? undefined : inspection.blocked_reason ?? inspection.status;
+      this.lastAction = `Binary inspection ${inspection.status}; execution, loading, and mutation did not occur.`;
+      await this.refreshOperationAudits();
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Static binary inspection failed.";
+      this.binaryOperations.set(context.sessionId, { ...this.getBinaryOperation(context.sessionId), lastError: this.codingError });
+      this.lastAction = "Static binary inspection failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
   private async applyApprovedPatch(): Promise<void> {
     const sessionId = this.activeSessionId;
     if (!sessionId) return;
@@ -2197,6 +2403,8 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
         visualOperation: this.activeSessionId ? this.visualOperations.get(this.activeSessionId) ?? null : null,
         mediaOperation: this.activeSessionId ? this.mediaOperations.get(this.activeSessionId) ?? null : null,
         archiveOperation: this.activeSessionId ? this.archiveOperations.get(this.activeSessionId) ?? null : null,
+        databaseOperation: this.activeSessionId ? this.databaseOperations.get(this.activeSessionId) ?? null : null,
+        binaryOperation: this.activeSessionId ? this.binaryOperations.get(this.activeSessionId) ?? null : null,
         mediaWorkerTruth: this.mediaWorkerTruth,
         fileOperation: this.activeSessionId ? this.fileOperations.get(this.activeSessionId) ?? null : null,
         operationAudits: this.operationAudits,

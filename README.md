@@ -25,6 +25,8 @@ This extension is not Elysia core and does not require Marketplace sign-in. It c
 - Document, science/data/geospatial, and image/OCR/SVG panels with adapter-specific capability and dependency truth.
 - Read-only WAV/MP3/FLAC/OGG/M4A and MP4/MOV/MKV/WebM metadata panels, with fixed local video thumbnails, privacy/safety flags, dependency truth, and request/operation/audit IDs. Governed local STT and non-cloning Kokoro TTS API flows are available through Elysia core; Codev surfaces their live/disabled truth without adding unreviewed action controls.
 - ArchiveForge panels for approved local ZIP, TAR, TAR.GZ, 7Z, RAR, WHL, JAR, VSIX, AppImage, and DEB listing/risk truth. ZIP/TAR/TAR.GZ expose selected-file planning and exact-approved extraction into an Elysia-owned disposable sandbox outside the workspace.
+- DatabaseForge panels for selected SQLite, DuckDB, and unknown `.db` files. Metadata is static; SQLite/DuckDB schema counts require exact approval and Elysia's private read-only snapshot. Unknown `.db` files remain metadata-only, and rows are never shown.
+- BinaryForge panels for bounded static PE/EXE/DLL, ELF/SO/O, Java CLASS, WebAssembly, and unknown BIN metadata, hashes, aggregate import/export/symbol/string counts, structural risk summaries, local artifact receipts, and audit IDs.
 - Sanitized coding audit records with request, operation, approval, relative-path, hash, mutation, shell, backup, and persistence truth.
 - Local UI sessions stored in VS Code state, with backend session IDs when available.
 - Workspace/trust status.
@@ -43,6 +45,8 @@ This extension is not Elysia core and does not require Marketplace sign-in. It c
 - No source-code contents returned by the repo preview or stored by default.
 - Voice cloning/reference-voice input is unavailable by design; transcoding and media mutation are unavailable. ImageForge remains disabled-by-default lab-only. VideoForge exposes a fixed-profile, exact-approved, cancellable Wan lab route through Elysia core, also disabled by default. Neither forge is production-enabled.
 - No archive install, execute, import, trust, executable-open, extract-all, project merge, autonomous extraction, or link/device materialization. 7Z is list-only, RAR extraction is license-sensitive lab-only, and WHL/JAR/VSIX/AppImage/DEB are inspect-only.
+- No database rows, arbitrary SQL, query/export, attach, extension loading, external access, repair, mutation, or migration. Schema approval cannot authorize any of these.
+- No binary execution, loading, importing, installation, linking, trust, mutation, patching, signature tampering, decompilation, or exploit workflow. Deeper disassembly and sandboxed execution remain future separately gated capabilities.
 - No secrets, service-role keys, tokens, or local private data storage.
 
 ## Local-First Boundary
@@ -85,6 +89,13 @@ The current MVP uses:
 - `POST /coding/archive/extract/apply`
 - `GET /coding/archive/jobs/*`
 - `GET /coding/archive/artifacts/*`
+- `GET /coding/database/types`
+- `POST /coding/database/inspect`
+- `POST /coding/database/schema/preview`
+- `GET /coding/database/artifacts/*`
+- `GET /coding/binary/types`
+- `POST /coding/binary/inspect`
+- `GET /coding/binary/artifacts/*`
 - `POST /coding/patch/propose`
 - `POST /coding/patch/apply-approved`
 - `POST /coding/command/plan`
@@ -127,7 +138,7 @@ Packaging a local VSIX does not publish the extension. Public VS Code Marketplac
 
 ## Next proof / roadmap
 
-1. Run Extension Host proof for restart/reload, preview, exact patch apply, exact checks, generic CRUD, document/data/visual/archive flows, and audit visibility against disposable workspaces.
+1. Run Extension Host proof for restart/reload, preview, exact patch apply, exact checks, generic CRUD, document/data/visual/archive/database/binary flows, and audit visibility against disposable workspaces.
 2. Replace the bounded deterministic chat bridge with a real governed general local coding reasoner and reviewed patch-generation path.
 3. Add automated extension-host/API client coverage without weakening current approval boundaries.
 4. Marketplace packaging remains a separate official add-on release task.

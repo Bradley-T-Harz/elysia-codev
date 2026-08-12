@@ -15,7 +15,7 @@ export default function OperationAuditPanel({ records }: Props) {
         <span>Governed Operation Audit</span>
         <span className="pill">sanitized local truth</span>
       </div>
-      <p className="muted">Compact records only: identifiers, relative paths, hashes, approval state, mutation/shell flags, and backup truth. No full content, absolute paths, or command logs.</p>
+      <p className="muted">Compact records only: identifiers, hashes, counts, policy/risk summaries, approval state, and effect truth. No full content, schema names, binary strings, absolute paths, or command logs.</p>
       {!records.length ? <p className="muted">No coding operation audit has been loaded in this Codev session.</p> : null}
       {records.slice(0, 8).map((record, index) => (
         <div className="document-preview__result" key={record.operation_id ?? `${record.timestamp_utc ?? record.recorded_at_utc ?? "audit"}-${index}`}>
@@ -31,6 +31,9 @@ export default function OperationAuditPanel({ records }: Props) {
             {record.artifact_id ? <div><dt>Artifact/model</dt><dd>{short(record.artifact_id)} · {record.model_id ?? "model not recorded"}</dd></div> : null}
             {record.voice_id ? <div><dt>Reading voice</dt><dd>{record.voice_id} · synthetic {record.synthetic_media ? "yes" : "not reported"}</dd></div> : null}
             {record.segment_count !== undefined ? <div><dt>Transcript</dt><dd>{record.language ?? "unknown language"} · {record.segment_count} segments · raw content logged {record.raw_content_logged ? "yes" : "no"}</dd></div> : null}
+            {record.database_engine ? <div><dt>Database</dt><dd>{record.database_engine} · {record.table_count ?? 0} tables · {record.view_count ?? 0} views · {record.index_count ?? 0} indexes · {record.trigger_count ?? 0} triggers · rows logged {record.row_data_returned ? "yes" : "no"}</dd></div> : null}
+            {record.binary_format ? <div><dt>Binary</dt><dd>{record.binary_format} · {record.section_count ?? 0} sections · {record.import_count ?? 0} imports · {record.export_count ?? 0} exports · {record.symbol_count ?? 0} symbols · {record.string_count ?? 0} strings counted</dd></div> : null}
+            {record.database_engine || record.binary_format ? <div><dt>Stewardship</dt><dd>risk count {record.risk_total ?? 0} · policy {record.policy_version ?? "not recorded"} · raw content logged {record.raw_content_logged ? "yes" : "no"}</dd></div> : null}
           </dl>
           {record.media_family ? (
             <p className="muted">Media {record.media_family} · {record.duration_seconds ?? "unknown"} seconds · {record.stream_count ?? "unknown"} streams · thumbnail {record.thumbnail_status ?? "not requested"} · privacy tags {record.privacy_flags_present ? "present" : "not reported"}</p>

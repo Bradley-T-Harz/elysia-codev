@@ -7,6 +7,7 @@ import type {
   ArchiveContainerPreview,
   ArchiveExtractionPlan,
   ArchiveExtractionResult,
+  BinaryInspection,
   CodingChatReply,
   CodingCommandPlan,
   CodingCommandRunResult,
@@ -18,6 +19,8 @@ import type {
   CodingPatchProposal,
   CodingOperationApproval,
   CodingOperationAudit,
+  DatabaseInspection,
+  DatabaseSchemaPreview,
   ElysiaConnectionStatus,
   FileReadPreview,
   CodingFileOperationPlan,
@@ -67,6 +70,11 @@ type MediaPreviewData = { media?: FileReadPreview };
 type ArchivePreviewData = { archive?: ArchiveContainerPreview };
 type ArchivePlanData = { archive_extraction_plan?: ArchiveExtractionPlan };
 type ArchiveResultData = { archive_extraction_result?: ArchiveExtractionResult };
+type DatabaseInspectData = { database?: DatabaseInspection };
+type DatabaseSchemaData = { database_schema?: DatabaseSchemaPreview };
+type BinaryInspectData = { binary?: BinaryInspection };
+type DatabaseTypesData = { database_types?: Record<string, unknown> };
+type BinaryTypesData = { binary_types?: Record<string, unknown> };
 type MediaWorkerTruthData = { media_workers?: MediaWorkerTruth };
 type TtsVoiceData = { voices?: TtsVoice[]; voice_cloning_available?: boolean };
 type SpeechTtsPlanData = { tts_plan?: SpeechTtsPlan };
@@ -703,6 +711,57 @@ export class ElysiaApiClient {
     const envelope = await this.request<ArchiveResultData>("/coding/archive/extract/apply", { method: "POST", body: JSON.stringify(request) });
     if (!envelope.data?.archive_extraction_result) throw new Error("Local Elysia did not return an ArchiveForge extraction result.");
     return envelope.data.archive_extraction_result;
+  }
+
+  public async inspectDatabase(request: {
+    workspace_root: string;
+    database_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+  }): Promise<DatabaseInspection> {
+    const envelope = await this.request<DatabaseInspectData>("/coding/database/inspect", { method: "POST", body: JSON.stringify(request) });
+    if (!envelope.data?.database) throw new Error("Local Elysia did not return DatabaseForge metadata.");
+    return this.withEnvelopeTruth(envelope.data.database, envelope);
+  }
+
+  public async getDatabaseTypes(): Promise<Record<string, unknown>> {
+    const envelope = await this.request<DatabaseTypesData>("/coding/database/types", { method: "GET" });
+    if (!envelope.data?.database_types) throw new Error("Local Elysia did not return DatabaseForge capability truth.");
+    return envelope.data.database_types;
+  }
+
+  public async previewApprovedDatabaseSchema(request: {
+    workspace_root: string;
+    database_path: string;
+    session_id?: string;
+    approval_id: string;
+    approval_token: string;
+    operator_approved: boolean;
+    expected_source_sha256: string;
+    expected_plan_hash: string;
+  }): Promise<DatabaseSchemaPreview> {
+    const envelope = await this.request<DatabaseSchemaData>("/coding/database/schema/preview", { method: "POST", body: JSON.stringify(request) });
+    if (!envelope.data?.database_schema) throw new Error("Local Elysia did not return the approved DatabaseForge schema summary.");
+    return this.withEnvelopeTruth(envelope.data.database_schema, envelope);
+  }
+
+  public async inspectBinary(request: {
+    workspace_root: string;
+    binary_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+  }): Promise<BinaryInspection> {
+    const envelope = await this.request<BinaryInspectData>("/coding/binary/inspect", { method: "POST", body: JSON.stringify(request) });
+    if (!envelope.data?.binary) throw new Error("Local Elysia did not return BinaryForge static metadata.");
+    return this.withEnvelopeTruth(envelope.data.binary, envelope);
+  }
+
+  public async getBinaryTypes(): Promise<Record<string, unknown>> {
+    const envelope = await this.request<BinaryTypesData>("/coding/binary/types", { method: "GET" });
+    if (!envelope.data?.binary_types) throw new Error("Local Elysia did not return BinaryForge capability truth.");
+    return envelope.data.binary_types;
   }
 
   public async getMediaWorkerTruth(): Promise<MediaWorkerTruth> {

@@ -244,6 +244,125 @@ export type ArchiveExtractionResult = {
   blocked_reason?: string;
 };
 
+export type DataBinaryArtifactReceipt = {
+  artifact_id: string;
+  artifact_kind: string;
+  sha256: string;
+  size_bytes: number;
+};
+
+export type DatabaseInspection = {
+  status: string;
+  operation_id: string;
+  request_id?: string;
+  file_label: string;
+  relative_path?: string;
+  path_hash: string;
+  source_sha256?: string;
+  source_blake3?: string;
+  size_bytes: number;
+  extension_type: string;
+  detected_engine: string;
+  extension_content_match: boolean;
+  magic_summary: string;
+  descriptor: {
+    type_id: string;
+    label: string;
+    metadata_state: string;
+    schema_preview_state: string;
+    read_only_open_supported: boolean;
+    row_preview_state: string;
+    arbitrary_sql_state: string;
+    mutation_state: string;
+    install_load_state: string;
+    notes: string[];
+  };
+  sidecars: Record<string, { present?: boolean; size_bytes?: number; regular_file?: boolean; symlink?: boolean }>;
+  source_state_digest?: string;
+  schema_preview_plan_hash?: string;
+  artifact?: DataBinaryArtifactReceipt;
+  policy_version: string;
+  worker_policy_version: string;
+  audit_written: boolean;
+  blocked_reason?: string;
+  warnings: string[];
+};
+
+export type DatabaseSchemaPreview = {
+  status: string;
+  operation_id: string;
+  request_id?: string;
+  approval_id?: string;
+  detected_engine: string;
+  source_sha256: string;
+  snapshot_sha256?: string;
+  snapshot_strategy?: string;
+  table_count: number;
+  view_count: number;
+  index_count: number;
+  trigger_count: number;
+  schema_object_count: number;
+  risk_counts: Record<string, number>;
+  artifact?: DataBinaryArtifactReceipt;
+  policy_version: string;
+  mutation_performed: boolean;
+  row_data_returned: boolean;
+  arbitrary_sql_executed: boolean;
+  audit_written: boolean;
+  blocked_reason?: string;
+  warnings: string[];
+};
+
+export type BinaryInspection = {
+  status: string;
+  operation_id: string;
+  request_id?: string;
+  source_sha256?: string;
+  source_blake3?: string;
+  size_bytes: number;
+  extension_type: string;
+  detected_format: string;
+  extension_content_match: boolean;
+  magic_summary: string;
+  descriptor: {
+    label: string;
+    inspection_state: string;
+    static_metadata_only: boolean;
+    strings_state: string;
+    disassembly_state: string;
+    execution_state: string;
+    load_state: string;
+    install_state: string;
+    mutation_state: string;
+    patch_state: string;
+    notes: string[];
+  };
+  architecture?: string;
+  bitness?: number;
+  endianness?: string;
+  section_count: number;
+  import_count: number;
+  export_count: number;
+  symbol_count: number;
+  string_count: number;
+  entropy?: number;
+  executable_bit: boolean;
+  debug_symbols_present?: boolean;
+  stripped?: boolean;
+  risk_flags: Array<{ code: string; severity: string; count: number; summary: string }>;
+  risk_counts: Record<string, number>;
+  artifact?: DataBinaryArtifactReceipt;
+  policy_version: string;
+  worker_policy_version: string;
+  toolchain: string[];
+  execution_performed: boolean;
+  loading_performed: boolean;
+  mutation_performed: boolean;
+  audit_written: boolean;
+  blocked_reason?: string;
+  warnings: string[];
+};
+
 export type WebviewState = {
   connection: { state: ConnectionState; apiUrl: string; summary: string; checkedAt?: string };
   workspace: {
@@ -517,6 +636,15 @@ export type WebviewState = {
       extractionResult: ArchiveExtractionResult | null;
       lastError?: string;
     } | null;
+    databaseOperation: {
+      inspection: DatabaseInspection | null;
+      schemaPreview: DatabaseSchemaPreview | null;
+      lastError?: string;
+    } | null;
+    binaryOperation: {
+      inspection: BinaryInspection | null;
+      lastError?: string;
+    } | null;
     mediaWorkerTruth: MediaWorkerTruth | null;
     fileOperation: {
       plan: {
@@ -586,9 +714,27 @@ export type WebviewState = {
       synthetic_media?: boolean;
       production_enabled?: boolean;
       raw_content_logged?: boolean;
+      database_engine?: string;
+      binary_format?: string;
+      snapshot_hash?: string;
+      artifact_hash?: string;
+      table_count?: number;
+      view_count?: number;
+      index_count?: number;
+      trigger_count?: number;
+      schema_object_count?: number;
+      section_count?: number;
+      import_count?: number;
+      export_count?: number;
+      symbol_count?: number;
+      string_count?: number;
+      risk_total?: number;
+      policy_version?: string;
+      row_data_returned?: boolean;
+      arbitrary_sql_executed?: boolean;
     }>;
     lastError?: string;
-    busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions" | "fileOperationPlan" | "fileOperationApply" | "documentInspect" | "documentExtract" | "documentExportPlan" | "documentExportApply" | "documentEditPlan" | "documentEditApply" | "dataInspect" | "dataPreview" | "dataExportPlan" | "dataExportApply" | "dataMutationPlan" | "dataMutationApply" | "visualInspect" | "visualPreview" | "visualOcr" | "visualAnalysis" | "visualExportPlan" | "visualExportApply" | "visualEditPlan" | "visualEditApply" | "mediaInspect" | "mediaThumbnail" | "archiveInspect" | "archivePlan" | "archiveApply";
+    busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions" | "fileOperationPlan" | "fileOperationApply" | "documentInspect" | "documentExtract" | "documentExportPlan" | "documentExportApply" | "documentEditPlan" | "documentEditApply" | "dataInspect" | "dataPreview" | "dataExportPlan" | "dataExportApply" | "dataMutationPlan" | "dataMutationApply" | "visualInspect" | "visualPreview" | "visualOcr" | "visualAnalysis" | "visualExportPlan" | "visualExportApply" | "visualEditPlan" | "visualEditApply" | "mediaInspect" | "mediaThumbnail" | "archiveInspect" | "archivePlan" | "archiveApply" | "databaseInspect" | "databaseSchema" | "binaryInspect";
     lastAction?: string;
   };
 };

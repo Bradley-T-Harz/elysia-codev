@@ -6,6 +6,7 @@ import FileOperationPanel from "./FileOperationPanel";
 import MediaPreviewPanel from "./MediaPreviewPanel";
 import VisualPreviewPanel from "./VisualPreviewPanel";
 import ArchiveContainerPanel from "./ArchiveContainerPanel";
+import DataBinaryForgePanel from "./DataBinaryForgePanel";
 
 type Props = {
   activeFile: WebviewState["activeFile"];
@@ -48,9 +49,14 @@ type Props = {
   onInspectArchive: () => void;
   onPlanArchive: (selectedMemberIndexes: number[]) => void;
   onApplyArchive: () => void;
+  databaseOperation: WebviewState["coding"]["databaseOperation"];
+  binaryOperation: WebviewState["coding"]["binaryOperation"];
+  onInspectDatabase: () => void;
+  onPreviewDatabaseSchema: () => void;
+  onInspectBinary: () => void;
 };
 
-export default function ActiveFilePanel({ activeFile, filePreview, busyAction, canReadWorkspace, canMutate, onReadPreview, fileOperation, onPlanFileOperation, onApplyFileOperation, documentOperation, onInspectDocument, onExtractDocument, onPlanExport, onApplyExport, onPlanEdit, onApplyEdit, dataOperation, onInspectData, onPreviewData, onPlanDataExport, onApplyDataExport, onPlanDataMutation, onApplyDataMutation, visualOperation, onInspectVisual, onPreviewVisual, onVisualOcr, onVisualAnalysis, onPlanVisualExport, onApplyVisualExport, onPlanVisualEdit, onApplyVisualEdit, mediaOperation, mediaWorkerTruth, onInspectMedia, onThumbnailMedia, archiveOperation, onInspectArchive, onPlanArchive, onApplyArchive }: Props) {
+export default function ActiveFilePanel({ activeFile, filePreview, busyAction, canReadWorkspace, canMutate, onReadPreview, fileOperation, onPlanFileOperation, onApplyFileOperation, documentOperation, onInspectDocument, onExtractDocument, onPlanExport, onApplyExport, onPlanEdit, onApplyEdit, dataOperation, onInspectData, onPreviewData, onPlanDataExport, onApplyDataExport, onPlanDataMutation, onApplyDataMutation, visualOperation, onInspectVisual, onPreviewVisual, onVisualOcr, onVisualAnalysis, onPlanVisualExport, onApplyVisualExport, onPlanVisualEdit, onApplyVisualEdit, mediaOperation, mediaWorkerTruth, onInspectMedia, onThumbnailMedia, archiveOperation, onInspectArchive, onPlanArchive, onApplyArchive, databaseOperation, binaryOperation, onInspectDatabase, onPreviewDatabaseSchema, onInspectBinary }: Props) {
   const busy = busyAction === "filePreview";
   const fileBacked = activeFile?.scheme === "file";
   const previewApproved = filePreview?.status === "completed";
@@ -184,12 +190,34 @@ export default function ActiveFilePanel({ activeFile, filePreview, busyAction, c
               onApply={onApplyArchive}
             />
           ) : null}
+          {filePreview.category === "database" || filePreview.adapter === "database" ? (
+            <DataBinaryForgePanel
+              kind="database"
+              databaseOperation={databaseOperation}
+              binaryOperation={binaryOperation}
+              busyAction={busyAction}
+              onInspectDatabase={onInspectDatabase}
+              onPreviewDatabaseSchema={onPreviewDatabaseSchema}
+              onInspectBinary={onInspectBinary}
+            />
+          ) : null}
+          {filePreview.category === "binary" || filePreview.adapter === "binary" ? (
+            <DataBinaryForgePanel
+              kind="binary"
+              databaseOperation={databaseOperation}
+              binaryOperation={binaryOperation}
+              busyAction={busyAction}
+              onInspectDatabase={onInspectDatabase}
+              onPreviewDatabaseSchema={onPreviewDatabaseSchema}
+              onInspectBinary={onInspectBinary}
+            />
+          ) : null}
           {parseSummary && !archivePreview ? <pre className="source-preview source-preview--compact">{parseSummary}</pre> : null}
           {filePreview.content_preview && !archivePreview ? <pre className="source-preview">{filePreview.content_preview}</pre> : null}
         </div>
       ) : null}
-      {filePreview?.category === "media" || filePreview?.adapter === "media" || filePreview?.category === "archive" || filePreview?.adapter === "archive" ? (
-        <p className="muted">Media and archive create/edit/delete/rename/move controls are intentionally hidden. Archive writes are limited to exact-approved disposable sandbox extraction.</p>
+      {filePreview?.category === "media" || filePreview?.adapter === "media" || filePreview?.category === "archive" || filePreview?.adapter === "archive" || filePreview?.category === "database" || filePreview?.adapter === "database" || filePreview?.category === "binary" || filePreview?.adapter === "binary" ? (
+        <p className="muted">Create/edit/delete/rename/move controls are intentionally hidden for governed media, archive, database, and binary files. Database and binary mutation is unavailable by design.</p>
       ) : (
         <FileOperationPanel
           activeRelativePath={activeFile?.relativePath}
