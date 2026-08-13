@@ -59,7 +59,7 @@ const emptyState: WebviewState = {
   git: { branch: "Not inspected", dirtyState: "unknown", changedCount: 0, summary: "No repo inspected." },
   changedFiles: [],
   patchPreview: { state: "empty", summary: "No patch proposed.", files: [], canApply: false },
-  coding: { bridge: null, repoPreview: null, filePreview: null, patchApplyResult: null, commandResult: null, documentOperation: null, dataOperation: null, visualOperation: null, mediaOperation: null, archiveOperation: null, databaseOperation: null, binaryOperation: null, mediaWorkerTruth: null, fileOperation: null, operationAudits: [] }
+  coding: { bridge: null, repoPreview: null, filePreview: null, patchApplyResult: null, commandResult: null, documentOperation: null, dataOperation: null, visualOperation: null, mediaOperation: null, archiveOperation: null, databaseOperation: null, binaryOperation: null, engineeringOperation: null, mediaWorkerTruth: null, fileOperation: null, operationAudits: [] }
 };
 
 export default function App({ vscode }: AppProps) {
@@ -180,9 +180,13 @@ export default function App({ vscode }: AppProps) {
             onApplyArchive={() => vscode.postMessage({ type: "applyApprovedArchiveExtraction" })}
             databaseOperation={state.coding.databaseOperation}
             binaryOperation={state.coding.binaryOperation}
+            engineeringOperation={state.coding.engineeringOperation}
             onInspectDatabase={() => vscode.postMessage({ type: "inspectActiveDatabase" })}
             onPreviewDatabaseSchema={() => vscode.postMessage({ type: "previewActiveDatabaseSchema" })}
             onInspectBinary={() => vscode.postMessage({ type: "inspectActiveBinary" })}
+            onInspectEngineering={() => vscode.postMessage({ type: "inspectActiveEngineering" })}
+            onPlanEngineeringPreview={() => vscode.postMessage({ type: "planEngineeringPreview" })}
+            onApplyEngineeringPreview={() => vscode.postMessage({ type: "applyApprovedEngineeringPreview" })}
           />
           <GitStatusPanel git={state.git} />
           <ChangedFilesPanel files={state.changedFiles} />

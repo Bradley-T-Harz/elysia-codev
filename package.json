@@ -1,7 +1,7 @@
 {
   "name": "elysia-codev",
   "displayName": "Elysia Codev",
-  "description": "Local-first governed Elysia companion for VS Code. Database schema snapshots require exact approval; binary inspection is static only. Database/binary execution, loading, installation, and mutation remain unavailable.",
+  "description": "Local-first governed Elysia companion for VS Code. EngineeringForge, database, and binary inspection delegate to Elysia; execution, hardware control, cloud upload, and source mutation remain unavailable.",
   "version": "0.1.0",
   "publisher": "ecosyneva-commons",
   "license": "Apache-2.0",

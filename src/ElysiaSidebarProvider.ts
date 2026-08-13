@@ -5,7 +5,7 @@ import { ElysiaApiClient } from "./ElysiaApiClient";
 import { FileDiffProvider } from "./FileDiffProvider";
 import { SessionStore } from "./SessionStore";
 import { WorkspaceTrust } from "./WorkspaceTrust";
-import type { ApprovalMode, CodingArchiveOperationState, CodingBinaryOperationState, CodingBridgeStatus, CodingCommandRunResult, CodingDataOperationState, CodingDatabaseOperationState, CodingDocumentOperationState, CodingFileOperationState, CodingMediaOperationState, CodingOperationAudit, CodingPatchApplyResult, CodingPatchProposal, CodingVisualOperationState, ElysiaMessage, ExtensionToWebviewMessage, FileReadPreview, GoalWorkflowState, IdeContextSettings, MediaWorkerTruth, PatchPreview, RepoInspectPreview, WebviewState, WebviewToExtensionMessage, WorkModeState } from "./types";
+import type { ApprovalMode, CodingArchiveOperationState, CodingBinaryOperationState, CodingBridgeStatus, CodingCommandRunResult, CodingDataOperationState, CodingDatabaseOperationState, CodingDocumentOperationState, CodingEngineeringOperationState, CodingFileOperationState, CodingMediaOperationState, CodingOperationAudit, CodingPatchApplyResult, CodingPatchProposal, CodingVisualOperationState, ElysiaMessage, ExtensionToWebviewMessage, FileReadPreview, GoalWorkflowState, IdeContextSettings, MediaWorkerTruth, PatchPreview, RepoInspectPreview, WebviewState, WebviewToExtensionMessage, WorkModeState } from "./types";
 
 export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   private view: vscode.WebviewView | undefined;
@@ -23,6 +23,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   private archiveOperations = new Map<string, CodingArchiveOperationState>();
   private databaseOperations = new Map<string, CodingDatabaseOperationState>();
   private binaryOperations = new Map<string, CodingBinaryOperationState>();
+  private engineeringOperations = new Map<string, CodingEngineeringOperationState>();
   private visualEditRequests = new Map<string, { operation: string; parameters: Record<string, unknown> }>();
   private fileOperations = new Map<string, CodingFileOperationState>();
   private fileOperationRequests = new Map<string, { operationKind: "create" | "edit" | "replace" | "delete" | "rename" | "move"; targetPath: string; destinationPath?: string; newText?: string }>();
@@ -137,6 +138,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     this.archiveOperations.clear();
     this.databaseOperations.clear();
     this.binaryOperations.clear();
+    this.engineeringOperations.clear();
     this.fileOperations.clear();
     this.fileOperationRequests.clear();
     this.documentEditRequests.clear();
@@ -167,6 +169,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     this.archiveOperations.delete(sessionId);
     this.databaseOperations.delete(sessionId);
     this.binaryOperations.delete(sessionId);
+    this.engineeringOperations.delete(sessionId);
     this.fileOperations.delete(sessionId);
     this.fileOperationRequests.delete(sessionId);
     this.documentEditRequests.delete(sessionId);
@@ -404,6 +407,18 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
       await this.inspectActiveBinary();
       return;
     }
+    if (message.type === "inspectActiveEngineering") {
+      await this.inspectActiveEngineering();
+      return;
+    }
+    if (message.type === "planEngineeringPreview") {
+      await this.planEngineeringPreview();
+      return;
+    }
+    if (message.type === "applyApprovedEngineeringPreview") {
+      await this.applyApprovedEngineeringPreview();
+      return;
+    }
     if (message.type === "applyApprovedPatch") {
       await this.applyApprovedPatch();
       return;
@@ -549,6 +564,12 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
       } else if (binaryOperation?.inspection?.relative_path !== preview.relative_path) {
         this.binaryOperations.delete(activeSessionId);
       }
+      const engineeringOperation = this.engineeringOperations.get(activeSessionId);
+      if (preview.category !== "engineering" && preview.adapter !== "engineering") {
+        this.engineeringOperations.delete(activeSessionId);
+      } else if (engineeringOperation?.inspection?.relative_path !== preview.relative_path) {
+        this.engineeringOperations.delete(activeSessionId);
+      }
       this.codingError = preview.status === "completed" ? undefined : preview.blocked_reason ?? preview.status;
       this.lastAction = preview.status === "completed" ? "Selected-file preview updated." : "Selected-file preview blocked.";
       if (preview.status === "completed") {
@@ -559,6 +580,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
         if (preview.category !== "visual") this.visualOperations.delete(activeSessionId);
         if (preview.category !== "media" && preview.adapter !== "media") this.mediaOperations.delete(activeSessionId);
         if (preview.category !== "archive" && preview.adapter !== "archive") this.archiveOperations.delete(activeSessionId);
+        if (preview.category !== "engineering" && preview.adapter !== "engineering") this.engineeringOperations.delete(activeSessionId);
       }
     } catch (error) {
       this.codingError = error instanceof Error ? error.message : "Selected-file preview failed.";
@@ -1057,6 +1079,14 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     return created;
   }
 
+  private getEngineeringOperation(sessionId: string): CodingEngineeringOperationState {
+    const existing = this.engineeringOperations.get(sessionId);
+    if (existing) return existing;
+    const created: CodingEngineeringOperationState = { inspection: null, previewPlan: null, previewResult: null };
+    this.engineeringOperations.set(sessionId, created);
+    return created;
+  }
+
   private getActiveDataContext(): { sessionId: string; workspaceRoot: string; filePath: string; backendSessionId?: string } | { error: string } {
     const sessionId = this.activeSessionId;
     const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
@@ -1144,6 +1174,24 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     const currentRelativePath = path.relative(workspaceRoot, filePath).split(path.sep).join("/");
     if (preview.relative_path !== currentRelativePath) {
       return { error: "The active binary changed. Read its approved selected-file preview before requesting BinaryForge." };
+    }
+    const session = this.sessions.getSessions().find((item) => item.id === sessionId);
+    return { sessionId, workspaceRoot, filePath, backendSessionId: session?.backendSessionId };
+  }
+
+  private getActiveEngineeringContext(): { sessionId: string; workspaceRoot: string; filePath: string; backendSessionId?: string } | { error: string } {
+    const sessionId = this.activeSessionId;
+    const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
+    const filePath = this.diffs.getActiveFilePath();
+    if (!sessionId) return { error: "Create or select a Codev session first." };
+    if (!workspaceRoot || !filePath) return { error: "Open a file-backed engineering file in the workspace first." };
+    const preview = this.filePreviews.get(sessionId);
+    if (preview?.category !== "engineering" && preview?.adapter !== "engineering") {
+      return { error: "Read the registered engineering file descriptor first; raw engineering source content remains excluded." };
+    }
+    const currentRelativePath = path.relative(workspaceRoot, filePath).split(path.sep).join("/");
+    if (preview.relative_path !== currentRelativePath) {
+      return { error: "The active engineering file changed. Refresh its selected-file descriptor before requesting EngineeringForge." };
     }
     const session = this.sessions.getSessions().find((item) => item.id === sessionId);
     return { sessionId, workspaceRoot, filePath, backendSessionId: session?.backendSessionId };
@@ -2150,6 +2198,138 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     await this.postState();
   }
 
+  private async inspectActiveEngineering(): Promise<void> {
+    const context = this.getActiveEngineeringContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    this.busyAction = "engineeringInspect";
+    this.lastAction = "Performing bounded local engineering inspection...";
+    await this.postState();
+    try {
+      const inspection = await this.api.inspectEngineering({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        approval_reason: "operator_requested_bounded_engineering_inspection_in_codev"
+      });
+      this.engineeringOperations.set(context.sessionId, { inspection, previewPlan: null, previewResult: null });
+      this.codingError = inspection.status === "completed" ? undefined : inspection.blocked_reason ?? inspection.status;
+      this.lastAction = `Engineering inspection ${inspection.status}; mutation, execution, sending, actuation, and upload did not occur.`;
+      await this.refreshOperationAudits();
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "EngineeringForge inspection failed.";
+      this.engineeringOperations.set(context.sessionId, { ...this.getEngineeringOperation(context.sessionId), lastError: this.codingError });
+      this.lastAction = "EngineeringForge inspection failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async planEngineeringPreview(): Promise<void> {
+    const context = this.getActiveEngineeringContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    const operation = this.getEngineeringOperation(context.sessionId);
+    if (!operation.inspection?.source_sha256 || operation.inspection.descriptor.preview_state !== "approval_required") {
+      this.codingError = "Inspect a format with a live safe local preview before planning one.";
+      await this.postState();
+      return;
+    }
+    this.busyAction = "engineeringPreviewPlan";
+    this.lastAction = "Planning a bounded local engineering projection...";
+    await this.postState();
+    try {
+      const previewPlan = await this.api.planEngineeringPreview({
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        approval_reason: "operator_requested_local_engineering_preview_plan_in_codev"
+      });
+      this.engineeringOperations.set(context.sessionId, { ...operation, previewPlan, previewResult: null, lastError: undefined });
+      this.codingError = previewPlan.status === "planned" ? undefined : previewPlan.blocked_reason ?? previewPlan.status;
+      this.lastAction = `Engineering preview plan ${previewPlan.status}; no artifact projection was created yet.`;
+      await this.refreshOperationAudits();
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Engineering preview planning failed.";
+      this.engineeringOperations.set(context.sessionId, { ...operation, lastError: this.codingError });
+      this.lastAction = "Engineering preview planning failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async applyApprovedEngineeringPreview(): Promise<void> {
+    const context = this.getActiveEngineeringContext();
+    if ("error" in context) {
+      this.codingError = context.error;
+      await this.postState();
+      return;
+    }
+    const operation = this.getEngineeringOperation(context.sessionId);
+    const plan = operation.previewPlan;
+    if (!plan || plan.status !== "planned" || !plan.source_sha256 || !plan.plan_hash) {
+      this.codingError = "Plan a supported safe local engineering preview before approval.";
+      await this.postState();
+      return;
+    }
+    const approval = await vscode.window.showWarningMessage(
+      "Create a bounded local SVG projection for this exact engineering file? This does not simulate, repair, print, machine, send, actuate, certify, upload, or mutate the source.",
+      { modal: true },
+      "Approve exact engineering preview"
+    );
+    if (approval !== "Approve exact engineering preview") {
+      this.lastAction = "Engineering preview cancelled before approval.";
+      await this.postState();
+      return;
+    }
+    this.busyAction = "engineeringPreviewApply";
+    this.lastAction = "Creating exact-approved private local engineering projection...";
+    await this.postState();
+    try {
+      const exactApproval = await this.issueExactApproval({
+        sessionId: context.backendSessionId,
+        operationKind: "engineering_preview",
+        operationSummary: "Create exact bounded local engineering SVG projection",
+        workspaceRoot: context.workspaceRoot,
+        exactFiles: [context.filePath],
+        sourceHash: plan.source_sha256,
+        planHash: plan.plan_hash,
+        mutationClass: "engineering_preview_artifact",
+        rollbackNote: "Delete the private local artifact; the engineering source and project remain unchanged."
+      });
+      const previewResult = await this.api.applyApprovedEngineeringPreview({
+        operation_id: plan.operation_id,
+        workspace_root: context.workspaceRoot,
+        file_path: context.filePath,
+        session_id: context.backendSessionId,
+        approval_granted: true,
+        approval_reason: "operator_exact_approved_local_engineering_preview_in_codev",
+        operator_approved: true,
+        expected_source_sha256: plan.source_sha256,
+        expected_plan_hash: plan.plan_hash,
+        ...exactApproval
+      });
+      this.engineeringOperations.set(context.sessionId, { ...operation, previewResult, lastError: undefined });
+      this.codingError = previewResult.status === "completed" ? undefined : previewResult.blocked_reason ?? previewResult.status;
+      this.lastAction = `Engineering preview ${previewResult.status}; source/project mutation no/no and physical output no.`;
+      await this.refreshOperationAudits();
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Engineering preview failed.";
+      this.engineeringOperations.set(context.sessionId, { ...operation, lastError: this.codingError });
+      this.lastAction = "Engineering preview failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
   private async applyApprovedPatch(): Promise<void> {
     const sessionId = this.activeSessionId;
     if (!sessionId) return;
@@ -2405,6 +2585,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
         archiveOperation: this.activeSessionId ? this.archiveOperations.get(this.activeSessionId) ?? null : null,
         databaseOperation: this.activeSessionId ? this.databaseOperations.get(this.activeSessionId) ?? null : null,
         binaryOperation: this.activeSessionId ? this.binaryOperations.get(this.activeSessionId) ?? null : null,
+        engineeringOperation: this.activeSessionId ? this.engineeringOperations.get(this.activeSessionId) ?? null : null,
         mediaWorkerTruth: this.mediaWorkerTruth,
         fileOperation: this.activeSessionId ? this.fileOperations.get(this.activeSessionId) ?? null : null,
         operationAudits: this.operationAudits,

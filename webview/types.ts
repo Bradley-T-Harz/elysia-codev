@@ -363,6 +363,115 @@ export type BinaryInspection = {
   warnings: string[];
 };
 
+export type EngineeringArtifactReceipt = {
+  artifact_id: string;
+  artifact_kind: string;
+  file_name: string;
+  media_type: string;
+  sha256: string;
+  size_bytes: number;
+  local_only: true;
+};
+
+export type EngineeringInspection = {
+  status: string;
+  operation_id: string;
+  request_id?: string;
+  file_label: string;
+  relative_path?: string;
+  path_hash: string;
+  source_sha256?: string;
+  size_bytes: number;
+  extension_type: string;
+  detected_type: string;
+  extension_content_match: boolean;
+  magic_summary: string;
+  descriptor: {
+    type_id: string;
+    label: string;
+    family: string;
+    forge: string;
+    static_inspection_state: string;
+    report_state: string;
+    preview_state: string;
+    conversion_state: string;
+    repair_state: string;
+    simulation_state: string;
+    generation_state: string;
+    physical_output_state: string;
+    maximum_live_level: number;
+    notes: string[];
+  };
+  report: Record<string, unknown>;
+  capability_truth: Record<string, string>;
+  risk_flags: Array<{ code: string; severity: string; count: number; summary: string }>;
+  risk_counts: Record<string, number>;
+  external_references: Array<{ reference_kind: string; display_reference: string; reference_hash: string; scheme: string; resolution_state: string; blocked_reason?: string }>;
+  external_reference_count: number;
+  artifacts: EngineeringArtifactReceipt[];
+  preview_plan_hash?: string;
+  preview_kind?: string;
+  policy_version: string;
+  worker_policy_version: string;
+  worker_key: string;
+  worker_state: string;
+  audit_written: boolean;
+  source_mutated: false;
+  network_used: false;
+  scripts_executed: false;
+  plugins_loaded: false;
+  physical_output_performed: false;
+  blocked_reason?: string;
+  warnings: string[];
+};
+
+export type EngineeringPreviewPlan = {
+  status: string;
+  operation_id: string;
+  request_id?: string;
+  file_label: string;
+  relative_path?: string;
+  path_hash: string;
+  source_sha256: string;
+  size_bytes: number;
+  detected_type: string;
+  family: string;
+  preview_kind: string;
+  plan_hash: string;
+  policy_version: string;
+  approval_required: true;
+  artifact?: EngineeringArtifactReceipt;
+  blocked_reason?: string;
+  warnings: string[];
+};
+
+export type EngineeringPreviewResult = {
+  status: string;
+  operation_id: string;
+  request_id?: string;
+  approval_id?: string;
+  file_label: string;
+  relative_path?: string;
+  path_hash: string;
+  source_sha256: string;
+  detected_type: string;
+  family: string;
+  preview_kind: string;
+  plan_hash: string;
+  artifact?: EngineeringArtifactReceipt;
+  receipt_artifact?: EngineeringArtifactReceipt;
+  policy_version: string;
+  audit_written: boolean;
+  source_mutated: false;
+  project_root_written: false;
+  network_used: false;
+  scripts_executed: false;
+  plugins_loaded: false;
+  physical_output_performed: false;
+  blocked_reason?: string;
+  warnings: string[];
+};
+
 export type WebviewState = {
   connection: { state: ConnectionState; apiUrl: string; summary: string; checkedAt?: string };
   workspace: {
@@ -645,6 +754,12 @@ export type WebviewState = {
       inspection: BinaryInspection | null;
       lastError?: string;
     } | null;
+    engineeringOperation: {
+      inspection: EngineeringInspection | null;
+      previewPlan: EngineeringPreviewPlan | null;
+      previewResult: EngineeringPreviewResult | null;
+      lastError?: string;
+    } | null;
     mediaWorkerTruth: MediaWorkerTruth | null;
     fileOperation: {
       plan: {
@@ -734,7 +849,7 @@ export type WebviewState = {
       arbitrary_sql_executed?: boolean;
     }>;
     lastError?: string;
-    busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions" | "fileOperationPlan" | "fileOperationApply" | "documentInspect" | "documentExtract" | "documentExportPlan" | "documentExportApply" | "documentEditPlan" | "documentEditApply" | "dataInspect" | "dataPreview" | "dataExportPlan" | "dataExportApply" | "dataMutationPlan" | "dataMutationApply" | "visualInspect" | "visualPreview" | "visualOcr" | "visualAnalysis" | "visualExportPlan" | "visualExportApply" | "visualEditPlan" | "visualEditApply" | "mediaInspect" | "mediaThumbnail" | "archiveInspect" | "archivePlan" | "archiveApply" | "databaseInspect" | "databaseSchema" | "binaryInspect";
+    busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions" | "fileOperationPlan" | "fileOperationApply" | "documentInspect" | "documentExtract" | "documentExportPlan" | "documentExportApply" | "documentEditPlan" | "documentEditApply" | "dataInspect" | "dataPreview" | "dataExportPlan" | "dataExportApply" | "dataMutationPlan" | "dataMutationApply" | "visualInspect" | "visualPreview" | "visualOcr" | "visualAnalysis" | "visualExportPlan" | "visualExportApply" | "visualEditPlan" | "visualEditApply" | "mediaInspect" | "mediaThumbnail" | "archiveInspect" | "archivePlan" | "archiveApply" | "databaseInspect" | "databaseSchema" | "binaryInspect" | "engineeringInspect" | "engineeringPreviewPlan" | "engineeringPreviewApply";
     lastAction?: string;
   };
 };

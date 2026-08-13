@@ -21,6 +21,9 @@ import type {
   CodingOperationAudit,
   DatabaseInspection,
   DatabaseSchemaPreview,
+  EngineeringInspection,
+  EngineeringPreviewPlan,
+  EngineeringPreviewResult,
   ElysiaConnectionStatus,
   FileReadPreview,
   CodingFileOperationPlan,
@@ -73,6 +76,9 @@ type ArchiveResultData = { archive_extraction_result?: ArchiveExtractionResult }
 type DatabaseInspectData = { database?: DatabaseInspection };
 type DatabaseSchemaData = { database_schema?: DatabaseSchemaPreview };
 type BinaryInspectData = { binary?: BinaryInspection };
+type EngineeringInspectData = { engineering?: EngineeringInspection };
+type EngineeringPreviewPlanData = { engineering_preview_plan?: EngineeringPreviewPlan };
+type EngineeringPreviewResultData = { engineering_preview_result?: EngineeringPreviewResult };
 type DatabaseTypesData = { database_types?: Record<string, unknown> };
 type BinaryTypesData = { binary_types?: Record<string, unknown> };
 type MediaWorkerTruthData = { media_workers?: MediaWorkerTruth };
@@ -762,6 +768,48 @@ export class ElysiaApiClient {
     const envelope = await this.request<BinaryTypesData>("/coding/binary/types", { method: "GET" });
     if (!envelope.data?.binary_types) throw new Error("Local Elysia did not return BinaryForge capability truth.");
     return envelope.data.binary_types;
+  }
+
+  public async inspectEngineering(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+  }): Promise<EngineeringInspection> {
+    const envelope = await this.request<EngineeringInspectData>("/coding/engineering/inspect", { method: "POST", body: JSON.stringify(request) });
+    if (!envelope.data?.engineering) throw new Error("Local Elysia did not return EngineeringForge inspection data.");
+    return this.withEnvelopeTruth(envelope.data.engineering, envelope);
+  }
+
+  public async planEngineeringPreview(request: {
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+  }): Promise<EngineeringPreviewPlan> {
+    const envelope = await this.request<EngineeringPreviewPlanData>("/coding/engineering/preview/plan", { method: "POST", body: JSON.stringify(request) });
+    if (!envelope.data?.engineering_preview_plan) throw new Error("Local Elysia did not return an EngineeringForge preview plan.");
+    return this.withEnvelopeTruth(envelope.data.engineering_preview_plan, envelope);
+  }
+
+  public async applyApprovedEngineeringPreview(request: {
+    operation_id: string;
+    workspace_root: string;
+    file_path: string;
+    session_id?: string;
+    approval_granted: boolean;
+    approval_reason?: string;
+    approval_id: string;
+    approval_token: string;
+    operator_approved: boolean;
+    expected_source_sha256: string;
+    expected_plan_hash: string;
+  }): Promise<EngineeringPreviewResult> {
+    const envelope = await this.request<EngineeringPreviewResultData>("/coding/engineering/preview/apply", { method: "POST", body: JSON.stringify(request) });
+    if (!envelope.data?.engineering_preview_result) throw new Error("Local Elysia did not return an EngineeringForge preview result.");
+    return this.withEnvelopeTruth(envelope.data.engineering_preview_result, envelope);
   }
 
   public async getMediaWorkerTruth(): Promise<MediaWorkerTruth> {
