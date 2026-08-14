@@ -27,6 +27,7 @@ This extension is not Elysia core and does not require Marketplace sign-in. It c
 - ArchiveForge panels for approved local ZIP, TAR, TAR.GZ, 7Z, RAR, WHL, JAR, VSIX, AppImage, and DEB listing/risk truth. ZIP/TAR/TAR.GZ expose selected-file planning and exact-approved extraction into an Elysia-owned disposable sandbox outside the workspace.
 - DatabaseForge panels for selected SQLite, DuckDB, and unknown `.db` files. Metadata is static; SQLite/DuckDB schema counts require exact approval and Elysia's private read-only snapshot. Unknown `.db` files remain metadata-only, and rows are never shown.
 - BinaryForge panels for bounded static PE/EXE/DLL, ELF/SO/O, Java CLASS, WebAssembly, and unknown BIN metadata, hashes, aggregate import/export/symbol/string counts, structural risk summaries, local artifact receipts, and audit IDs.
+- EngineeringForge panels for bounded static STL, OBJ, DAE, STEP/STP, IGES/IGS, DXF, URDF, SDF, G-code, BLEND, F3D, and F3Z reports. STL, OBJ, DXF, and G-code alone expose exact-approved sandbox-only SVG projections; heavy-worker handoff remains disabled when the required namespace sandbox is unavailable.
 - Sanitized coding audit records with request, operation, approval, relative-path, hash, mutation, shell, backup, and persistence truth.
 - Local UI sessions stored in VS Code state, with backend session IDs when available.
 - Workspace/trust status.
@@ -47,11 +48,12 @@ This extension is not Elysia core and does not require Marketplace sign-in. It c
 - No archive install, execute, import, trust, executable-open, extract-all, project merge, autonomous extraction, or link/device materialization. 7Z is list-only, RAR extraction is license-sensitive lab-only, and WHL/JAR/VSIX/AppImage/DEB are inspect-only.
 - No database rows, arbitrary SQL, query/export, attach, extension loading, external access, repair, mutation, or migration. Schema approval cannot authorize any of these.
 - No binary execution, loading, importing, installation, linking, trust, mutation, patching, signature tampering, decompilation, or exploit workflow. Deeper disassembly and sandboxed execution remain future separately gated capabilities.
+- No engineering source/project mutation, machine send, printing, CNC/serial/controller access, robot actuation, ROS/Gazebo launch, scripts/plugins, conversion/repair apply, cloud/Fusion upload, or safety certification. ParametricForge remains experimental.
 - No secrets, service-role keys, tokens, or local private data storage.
 
 ## Local-First Boundary
 
-The extension uses VS Code UI APIs, the extension host, local extension state, and the local Elysia bridge. The webview does not fetch the local API directly. It does not send source code to Marketplace or cloud services. Patch, file, document, data, visual, archive-sandbox, and command capabilities go through Elysia core planning, exact expiring one-time approval, source/plan hash checks, audit/trace truth, and backup, derived-output, or disposable-sandbox rules.
+The extension uses VS Code UI APIs, the extension host, local extension state, and the local Elysia bridge. The webview does not fetch the local API directly. It does not send source code to Marketplace or cloud services. Patch, file, document, data, visual, archive-sandbox, database-schema, engineering-projection, and command capabilities go through Elysia core planning, exact expiring one-time approval, source/plan hash checks, audit/trace truth, and backup, derived-output, private-snapshot, or disposable-sandbox rules.
 
 ## Local Bridge Endpoints
 
@@ -96,6 +98,12 @@ The current MVP uses:
 - `GET /coding/binary/types`
 - `POST /coding/binary/inspect`
 - `GET /coding/binary/artifacts/*`
+- `GET /coding/engineering/types`
+- `POST /coding/engineering/inspect`
+- `POST /coding/engineering/preview/plan`
+- `POST /coding/engineering/preview/apply`
+- `GET /coding/engineering/jobs/*`
+- `GET /coding/engineering/artifacts/*`
 - `POST /coding/patch/propose`
 - `POST /coding/patch/apply-approved`
 - `POST /coding/command/plan`
@@ -138,7 +146,7 @@ Packaging a local VSIX does not publish the extension. Public VS Code Marketplac
 
 ## Next proof / roadmap
 
-1. Run Extension Host proof for restart/reload, preview, exact patch apply, exact checks, generic CRUD, document/data/visual/archive/database/binary flows, and audit visibility against disposable workspaces.
+1. Run Extension Host proof for restart/reload, preview, exact patch apply, exact checks, generic CRUD, document/data/visual/archive/database/binary/engineering flows, and audit visibility against disposable workspaces.
 2. Replace the bounded deterministic chat bridge with a real governed general local coding reasoner and reviewed patch-generation path.
 3. Add automated extension-host/API client coverage without weakening current approval boundaries.
 4. Marketplace packaging remains a separate official add-on release task.

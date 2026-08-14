@@ -28,9 +28,6 @@ function defaultMutationFor(filePreview: FileReadPreview): { operation: string; 
   if (typeId === "json_lines") {
     return { operation: "jsonl_append_record", parameters: { record: { source: "codev", approved: true } }, label: "Plan JSONL append" };
   }
-  if (typeId === "sqlite_database") {
-    return { operation: "sqlite_insert_row", parameters: { table: "samples", row: { name: "approved_codev_row" } }, label: "Plan SQLite insert" };
-  }
   if (typeId === "geojson_vector") {
     return { operation: "geojson_update_properties", parameters: { feature_index: 0, properties: { reviewed_by: "codev" } }, label: "Plan GeoJSON property edit" };
   }

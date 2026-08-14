@@ -35,3 +35,14 @@ test("database and binary panels expose truth without dangerous action controls"
     assert.equal(panel.includes(forbidden), false, `unexpected dangerous control: ${forbidden}`);
   }
 });
+
+test("legacy data controls do not advertise SQLite row mutation", () => {
+  const dataPanel = source("webview/components/DataPreviewPanel.tsx");
+  const activeFilePanel = source("webview/components/ActiveFilePanel.tsx");
+
+  assert.doesNotMatch(dataPanel, /sqlite_insert_row/);
+  assert.doesNotMatch(dataPanel, /Plan SQLite insert/);
+  assert.match(activeFilePanel, /filePreview\.category === "database"/);
+  assert.match(activeFilePanel, /kind="database"/);
+  assert.match(activeFilePanel, /Create\/edit\/delete\/rename\/move controls are intentionally hidden/);
+});
