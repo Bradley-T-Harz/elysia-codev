@@ -1,6 +1,6 @@
 # Marketplace Manifest Notes
 
-Elysia Codev can later be represented in the Elysia Marketplace as an official developer-tool add-on.
+Elysia Codev is the official v1-finalization local Developer-profile add-on candidate. Public Marketplace installation remains unavailable.
 
 Truth fields should include:
 
@@ -8,5 +8,6 @@ Truth fields should include:
 - no Marketplace account required
 - local-only bridge
 - no source-code upload
-- no local installation claim from the website
-- install/enable actions are planned/preview-only until local Elysia implements approved add-on execution
+- reviewed local VSIX installation is explicit, dry-run-first, user-local, and receipt-backed
+- no in-app or website installation control
+- public install, publish, push, arbitrary shell, and add-on execution remain unavailable

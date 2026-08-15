@@ -5,6 +5,13 @@ Codev is local-first and must default to loopback Elysia only.
 Allowed now:
 
 - local bridge status
+- private XDG local-client authentication handled only by the extension host
+- exact Elysia repository approval/revocation in addition to VS Code workspace trust
+- fixed-argv read-only Git branch/HEAD/remote/changed-file truth
+- selected SCM metadata receipts and separately approved bounded source preview
+- VS Code native diff review and exact-approved patch apply
+- one exact read-only bounded check through Elysia's command catalog
+- bounded Developer Lab plans and one receipt-only checkpoint per explicit click
 - session creation
 - planning chat
 - metadata-only repo preview
@@ -21,10 +28,12 @@ Not allowed in Codev itself:
 
 - cloud upload
 - Marketplace account requirement
-- direct shell/process execution
+- direct or arbitrary shell/process execution
+- Git commit, push, reset, clean, stash, checkout, or other Git mutation
 - direct file mutation
 - direct archive parsing, extraction, install, execution, activation, or project merge
-- autonomous workspace scanning
+- broad/autonomous workspace scanning
+- background or unbounded goal pursuit
 - autonomous archive extraction
 - direct database parsing, SQL, row preview, export, extension loading, or mutation
 - direct binary parsing, execution, loading, import, install, linking, trust, mutation, patching, or decompilation

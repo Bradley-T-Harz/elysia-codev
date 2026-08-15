@@ -4,11 +4,13 @@ import type { WebviewState } from "../types";
 type Props = {
   coding: WebviewState["coding"];
   workspace: WebviewState["workspace"];
+  onApproveRepo: () => void;
+  onRevokeRepo: () => void;
   onInspectRepo: () => void;
   onRefresh: () => void;
 };
 
-export default function CodingBridgePanel({ coding, workspace, onInspectRepo, onRefresh }: Props) {
+export default function CodingBridgePanel({ coding, workspace, onApproveRepo, onRevokeRepo, onInspectRepo, onRefresh }: Props) {
   const bridge = coding.bridge;
   const preview = coding.repoPreview;
   const busy = Boolean(coding.busyAction);
@@ -22,6 +24,10 @@ export default function CodingBridgePanel({ coding, workspace, onInspectRepo, on
       {coding.lastError ? <p className="error-note">{coding.lastError}</p> : null}
       {coding.lastAction ? <p className="success-note">{coding.lastAction}</p> : null}
       <dl className="facts">
+        <div><dt>Official add-on</dt><dd>{coding.developerProfile?.official_addon ? "yes · v1-finalization" : "unknown"}</dd></div>
+        <div><dt>Developer profile</dt><dd>{coding.developerProfile?.profile_readiness ?? "unknown"}</dd></div>
+        <div><dt>Codev package</dt><dd>{coding.developerProfile?.codev_install.state ?? "unknown"}</dd></div>
+        <div><dt>Repo approval</dt><dd>{coding.repoApproval.status}</dd></div>
         <div><dt>Local only</dt><dd>{bridge?.boundaries.local_only ? "yes" : "unknown"}</dd></div>
         <div><dt>Marketplace</dt><dd>{bridge?.boundaries.marketplace_account_required ? "required" : "not required"}</dd></div>
         <div><dt>Patch apply</dt><dd>{bridge?.boundaries.patch_apply_allowed ? "approval-gated" : "disabled"}</dd></div>
@@ -51,8 +57,11 @@ export default function CodingBridgePanel({ coding, workspace, onInspectRepo, on
       </details>
       <div className="button-row">
         <button className="ghost" disabled={busy} onClick={onRefresh}>{coding.busyAction === "refresh" ? "Refreshing..." : "Refresh bridge"}</button>
+        <button className="ghost" disabled={busy || !workspace.vscodeTrusted || coding.repoApproval.approved} onClick={onApproveRepo}>Approve exact repo</button>
+        <button className="ghost" disabled={busy || !coding.repoApproval.approved} onClick={onRevokeRepo}>Revoke repo</button>
         <button className="ghost" disabled={busy || !workspace.canReadWorkspace} onClick={onInspectRepo}>{coding.busyAction === "repoPreview" ? "Inspecting..." : "Inspect repo preview"}</button>
       </div>
+      <p className="muted">Repository approval binds to {coding.repoApproval.workspaceLabel}{coding.repoApproval.workspaceRootHash ? ` · ${coding.repoApproval.workspaceRootHash}` : ""}. No raw root, shell, Git mutation, network, push, or publish authority is exposed.</p>
       {preview ? (
         <div className="repo-preview">
           <p className="muted">

@@ -6,7 +6,8 @@ type Props = {
   onChange: (settings: WebviewState["ideContext"]) => void;
 };
 
-const labels: Array<{ key: keyof WebviewState["ideContext"]; label: string; note: string; disabled?: boolean }> = [
+type BooleanContextKey = "workspaceMetadata" | "activeFileMetadata" | "approvedFilePreview" | "diagnosticsSummary";
+const labels: Array<{ key: BooleanContextKey; label: string; note: string; disabled?: boolean }> = [
   { key: "workspaceMetadata", label: "Workspace metadata", note: "Folder label, trust, bounded repo preview metadata." },
   { key: "activeFileMetadata", label: "Active file metadata", note: "File name, language, dirty state, local scheme." },
   { key: "approvedFilePreview", label: "Approved file previews", note: "Only after explicit Read approved preview approval." },
@@ -14,7 +15,7 @@ const labels: Array<{ key: keyof WebviewState["ideContext"]; label: string; note
 ];
 
 export default function IdeContextPanel({ context, onChange }: Props) {
-  function toggle(key: keyof WebviewState["ideContext"]) {
+  function toggle(key: BooleanContextKey) {
     onChange({ ...context, [key]: !context[key] });
   }
 
@@ -41,6 +42,7 @@ export default function IdeContextPanel({ context, onChange }: Props) {
           </label>
         ))}
       </div>
+      <p className="muted">Selected SCM metadata: {context.selectedChangedFiles.length} file(s). File contents are never implied by this selection.</p>
     </section>
   );
 }

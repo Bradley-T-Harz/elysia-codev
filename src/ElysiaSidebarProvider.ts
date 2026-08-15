@@ -5,12 +5,24 @@ import { ElysiaApiClient } from "./ElysiaApiClient";
 import { FileDiffProvider } from "./FileDiffProvider";
 import { SessionStore } from "./SessionStore";
 import { WorkspaceTrust } from "./WorkspaceTrust";
-import type { ApprovalMode, CodingArchiveOperationState, CodingBinaryOperationState, CodingBridgeStatus, CodingCommandRunResult, CodingDataOperationState, CodingDatabaseOperationState, CodingDocumentOperationState, CodingEngineeringOperationState, CodingFileOperationState, CodingMediaOperationState, CodingOperationAudit, CodingPatchApplyResult, CodingPatchProposal, CodingVisualOperationState, ElysiaMessage, ExtensionToWebviewMessage, FileReadPreview, GoalWorkflowState, IdeContextSettings, MediaWorkerTruth, PatchPreview, RepoInspectPreview, WebviewState, WebviewToExtensionMessage, WorkModeState } from "./types";
+import type { ApprovalMode, CodingArchiveOperationState, CodingBinaryOperationState, CodingBridgeStatus, CodingCommandRunResult, CodingDataOperationState, CodingDatabaseOperationState, CodingDocumentOperationState, CodingEngineeringOperationState, CodingFileOperationState, CodingMediaOperationState, CodingOperationAudit, CodingPatchApplyResult, CodingPatchProposal, CodingVisualOperationState, CommandCatalog, DeveloperProfileStatus, ElysiaConnectionStatus, ElysiaMessage, ExtensionToWebviewMessage, FileReadPreview, GoalWorkflowState, IdeContextSettings, MediaWorkerTruth, PatchPreview, RepoApprovalStatus, RepoInspectPreview, WebviewState, WebviewToExtensionMessage, WorkModeState } from "./types";
+
+const UNKNOWN_REPO_APPROVAL: RepoApprovalStatus = {
+  status: "unknown",
+  workspaceLabel: "No workspace",
+  approved: false,
+  revoked: false,
+  rawPathExposed: false
+};
 
 export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   private view: vscode.WebviewView | undefined;
   private activeSessionId: string | null = null;
   private codingBridge: CodingBridgeStatus | null = null;
+  private connectionStatus: ElysiaConnectionStatus | null = null;
+  private developerProfile: DeveloperProfileStatus | null = null;
+  private commandCatalog: CommandCatalog | null = null;
+  private repoApproval: RepoApprovalStatus = UNKNOWN_REPO_APPROVAL;
   private mediaWorkerTruth: MediaWorkerTruth | null = null;
   private repoPreviews = new Map<string, RepoInspectPreview>();
   private filePreviews = new Map<string, FileReadPreview>();
@@ -34,6 +46,9 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   private codingError: string | undefined;
   private busyAction: WebviewState["coding"]["busyAction"];
   private lastAction: string | undefined;
+  private lastRequestId: string | undefined;
+  private contextReceipt: WebviewState["coding"]["contextReceipt"];
+  private goalTaskToken: string | undefined;
   private workMode: WorkModeState = {
     mode: "local",
     forgeConnected: false,
@@ -49,7 +64,8 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     workspaceMetadata: true,
     activeFileMetadata: true,
     approvedFilePreview: true,
-    diagnosticsSummary: false
+    diagnosticsSummary: false,
+    selectedChangedFiles: []
   };
   private goalWorkflow: GoalWorkflowState = {
     status: "idle",
@@ -58,7 +74,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     fullOperatorEnabled: false,
     notes: [
       "Plan mode is available through chat and the approval selector.",
-      "Pursue Goal and bounded task loops are visible placeholders until Elysia core policy enables them.",
+      "Developer Lab uses one explicitly approved, receipt-backed checkpoint at a time.",
       "Full Operator Mode is not enabled."
     ]
   };
@@ -70,7 +86,11 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     private readonly approvals: ApprovalController,
     private readonly workspaceTrust: WorkspaceTrust,
     private readonly diffs: FileDiffProvider
-  ) {}
+  ) {
+    this.ideContext = this.sessions.getContextPreferences();
+    this.activeSessionId = this.sessions.getActiveSessionId();
+    this.lastRequestId = this.sessions.getLastReceipt().requestId;
+  }
 
   public resolveWebviewView(webviewView: vscode.WebviewView): void {
     this.view = webviewView;
@@ -98,7 +118,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     this.busyAction = "newSession";
     this.lastAction = "Creating session...";
     await this.postState();
-    const workspace = this.workspaceTrust.getStatus();
+    const workspace = this.workspaceTrust.getStatus(this.repoApproval);
     const workspaceRoot = this.getWorkspaceRoot();
     let backendSessionId: string | undefined;
     try {
@@ -115,6 +135,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     }
     const session = await this.sessions.newSession(workspace.workspaceLabel, this.approvals.getMode(), backendSessionId);
     this.activeSessionId = session.id;
+    await this.sessions.setActiveSessionId(session.id);
     this.busyAction = undefined;
     await this.postState();
   }
@@ -125,6 +146,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     await this.postState();
     await this.sessions.clear();
     this.activeSessionId = null;
+    this.ideContext = this.sessions.getContextPreferences();
     this.repoPreviews.clear();
     this.filePreviews.clear();
     this.patchProposals.clear();
@@ -151,6 +173,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
   public async selectSession(sessionId: string): Promise<void> {
     if (!this.sessions.getSessions().some((session) => session.id === sessionId)) return;
     this.activeSessionId = sessionId;
+    await this.sessions.setActiveSessionId(sessionId);
     this.lastAction = "Selected session.";
     await this.postState();
   }
@@ -180,6 +203,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     const sessions = this.sessions.getSessions();
     if (this.activeSessionId === sessionId) {
       this.activeSessionId = sessions[0]?.id ?? null;
+      await this.sessions.setActiveSessionId(this.activeSessionId);
     }
     this.lastAction = "Local session deleted.";
     this.busyAction = undefined;
@@ -220,9 +244,29 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
       return;
     }
     if (message.type === "setIdeContext") {
-      this.ideContext = message.settings;
+      this.ideContext = { ...message.settings, selectedChangedFiles: this.ideContext.selectedChangedFiles };
+      await this.sessions.setContextPreferences(this.ideContext);
       this.lastAction = "IDE context settings updated.";
       await this.postState();
+      return;
+    }
+    if (message.type === "toggleChangedFileContext") {
+      const selected = new Set(this.ideContext.selectedChangedFiles);
+      selected.has(message.path) ? selected.delete(message.path) : selected.add(message.path);
+      const validChanged = new Set(this.diffs.getChangedFiles().map((item) => item.path));
+      this.ideContext = { ...this.ideContext, selectedChangedFiles: [...selected].filter((item) => validChanged.has(item)).slice(0, 20) };
+      await this.sessions.setContextPreferences(this.ideContext);
+      this.diffs.setGitPreview(await this.safeGitPreview(), this.ideContext.selectedChangedFiles);
+      this.lastAction = "Selected SCM context updated; source contents remain excluded.";
+      await this.postState();
+      return;
+    }
+    if (message.type === "approveWorkspaceRepo") {
+      await this.approveWorkspaceRepo();
+      return;
+    }
+    if (message.type === "revokeWorkspaceRepo") {
+      await this.revokeWorkspaceRepo();
       return;
     }
     if (message.type === "connectDeveloperForge") {
@@ -249,17 +293,20 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
       await this.postState();
       return;
     }
+    if (message.type === "planGoal") {
+      await this.planGoal(message.objective, message.maxSteps, message.maxMinutes);
+      return;
+    }
+    if (message.type === "approveGoal") {
+      await this.approveGoal();
+      return;
+    }
     if (message.type === "pursueGoal") {
-      this.goalWorkflow = { ...this.goalWorkflow, status: "preview_only", currentGoal: "Pursue Goal is not enabled yet." };
-      this.codingError = "Pursue Goal requires a future bounded task-loop contract. No autonomous work started.";
-      this.lastAction = "Pursue Goal blocked.";
-      await this.postState();
+      await this.runNextGoalCheckpoint();
       return;
     }
     if (message.type === "stopGoal") {
-      this.goalWorkflow = { ...this.goalWorkflow, status: "stopped", currentGoal: "No autonomous task was running; stop recorded locally." };
-      this.lastAction = "Goal workflow stopped.";
-      await this.postState();
+      await this.stopGoal();
       return;
     }
     if (message.type === "reviewPatchProposal") {
@@ -451,9 +498,15 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
         message: text.trim(),
         workspace_label: session?.workspaceLabel,
         approval_mode: this.approvals.getMode(),
-        approved_file_context: this.ideContext.approvedFilePreview ? this.toApprovedFileContext(approvedFilePreview) : undefined
+        approved_file_context: this.ideContext.approvedFilePreview ? this.toApprovedFileContext(approvedFilePreview) : undefined,
+        selected_context: this.diffs.getChangedFiles()
+          .filter((item) => this.ideContext.selectedChangedFiles.includes(item.path))
+          .map((item) => ({ relative_path: item.path, context_kind: "scm_metadata" as const, scm_status: item.state, staged: item.staged }))
       });
       reply = chatReply.assistantText;
+      this.lastRequestId = chatReply.requestId;
+      this.contextReceipt = chatReply.contextReceipt;
+      await this.sessions.setLastReceipt({ requestId: chatReply.requestId });
       if (chatReply.patchProposal) {
         this.patchProposals.set(sessionId, chatReply.patchProposal);
       }
@@ -521,7 +574,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     }
     const activeSessionId = this.activeSessionId;
     if (!activeSessionId) return;
-    const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
+    const workspaceRoot = this.getWorkspaceRoot();
     const activeFilePath = this.diffs.getActiveFilePath();
     if (!workspaceRoot || !activeFilePath) {
       this.codingError = "No file-backed editor active. Open a file such as fibonacci_bug.py first.";
@@ -592,7 +645,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
 
   private async planFileOperation(message: Extract<WebviewToExtensionMessage, { type: "planFileOperation" }>): Promise<void> {
     const sessionId = this.activeSessionId;
-    const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
+    const workspaceRoot = this.getWorkspaceRoot();
     if (!this.requireMutationMode("File operation planning") || !sessionId || !workspaceRoot) {
       if (!sessionId || !workspaceRoot) this.codingError = "Create a Codev session in a trusted approved workspace first.";
       await this.postState();
@@ -639,7 +692,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
 
   private async applyApprovedFileOperation(): Promise<void> {
     const sessionId = this.activeSessionId;
-    const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
+    const workspaceRoot = this.getWorkspaceRoot();
     if (!this.requireMutationMode("File operation") || !sessionId || !workspaceRoot) {
       if (!sessionId || !workspaceRoot) this.codingError = "Create a Codev session in a trusted approved workspace first.";
       await this.postState();
@@ -722,7 +775,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
 
   private getActiveDocumentContext(): { sessionId: string; workspaceRoot: string; filePath: string; backendSessionId?: string } | { error: string } {
     const sessionId = this.activeSessionId;
-    const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
+    const workspaceRoot = this.getWorkspaceRoot();
     const filePath = this.diffs.getActiveFilePath();
     if (!sessionId) return { error: "Create or select a Codev session first." };
     if (!workspaceRoot || !filePath) return { error: "Open a file-backed document in the workspace first." };
@@ -1089,7 +1142,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
 
   private getActiveDataContext(): { sessionId: string; workspaceRoot: string; filePath: string; backendSessionId?: string } | { error: string } {
     const sessionId = this.activeSessionId;
-    const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
+    const workspaceRoot = this.getWorkspaceRoot();
     const filePath = this.diffs.getActiveFilePath();
     if (!sessionId) return { error: "Create or select a Codev session first." };
     if (!workspaceRoot || !filePath) return { error: "Open a file-backed data file in the workspace first." };
@@ -1103,7 +1156,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
 
   private getActiveVisualContext(): { sessionId: string; workspaceRoot: string; filePath: string; backendSessionId?: string } | { error: string } {
     const sessionId = this.activeSessionId;
-    const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
+    const workspaceRoot = this.getWorkspaceRoot();
     const filePath = this.diffs.getActiveFilePath();
     if (!sessionId) return { error: "Create or select a Codev session first." };
     if (!workspaceRoot || !filePath) return { error: "Open a file-backed visual file in the workspace first." };
@@ -1117,7 +1170,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
 
   private getActiveMediaContext(): { sessionId: string; workspaceRoot: string; filePath: string; backendSessionId?: string } | { error: string } {
     const sessionId = this.activeSessionId;
-    const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
+    const workspaceRoot = this.getWorkspaceRoot();
     const filePath = this.diffs.getActiveFilePath();
     if (!sessionId) return { error: "Create or select a Codev session first." };
     if (!workspaceRoot || !filePath) return { error: "Open a file-backed media file in the workspace first." };
@@ -1131,7 +1184,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
 
   private getActiveArchiveContext(): { sessionId: string; workspaceRoot: string; filePath: string; backendSessionId?: string } | { error: string } {
     const sessionId = this.activeSessionId;
-    const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
+    const workspaceRoot = this.getWorkspaceRoot();
     const filePath = this.diffs.getActiveFilePath();
     if (!sessionId) return { error: "Create or select a Codev session first." };
     if (!workspaceRoot || !filePath) return { error: "Open a file-backed archive/container in the workspace first." };
@@ -1145,7 +1198,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
 
   private getActiveDatabaseContext(): { sessionId: string; workspaceRoot: string; filePath: string; backendSessionId?: string } | { error: string } {
     const sessionId = this.activeSessionId;
-    const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
+    const workspaceRoot = this.getWorkspaceRoot();
     const filePath = this.diffs.getActiveFilePath();
     if (!sessionId) return { error: "Create or select a Codev session first." };
     if (!workspaceRoot || !filePath) return { error: "Open a file-backed database in the workspace first." };
@@ -1163,7 +1216,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
 
   private getActiveBinaryContext(): { sessionId: string; workspaceRoot: string; filePath: string; backendSessionId?: string } | { error: string } {
     const sessionId = this.activeSessionId;
-    const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
+    const workspaceRoot = this.getWorkspaceRoot();
     const filePath = this.diffs.getActiveFilePath();
     if (!sessionId) return { error: "Create or select a Codev session first." };
     if (!workspaceRoot || !filePath) return { error: "Open a file-backed binary in the workspace first." };
@@ -1181,7 +1234,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
 
   private getActiveEngineeringContext(): { sessionId: string; workspaceRoot: string; filePath: string; backendSessionId?: string } | { error: string } {
     const sessionId = this.activeSessionId;
-    const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
+    const workspaceRoot = this.getWorkspaceRoot();
     const filePath = this.diffs.getActiveFilePath();
     if (!sessionId) return { error: "Create or select a Codev session first." };
     if (!workspaceRoot || !filePath) return { error: "Open a file-backed engineering file in the workspace first." };
@@ -2341,7 +2394,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     }
     const proposal = this.patchProposals.get(sessionId);
     const preview = this.filePreviews.get(sessionId);
-    const workspaceRoot = this.diffs.getActiveFileWorkspaceRoot() ?? this.getWorkspaceRoot();
+    const workspaceRoot = this.getWorkspaceRoot();
     if (!proposal || !preview || !workspaceRoot || !proposal.diff_preview || !preview.content_hash) {
       this.codingError = "Approve a file preview and request a patch proposal before applying.";
       await this.postState();
@@ -2426,17 +2479,15 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     this.lastAction = "Running approved check...";
     await this.postState();
     try {
-      const allowedCommands: Record<string, string[]> = {
-        git_diff_check: ["git", "diff", "--check"]
-      };
-      const command = allowedCommands[commandId];
-      if (!command) throw new Error(`Codev does not recognize the allowlisted check id "${commandId}".`);
+      const catalogEntry = this.commandCatalog?.entries.find((entry) => entry.command_id === commandId);
+      if (!catalogEntry) throw new Error(`Elysia's bounded catalog does not contain "${commandId}".`);
+      if (!catalogEntry.execution_enabled) throw new Error(catalogEntry.disabled_reason ?? `Check "${commandId}" is profile- or worker-gated.`);
       const session = this.sessions.getSessions().find((item) => item.id === sessionId);
       const plan = await this.api.planCommand({
         session_id: session?.backendSessionId,
         approval_mode: this.approvals.getMode(),
         workspace_root: workspaceRoot,
-        command,
+        command: catalogEntry.command,
         purpose: `Codev approved check: ${commandId}`
       });
       if (!plan.execution_enabled || !plan.plan_hash || plan.command_id !== commandId) {
@@ -2460,6 +2511,8 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
         operator_approved: true
       });
       this.commandResults.set(sessionId, result);
+      this.lastRequestId = result.request_id;
+      await this.sessions.setLastReceipt({ requestId: result.request_id, operationId: result.operation_id });
       this.codingError = result.status === "completed" ? undefined : result.blocked_reason ?? result.status;
       this.lastAction = `Approved check ${result.status}.`;
       await this.refreshOperationAudits();
@@ -2471,12 +2524,232 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     await this.postState();
   }
 
+  public async approveWorkspaceRepo(): Promise<void> {
+    const workspaceRoot = this.getCandidateWorkspaceRoot();
+    if (!workspaceRoot || !vscode.workspace.isTrusted) {
+      this.codingError = "Open exactly one trusted VS Code workspace before approving repository access.";
+      await this.postState();
+      return;
+    }
+    this.busyAction = "repoApproval";
+    this.lastAction = "Planning exact repository approval...";
+    await this.postState();
+    try {
+      const plan = await this.api.planRepoApproval(workspaceRoot);
+      if (plan.status !== "approval_required" || !plan.plan_id || !plan.plan_hash) throw new Error(plan.blocked_reason ?? "Repository approval plan was not issued.");
+      const answer = await vscode.window.showWarningMessage(
+        `Approve exact repository "${plan.workspace_label}" (${plan.workspace_root_hash}) for governed Codev operations? This grants no shell, Git mutation, package, network, push, or publish authority.`,
+        { modal: true },
+        "Approve exact repository"
+      );
+      if (answer !== "Approve exact repository") {
+        this.lastAction = "Repository approval cancelled.";
+      } else {
+        const result = await this.api.applyRepoApproval(plan.plan_id, plan.plan_hash);
+        if (!result.approved) throw new Error(result.blocked_reason ?? `Repository approval ${result.status}.`);
+        this.repoApproval = await this.api.getRepoApprovalStatus(workspaceRoot);
+        this.lastRequestId = this.api.lastRequestId;
+        await this.sessions.setLastReceipt({ requestId: this.lastRequestId, operationId: result.operation_id });
+        this.diffs.setGitPreview(await this.safeGitPreview(), this.ideContext.selectedChangedFiles);
+        this.codingError = undefined;
+        this.lastAction = "Exact repository approved; each mutation and check still requires separate approval.";
+      }
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Repository approval failed closed.";
+      this.lastAction = "Repository approval failed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  public async revokeWorkspaceRepo(): Promise<void> {
+    const workspaceRoot = this.getCandidateWorkspaceRoot();
+    if (!workspaceRoot || !this.repoApproval.approved) {
+      this.codingError = "No approved repository is active.";
+      await this.postState();
+      return;
+    }
+    const answer = await vscode.window.showWarningMessage(
+      `Revoke Codev authority for "${this.repoApproval.workspaceLabel}"? Runtime repo access stops immediately.`,
+      { modal: true },
+      "Revoke repository approval"
+    );
+    if (answer !== "Revoke repository approval") return;
+    this.busyAction = "repoRevoke";
+    await this.postState();
+    try {
+      const result = await this.api.revokeRepoApproval(workspaceRoot);
+      this.repoApproval = { ...UNKNOWN_REPO_APPROVAL, status: "revoked", workspaceLabel: result.workspace_label ?? this.repoApproval.workspaceLabel, workspaceRootHash: result.workspace_root_hash, revoked: true };
+      this.diffs.setGitPreview(null, []);
+      this.ideContext = { ...this.ideContext, selectedChangedFiles: [] };
+      this.goalTaskToken = undefined;
+      this.lastRequestId = this.api.lastRequestId;
+      await this.sessions.setContextPreferences(this.ideContext);
+      await this.sessions.setLastReceipt({ requestId: this.lastRequestId, operationId: result.operation_id });
+      this.codingError = undefined;
+      this.lastAction = "Repository approval revoked; repo, patch, command, and task authority is off.";
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Repository revocation failed closed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async planGoal(objective: string, maxSteps: number, maxMinutes: number): Promise<void> {
+    const workspaceRoot = this.getWorkspaceRoot();
+    if (!workspaceRoot || !objective.trim()) {
+      this.codingError = "A trusted, approved repository and a bounded objective are required.";
+      await this.postState();
+      return;
+    }
+    this.busyAction = "goalPlan";
+    await this.postState();
+    try {
+      const session = this.sessions.getSessions().find((item) => item.id === this.activeSessionId);
+      const plan = await this.api.planCodingTask({
+        session_id: session?.backendSessionId,
+        objective: objective.trim(),
+        workspace_label: this.repoApproval.workspaceLabel,
+        workspace_root: workspaceRoot,
+        allowed_files: this.ideContext.selectedChangedFiles,
+        max_steps: Math.max(1, Math.min(8, maxSteps)),
+        max_minutes: Math.max(1, Math.min(30, maxMinutes))
+      });
+      this.goalTaskToken = undefined;
+      this.goalWorkflow = {
+        status: plan.status === "approval_required" ? "approval_required" : "blocked",
+        currentGoal: plan.objective,
+        taskId: plan.task_id,
+        taskHash: plan.task_hash,
+        currentStep: plan.current_step,
+        maxSteps: plan.max_steps,
+        maxMinutes: plan.max_minutes,
+        autonomyEnabled: false,
+        pursueGoalEnabled: false,
+        fullOperatorEnabled: false,
+        notes: [...plan.plan_steps, ...plan.warnings]
+      };
+      this.lastRequestId = this.api.lastRequestId;
+      this.codingError = plan.blocked_reason;
+      this.lastAction = `Developer Lab plan ${plan.status}; nothing executed.`;
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Developer Lab plan failed closed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async approveGoal(): Promise<void> {
+    if (!this.goalWorkflow.taskId || !this.goalWorkflow.taskHash) {
+      this.codingError = "Create a bounded Developer Lab plan first.";
+      await this.postState();
+      return;
+    }
+    const answer = await vscode.window.showWarningMessage(
+      `Approve the bounded plan for up to ${this.goalWorkflow.maxSteps} manually requested checkpoints and ${this.goalWorkflow.maxMinutes} minutes? No checkpoint executes tools, patches, commands, or background work.`,
+      { modal: true },
+      "Approve bounded plan"
+    );
+    if (answer !== "Approve bounded plan") return;
+    this.busyAction = "goalApprove";
+    await this.postState();
+    try {
+      const approval = await this.api.approveCodingTask(this.goalWorkflow.taskId, this.goalWorkflow.taskHash);
+      if (approval.status !== "approved_checkpoint_only" || !approval.task_token) throw new Error(approval.blocked_reason ?? "Bounded task approval was not issued.");
+      this.goalTaskToken = approval.task_token;
+      this.goalWorkflow = { ...this.goalWorkflow, status: "approved_checkpoint_only", pursueGoalEnabled: true, notes: approval.warnings };
+      this.lastRequestId = this.api.lastRequestId;
+      this.lastAction = "Bounded plan approved; use Run next checkpoint for one receipt-only step.";
+      this.codingError = undefined;
+    } catch (error) {
+      this.goalTaskToken = undefined;
+      this.codingError = error instanceof Error ? error.message : "Bounded task approval failed closed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async runNextGoalCheckpoint(): Promise<void> {
+    if (!this.goalWorkflow.taskId || !this.goalTaskToken || !this.goalWorkflow.pursueGoalEnabled) {
+      this.codingError = "Approve a bounded Developer Lab plan before requesting one checkpoint.";
+      await this.postState();
+      return;
+    }
+    const answer = await vscode.window.showWarningMessage("Run exactly one receipt-only Developer Lab checkpoint? No patch, command, shell, or background continuation will run.", { modal: true }, "Run one checkpoint");
+    if (answer !== "Run one checkpoint") return;
+    this.busyAction = "goalNext";
+    await this.postState();
+    try {
+      const checkpoint = await this.api.runNextCodingTaskCheckpoint(this.goalWorkflow.taskId, this.goalTaskToken);
+      const complete = checkpoint.status === "complete" || checkpoint.current_step >= checkpoint.max_steps;
+      this.goalWorkflow = {
+        ...this.goalWorkflow,
+        status: complete ? "complete" : checkpoint.status === "checkpoint_ready" ? "checkpoint_ready" : "blocked",
+        currentStep: checkpoint.current_step,
+        receiptId: checkpoint.receipt_id,
+        nextStepLabel: checkpoint.step_label,
+        pursueGoalEnabled: !complete && checkpoint.status === "checkpoint_ready",
+        notes: checkpoint.warnings
+      };
+      this.lastRequestId = this.api.lastRequestId;
+      await this.sessions.setLastReceipt({ requestId: this.lastRequestId, operationId: checkpoint.receipt_id });
+      this.codingError = checkpoint.blocked_reason;
+      this.lastAction = checkpoint.status === "checkpoint_ready" ? "One checkpoint recorded; no tool or mutation ran." : `Developer Lab task ${checkpoint.status}.`;
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Developer Lab checkpoint failed closed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
+  private async stopGoal(): Promise<void> {
+    const taskId = this.goalWorkflow.taskId;
+    this.busyAction = "goalStop";
+    await this.postState();
+    try {
+      const stopped = taskId ? await this.api.stopCodingTask(taskId) : null;
+      this.goalTaskToken = undefined;
+      this.goalWorkflow = { ...this.goalWorkflow, status: "stopped", pursueGoalEnabled: false, receiptId: stopped?.receipt_id, notes: stopped?.warnings ?? ["No task was active; local stop state recorded."] };
+      this.lastRequestId = this.api.lastRequestId;
+      this.codingError = undefined;
+      this.lastAction = "Developer Lab task stopped and token revoked; no background continuation exists.";
+    } catch (error) {
+      this.goalTaskToken = undefined;
+      this.codingError = error instanceof Error ? error.message : "Task stop failed closed.";
+    }
+    this.busyAction = undefined;
+    await this.postState();
+  }
+
   private async refreshCodingStatus(): Promise<void> {
     this.busyAction = "refresh";
     this.lastAction = "Refreshing coding bridge...";
     await this.postState();
     try {
-      this.codingBridge = await this.api.getCodingStatus();
+      [this.connectionStatus, this.codingBridge, this.developerProfile, this.commandCatalog] = await Promise.all([
+        this.api.getStatus(),
+        this.api.getCodingStatus(),
+        this.api.getDeveloperProfile(),
+        this.api.getCommandCatalog()
+      ]);
+      const candidateRoot = this.getCandidateWorkspaceRoot();
+      if (candidateRoot && vscode.workspace.isTrusted) {
+        this.repoApproval = await this.api.getRepoApprovalStatus(candidateRoot);
+      } else {
+        this.repoApproval = {
+          ...UNKNOWN_REPO_APPROVAL,
+          status: candidateRoot ? "blocked" : "unknown",
+          workspaceLabel: vscode.workspace.workspaceFolders?.[0]?.name ?? "No workspace",
+          blockedReason: candidateRoot ? "vscode_workspace_untrusted" : "no_workspace"
+        };
+      }
+      const gitPreview = await this.safeGitPreview();
+      this.ideContext = {
+        ...this.ideContext,
+        selectedChangedFiles: this.ideContext.selectedChangedFiles.filter((item) => gitPreview?.changed_files.some((file) => file.relative_path === item))
+      };
+      await this.sessions.setContextPreferences(this.ideContext);
+      this.diffs.setGitPreview(gitPreview, this.ideContext.selectedChangedFiles);
       try {
         this.mediaWorkerTruth = await this.api.getMediaWorkerTruth();
       } catch {
@@ -2484,7 +2757,8 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
       }
       await this.refreshOperationAudits();
       this.codingError = undefined;
-      this.lastAction = "Coding bridge refreshed.";
+      this.lastRequestId = this.api.lastRequestId;
+      this.lastAction = "Coding bridge, Developer profile, repository approval, and SCM truth refreshed.";
     } catch (error) {
       this.codingError = error instanceof Error ? error.message : "Local Elysia coding bridge unavailable.";
       this.lastAction = "Coding bridge refresh failed.";
@@ -2539,14 +2813,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     if (!this.activeSessionId && sessions[0]) {
       this.activeSessionId = sessions[0].id;
     }
-    const connection = this.codingBridge
-      ? {
-          state: "connected" as const,
-          apiUrl: this.api.apiUrl.replace(/\/$/, ""),
-          summary: `Local Elysia coding bridge reachable (${this.codingBridge.contract_version}).`,
-          checkedAt: new Date().toISOString()
-        }
-      : await this.api.getStatus();
+    const connection = this.connectionStatus ?? await this.api.getStatus();
     if (!this.codingBridge && connection.state === "connected") {
       try {
         this.codingBridge = await this.api.getCodingStatus();
@@ -2559,7 +2826,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     const activeFilePreview = this.activeSessionId ? this.filePreviews.get(this.activeSessionId) ?? null : null;
     return {
       connection,
-      workspace: this.workspaceTrust.getStatus(),
+      workspace: this.workspaceTrust.getStatus(this.repoApproval),
       activeFile: this.diffs.getActiveFile(),
       sessions,
       activeSessionId: this.activeSessionId,
@@ -2574,6 +2841,9 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
       patchPreview: this.getPatchPreviewForSession(this.activeSessionId),
       coding: {
         bridge: this.codingBridge,
+        developerProfile: this.developerProfile,
+        commandCatalog: this.commandCatalog,
+        repoApproval: this.repoApproval,
         repoPreview: activePreview,
         filePreview: activeFilePreview,
         patchApplyResult: this.activeSessionId ? this.patchApplyResults.get(this.activeSessionId) ?? null : null,
@@ -2591,14 +2861,30 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
         operationAudits: this.operationAudits,
         lastError: this.codingError,
         busyAction: this.busyAction,
-        lastAction: this.lastAction
+        lastAction: this.lastAction,
+        lastRequestId: this.lastRequestId,
+        contextReceipt: this.contextReceipt
       }
     };
   }
 
+  private getCandidateWorkspaceRoot(): string | undefined {
+    const folders = vscode.workspace.workspaceFolders;
+    return folders?.length === 1 && folders[0].uri.scheme === "file" ? folders[0].uri.fsPath : undefined;
+  }
+
   private getWorkspaceRoot(): string | undefined {
-    if (!vscode.workspace.isTrusted) return undefined;
-    return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    return this.workspaceTrust.getStatus(this.repoApproval).canReadWorkspace ? this.getCandidateWorkspaceRoot() : undefined;
+  }
+
+  private async safeGitPreview() {
+    const workspaceRoot = this.getWorkspaceRoot();
+    if (!workspaceRoot) return null;
+    try {
+      return await this.api.getGitPreview(workspaceRoot);
+    } catch {
+      return null;
+    }
   }
 
   private looksLikePatchOrFileChangeRequest(text: string): boolean {
@@ -2649,14 +2935,16 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
       await this.postState();
       return;
     }
-    const files = proposal.allowed_target_files.length ? proposal.allowed_target_files : proposal.target_files;
-    await vscode.window.showInformationMessage(
-      `Patch proposal: ${proposal.change_summary}\nFiles: ${files.join(", ") || "none"}\nPatch hash: ${proposal.patch_hash}\nApply allowed by proposal: ${proposal.apply_allowed ? "yes, with approval" : "no"}`,
-      { modal: true },
-      "OK"
-    );
-    this.lastAction = "Patch proposal reviewed.";
-    this.codingError = undefined;
+    const preview = this.activeSessionId ? this.filePreviews.get(this.activeSessionId) : undefined;
+    try {
+      if (!preview || !proposal.diff_preview) throw new Error("Approve a complete selected-file preview before native diff review.");
+      await this.diffs.showNativePatchDiff(preview, proposal.diff_preview, proposal.patch_id ?? proposal.patch_hash);
+      this.lastAction = `Native diff opened for exact patch ${proposal.patch_hash}.`;
+      this.codingError = undefined;
+    } catch (error) {
+      this.codingError = error instanceof Error ? error.message : "Native patch review unavailable.";
+      this.lastAction = "Native diff review failed closed.";
+    }
     await this.postState();
   }
 

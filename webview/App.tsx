@@ -22,7 +22,7 @@ type AppProps = { vscode: VsCodeApi };
 
 const emptyState: WebviewState = {
   connection: { state: "unknown", apiUrl: "http://127.0.0.1:8000", summary: "Waiting for extension host." },
-  workspace: { trustLevel: "no_workspace", workspaceLabel: "No workspace", workspaceFolders: [], canReadWorkspace: false, canProposePatch: false, canApplyPatch: false, canRunCommand: false },
+  workspace: { trustLevel: "no_workspace", workspaceLabel: "No workspace", workspaceFolders: [], vscodeTrusted: false, trustMode: "vscode_workspace_trust", repoApprovalStatus: "unknown", repoApproved: false, canReadWorkspace: false, canProposePatch: false, canApplyPatch: false, canRunCommand: false },
   activeFile: null,
   sessions: [],
   activeSessionId: null,
@@ -47,7 +47,8 @@ const emptyState: WebviewState = {
     workspaceMetadata: true,
     activeFileMetadata: true,
     approvedFilePreview: true,
-    diagnosticsSummary: false
+    diagnosticsSummary: false,
+    selectedChangedFiles: []
   },
   goalWorkflow: {
     status: "idle",
@@ -56,10 +57,10 @@ const emptyState: WebviewState = {
     fullOperatorEnabled: false,
     notes: ["Pursue Goal and Full Operator Mode are not enabled."]
   },
-  git: { branch: "Not inspected", dirtyState: "unknown", changedCount: 0, summary: "No repo inspected." },
+  git: { branch: "Not inspected", dirtyState: "unknown", changedCount: 0, stagedCount: 0, unstagedCount: 0, untrackedCount: 0, repoDetected: false, approvedRepo: false, status: "not_inspected", summary: "No approved repo inspected." },
   changedFiles: [],
   patchPreview: { state: "empty", summary: "No patch proposed.", files: [], canApply: false },
-  coding: { bridge: null, repoPreview: null, filePreview: null, patchApplyResult: null, commandResult: null, documentOperation: null, dataOperation: null, visualOperation: null, mediaOperation: null, archiveOperation: null, databaseOperation: null, binaryOperation: null, engineeringOperation: null, mediaWorkerTruth: null, fileOperation: null, operationAudits: [] }
+  coding: { bridge: null, developerProfile: null, commandCatalog: null, repoApproval: { status: "unknown", workspaceLabel: "No workspace", approved: false, revoked: false, rawPathExposed: false }, repoPreview: null, filePreview: null, patchApplyResult: null, commandResult: null, documentOperation: null, dataOperation: null, visualOperation: null, mediaOperation: null, archiveOperation: null, databaseOperation: null, binaryOperation: null, engineeringOperation: null, mediaWorkerTruth: null, fileOperation: null, operationAudits: [] }
 };
 
 export default function App({ vscode }: AppProps) {
@@ -132,11 +133,13 @@ export default function App({ vscode }: AppProps) {
           <GoalWorkflowPanel
             goal={state.goalWorkflow}
             onPlanMode={() => vscode.postMessage({ type: "startPlanMode" })}
+            onPlanGoal={(objective, maxSteps, maxMinutes) => vscode.postMessage({ type: "planGoal", objective, maxSteps, maxMinutes })}
+            onApproveGoal={() => vscode.postMessage({ type: "approveGoal" })}
             onPursueGoal={() => vscode.postMessage({ type: "pursueGoal" })}
             onStop={() => vscode.postMessage({ type: "stopGoal" })}
             onFullOperator={() => vscode.postMessage({ type: "requestFullOperatorMode" })}
           />
-          <CodingBridgePanel coding={state.coding} workspace={state.workspace} onInspectRepo={() => vscode.postMessage({ type: "inspectRepoPreview" })} onRefresh={() => vscode.postMessage({ type: "refreshStatus" })} />
+          <CodingBridgePanel coding={state.coding} workspace={state.workspace} onApproveRepo={() => vscode.postMessage({ type: "approveWorkspaceRepo" })} onRevokeRepo={() => vscode.postMessage({ type: "revokeWorkspaceRepo" })} onInspectRepo={() => vscode.postMessage({ type: "inspectRepoPreview" })} onRefresh={() => vscode.postMessage({ type: "refreshStatus" })} />
           <ActiveFilePanel
             activeFile={state.activeFile}
             filePreview={state.coding.filePreview}
@@ -189,7 +192,7 @@ export default function App({ vscode }: AppProps) {
             onApplyEngineeringPreview={() => vscode.postMessage({ type: "applyApprovedEngineeringPreview" })}
           />
           <GitStatusPanel git={state.git} />
-          <ChangedFilesPanel files={state.changedFiles} />
+          <ChangedFilesPanel files={state.changedFiles} onToggle={(path) => vscode.postMessage({ type: "toggleChangedFileContext", path })} />
           <ReviewWorkflowPanel
             preview={state.patchPreview}
             applyResult={state.coding.patchApplyResult}
@@ -207,13 +210,14 @@ export default function App({ vscode }: AppProps) {
           />
           <TestOutputPanel
             result={state.coding.commandResult}
+            catalog={state.coding.commandCatalog}
             capabilities={state.approvalModeCapabilities}
             busyAction={state.coding.busyAction}
             onRun={(commandId) => vscode.postMessage({ type: "runApprovedCheck", commandId })}
           />
           <OperationAuditPanel records={state.coding.operationAudits} />
-          <ToolsPanel bridge={state.coding.bridge} />
-          <SettingsPanel connection={state.connection} workspace={state.workspace} />
+          <ToolsPanel bridge={state.coding.bridge} catalog={state.coding.commandCatalog} />
+          <SettingsPanel connection={state.connection} workspace={state.workspace} developerProfile={state.coding.developerProfile} lastRequestId={state.coding.lastRequestId} />
         </aside>
       </div>
     </main>

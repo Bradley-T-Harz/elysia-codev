@@ -26,11 +26,11 @@ export default function ReviewWorkflowPanel({ preview, applyResult, commandResul
         <div><dt>Last check</dt><dd>{commandResult ? `${commandResult.command_id}: ${commandResult.status}` : "none"}</dd></div>
       </dl>
       <div className="button-row">
-        <button className="ghost" type="button" disabled={!hasDiff} onClick={onReview}>Review</button>
+        <button className="ghost" type="button" disabled={!hasDiff} onClick={onReview}>Open native diff</button>
         <button className="ghost" type="button" disabled={!hasDiff} onClick={onCopyDiff}>Copy diff</button>
         <button className="ghost" type="button" disabled={!hasDiff} onClick={onDiscard}>Reject / Discard</button>
       </div>
-      <p className="muted">Approve Apply lives in the Patch Preview card and still requires Elysia backend hash/path guards. Reject only clears this local Codev proposal view.</p>
+      <p className="muted">Native diff opens the exact approved source against a virtual proposed document. Apply remains separate and binds Elysia approval to exact file/content/patch hashes. Reject only clears this local proposal view.</p>
     </section>
   );
 }

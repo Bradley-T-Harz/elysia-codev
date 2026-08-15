@@ -2,7 +2,7 @@
 
 Elysia Codev is a first-party official Elysia add-on for developers. It provides a local-first coding-room shell inside VS Code while keeping Elysia core clean.
 
-This extension is not Elysia core and does not require Marketplace sign-in. It connects to the local Elysia API bridge on `http://127.0.0.1:8000` by default.
+This extension is not Elysia core and does not require Marketplace sign-in. It connects to the authenticated local Elysia API bridge on `http://127.0.0.1:8000` by default. Mutating requests use the private XDG credential inside the extension host; the credential is never sent to the webview or displayed.
 
 ## What Works Now
 
@@ -30,11 +30,14 @@ This extension is not Elysia core and does not require Marketplace sign-in. It c
 - EngineeringForge panels for bounded static STL, OBJ, DAE, STEP/STP, IGES/IGS, DXF, URDF, SDF, G-code, BLEND, F3D, and F3Z reports. STL, OBJ, DXF, and G-code alone expose exact-approved sandbox-only SVG projections; heavy-worker handoff remains disabled when the required namespace sandbox is unavailable.
 - Sanitized coding audit records with request, operation, approval, relative-path, hash, mutation, shell, backup, and persistence truth.
 - Local UI sessions stored in VS Code state, with backend session IDs when available.
-- Workspace/trust status.
-- Read-only Git and changed-file status surfaces.
+- Real VS Code workspace trust plus exact Elysia repository approval/revocation. A trusted workspace alone grants no repository authority.
+- Read-only Git branch, HEAD, remote, dirty/staged/unstaged/untracked counts, and actual SCM changed-file status. No Git mutation is exposed.
 - Approval mode controls.
-- Live patch proposal/review/apply surface with exact source and patch hashes.
-- Settings panel.
+- Live patch proposal, VS Code native diff review, and exact-approved apply with source/patch hashes and receipts.
+- Backend-owned bounded command catalog with exact argv/cwd/timeout/output evidence; only catalog entries explicitly enabled by Elysia can run after approval.
+- Developer Lab bounded goal plans with a maximum of eight steps and thirty minutes, one explicit receipt-only checkpoint per click, a stop/revoke path, and no background execution.
+- Session/context preferences and last receipt identifiers persist in local VS Code state. Credentials and source snapshots do not.
+- Truthful Settings panel with Developer profile, authentication, contract, trust, repository hash, and approval status—never a raw repository root.
 
 ## Intentionally Disabled
 
@@ -50,6 +53,7 @@ This extension is not Elysia core and does not require Marketplace sign-in. It c
 - No binary execution, loading, importing, installation, linking, trust, mutation, patching, signature tampering, decompilation, or exploit workflow. Deeper disassembly and sandboxed execution remain future separately gated capabilities.
 - No engineering source/project mutation, machine send, printing, CNC/serial/controller access, robot actuation, ROS/Gazebo launch, scripts/plugins, conversion/repair apply, cloud/Fusion upload, or safety certification. ParametricForge remains experimental.
 - No secrets, service-role keys, tokens, or local private data storage.
+- No unbounded goal loop, hidden continuation, broad repository ingestion, arbitrary terminal, commit, push, publish, or cloud upload.
 
 ## Local-First Boundary
 
@@ -60,6 +64,12 @@ The extension uses VS Code UI APIs, the extension host, local extension state, a
 The current MVP uses:
 
 - `GET /coding/status`
+- `GET /coding/developer-profile`
+- `POST /coding/repo/approval-status`
+- `POST /coding/repo/approval-plan`
+- `POST /coding/repo/approval-apply`
+- `POST /coding/repo/revoke`
+- `POST /coding/git/preview`
 - `POST /coding/session/start`
 - `POST /coding/chat`
 - `POST /coding/repo/inspect-preview`
@@ -107,7 +117,12 @@ The current MVP uses:
 - `POST /coding/patch/propose`
 - `POST /coding/patch/apply-approved`
 - `POST /coding/command/plan`
+- `GET /coding/command/catalog`
 - `POST /coding/command/run-approved`
+- `POST /coding/task/plan`
+- `POST /coding/task/approve`
+- `POST /coding/task/next`
+- `POST /coding/task/stop`
 
 These endpoints are local-only and governed. Repo preview returns bounded
 metadata and ignores common generated/private paths; selected source preview
@@ -118,7 +133,7 @@ requires explicit approval and returns Elysia's file type/risk/capability truth.
 ```bash
 npm install
 npm run compile
-code <workspace-root>/EcoSyneva_Commons_LLC/<coordination-root>/Add-ons/Official_Addons/elysia-codev
+code /path/to/elysia-codev
 ```
 
 Then press `F5` in VS Code and open the **Elysia** Activity Bar icon in the Extension Development Host.
@@ -136,17 +151,17 @@ Or:
 ./scripts/package-vsix.sh
 ```
 
-Packaging a local VSIX does not publish the extension. Public VS Code Marketplace publishing is a separate future process.
+The package script uses already installed dependencies and never installs or downloads packages. Packaging a local VSIX does not install or publish the extension. Public VS Code Marketplace publishing is a separate future process.
 
 ## Settings
 
 - `elysia.apiUrl`: local API URL. Default `http://127.0.0.1:8000`.
 - `elysia.approvalMode`: default approval posture. Default `plan_only`.
-- `elysia.workspaceTrustMode`: how the companion interprets workspace trust.
+- `elysia.workspaceTrustMode`: enforced trust posture: VS Code trust plus exact Elysia approval, forced read-only, or blocked.
 
 ## Next proof / roadmap
 
-1. Run Extension Host proof for restart/reload, preview, exact patch apply, exact checks, generic CRUD, document/data/visual/archive/database/binary/engineering flows, and audit visibility against disposable workspaces.
+1. Run Extension Host proof for trusted/untrusted, authenticated/unauthenticated, restart/reload, exact repository approval, native diff, patch apply, bounded checks, Developer Lab stop/revoke, and audit visibility against disposable workspaces.
 2. Replace the bounded deterministic chat bridge with a real governed general local coding reasoner and reviewed patch-generation path.
 3. Add automated extension-host/API client coverage without weakening current approval boundaries.
 4. Marketplace packaging remains a separate official add-on release task.

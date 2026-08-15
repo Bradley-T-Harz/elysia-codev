@@ -1,5 +1,5 @@
 export type ApprovalMode = "read_only" | "plan_only" | "path_preview" | "apply_with_approval" | "test_with_approval";
-export type ConnectionState = "unknown" | "connected" | "unavailable";
+export type ConnectionState = "unknown" | "connected" | "unavailable" | "authentication_required" | "version_mismatch" | "profile_unavailable" | "degraded";
 export type WorkMode = "local" | "developer_forge";
 
 export type UiSession = {
@@ -473,12 +473,17 @@ export type EngineeringPreviewResult = {
 };
 
 export type WebviewState = {
-  connection: { state: ConnectionState; apiUrl: string; summary: string; checkedAt?: string };
+  connection: { state: ConnectionState; apiUrl: string; summary: string; checkedAt?: string; authStatus?: string; apiVersion?: string; contractVersion?: string; expectedContractVersion?: string; developerProfileStatus?: string; lastRequestId?: string };
   workspace: {
     trustLevel: string;
     workspaceLabel: string;
     workspaceFolders: string[];
-    workspaceRoot?: string;
+    workspaceRootHash?: string;
+    vscodeTrusted: boolean;
+    trustMode: "vscode_workspace_trust" | "read_only" | "blocked";
+    repoApprovalStatus: "unknown" | "approval_required" | "approved" | "blocked" | "revoked";
+    repoApproved: boolean;
+    blockedReason?: string;
     canReadWorkspace: boolean;
     canProposePatch: boolean;
     canApplyPatch: boolean;
@@ -509,17 +514,25 @@ export type WebviewState = {
     activeFileMetadata: boolean;
     approvedFilePreview: boolean;
     diagnosticsSummary: boolean;
+    selectedChangedFiles: string[];
   };
   goalWorkflow: {
-    status: "idle" | "planning" | "preview_only" | "stopped";
+    status: "idle" | "planning" | "approval_required" | "approved_checkpoint_only" | "checkpoint_ready" | "preview_only" | "stopped" | "blocked" | "complete";
     currentGoal?: string;
-    autonomyEnabled: false;
-    pursueGoalEnabled: false;
+    taskId?: string;
+    taskHash?: string;
+    currentStep?: number;
+    maxSteps?: number;
+    maxMinutes?: number;
+    receiptId?: string;
+    nextStepLabel?: string;
+    autonomyEnabled: boolean;
+    pursueGoalEnabled: boolean;
     fullOperatorEnabled: false;
     notes: string[];
   };
-  git: { branch: string; dirtyState: string; changedCount: number; summary: string };
-  changedFiles: Array<{ path: string; state: string }>;
+  git: { branch: string; dirtyState: string; changedCount: number; stagedCount: number; unstagedCount: number; untrackedCount: number; headCommit?: string; remotePresent?: boolean; repoDetected: boolean; approvedRepo: boolean; status: string; summary: string };
+  changedFiles: Array<{ path: string; state: string; staged: boolean; unstaged: boolean; selected: boolean }>;
   patchPreview: {
     state: string;
     summary: string;
@@ -531,6 +544,35 @@ export type WebviewState = {
   };
   coding: {
     bridge: CodingBridgeStatus | null;
+    developerProfile: {
+      status: string;
+      official_addon: boolean;
+      listing_state: string;
+      public_installable: boolean;
+      active: boolean;
+      profile_id: string;
+      profile_label: string;
+      profile_readiness: string;
+      codev_install: { state: string; installed: boolean; compatible: boolean; version?: string; expected_version: string; expected_contract_version: string; raw_path_exposed: false };
+      api_version: string;
+      coding_contract_version: string;
+      local_auth: { required_for_mutations?: boolean; initialized?: boolean; credential_exposed?: false };
+      repo_approval_contract: string;
+      command_catalog_contract: string;
+      task_lab_contract: string;
+      raw_paths_exposed: false;
+      warnings: string[];
+    } | null;
+    commandCatalog: {
+      contract_version: string;
+      entries: Array<{ command_id: string; label: string; purpose: string; command: string[]; execution_enabled: boolean; approval_required: true; shell: false; stdin: "closed"; network_allowed: false; package_install_allowed: false; disabled_reason?: string; timeout_seconds: number; output_limit_bytes: number; cwd_policy: string }>;
+      arbitrary_command_input_allowed: false;
+      shell_allowed: false;
+      package_manager_mutation_allowed: false;
+      git_mutation_allowed: false;
+      network_allowed: false;
+    } | null;
+    repoApproval: { status: "unknown" | "approval_required" | "approved" | "blocked" | "revoked"; workspaceLabel: string; workspaceRootHash?: string; approved: boolean; revoked: boolean; blockedReason?: string; approvalSource?: string; rawPathExposed: false };
     repoPreview: RepoInspectPreview | null;
     filePreview: FileReadPreview | null;
     patchApplyResult: {
@@ -549,7 +591,10 @@ export type WebviewState = {
     } | null;
     commandResult: {
       status: string;
+      run_id?: string;
       command_id: string;
+      command?: string[];
+      cwd_label?: string;
       execution_performed: boolean;
       exit_code?: number;
       stdout_preview?: string;
@@ -559,6 +604,11 @@ export type WebviewState = {
       approval_id?: string;
       request_id?: string;
       operation_id?: string;
+      started_at_utc?: string;
+      finished_at_utc?: string;
+      duration_ms?: number;
+      output_truncated?: boolean;
+      output_sanitized?: boolean;
       warnings: string[];
     } | null;
     documentOperation: {
@@ -849,8 +899,10 @@ export type WebviewState = {
       arbitrary_sql_executed?: boolean;
     }>;
     lastError?: string;
-    busyAction?: "refresh" | "newSession" | "chat" | "repoPreview" | "filePreview" | "applyPatch" | "runCheck" | "deleteSession" | "clearSessions" | "fileOperationPlan" | "fileOperationApply" | "documentInspect" | "documentExtract" | "documentExportPlan" | "documentExportApply" | "documentEditPlan" | "documentEditApply" | "dataInspect" | "dataPreview" | "dataExportPlan" | "dataExportApply" | "dataMutationPlan" | "dataMutationApply" | "visualInspect" | "visualPreview" | "visualOcr" | "visualAnalysis" | "visualExportPlan" | "visualExportApply" | "visualEditPlan" | "visualEditApply" | "mediaInspect" | "mediaThumbnail" | "archiveInspect" | "archivePlan" | "archiveApply" | "databaseInspect" | "databaseSchema" | "binaryInspect" | "engineeringInspect" | "engineeringPreviewPlan" | "engineeringPreviewApply";
+    busyAction?: string;
     lastAction?: string;
+    lastRequestId?: string;
+    contextReceipt?: { selected_metadata?: Array<{ relative_path: string; context_kind: string; scm_status?: string; staged: boolean; source_contents_included: false }>; selected_metadata_count?: number; approved_source_preview_included?: boolean; broad_repo_snapshot_included?: false; raw_absolute_paths_included?: false };
   };
 };
 

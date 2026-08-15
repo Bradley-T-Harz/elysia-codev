@@ -22,6 +22,8 @@ export function registerCommands(context: vscode.ExtensionContext, provider: Ely
       }
       await provider.refresh();
     }),
+    vscode.commands.registerCommand("elysia.approveWorkspace", async () => provider.approveWorkspaceRepo()),
+    vscode.commands.registerCommand("elysia.revokeWorkspace", async () => provider.revokeWorkspaceRepo()),
     vscode.commands.registerCommand("elysia.clearSessions", async () => provider.clearSessions())
   );
 }

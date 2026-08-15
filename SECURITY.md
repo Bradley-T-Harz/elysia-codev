@@ -5,9 +5,13 @@ Elysia Codev is a VS Code doorway into Elysia core. It is not the coding brain a
 ## Current Boundary
 
 - Local Elysia API only, loopback by default.
+- Packaged mutation authentication uses a private XDG credential kept out of the webview, UI, errors, and receipts.
+- VS Code workspace trust and exact Elysia repository approval are both required for repository access. Approval is revocable and never grants broad roots.
 - No cloud upload.
 - No Marketplace account requirement.
 - No shell, subprocess, git mutation, package-manager execution, or autonomous loop in the extension.
+- Real Git truth is fixed-argv and read-only. Native diff review mutates nothing; patch apply remains exact-hash, one-time-approved Elysia authority.
+- Developer Lab is limited to plan/approve/manual checkpoint/stop contracts. A checkpoint executes no command, patch, tool, or continuation.
 - Source-code previews require explicit Elysia core approval and return file
   type, adapter, risk, capability, hash, parse, and redaction truth.
 - Codev does not decide file safety itself. Elysia core classifies files,

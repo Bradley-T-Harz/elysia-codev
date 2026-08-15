@@ -1,7 +1,7 @@
 {
   "name": "elysia-codev",
   "displayName": "Elysia Codev",
-  "description": "Local-first governed Elysia companion for VS Code. EngineeringForge, database, and binary inspection delegate to Elysia; execution, hardware control, cloud upload, and source mutation remain unavailable.",
+  "description": "Official local-first Elysia Developer-profile companion for governed repo truth, patch review, exact mutation, bounded checks, and receipt-backed planning.",
   "version": "0.1.0",
   "publisher": "ecosyneva-commons",
   "license": "Apache-2.0",
@@ -27,6 +27,8 @@
     "onCommand:elysia.newSession",
     "onCommand:elysia.refreshConnection",
     "onCommand:elysia.trustWorkspace",
+    "onCommand:elysia.approveWorkspace",
+    "onCommand:elysia.revokeWorkspace",
     "onCommand:elysia.clearSessions"
   ],
   "main": "./out/src/extension.js",
@@ -58,6 +60,8 @@
       { "command": "elysia.newSession", "title": "Elysia: New Session", "category": "Elysia" },
       { "command": "elysia.refreshConnection", "title": "Elysia: Refresh Connection", "category": "Elysia" },
       { "command": "elysia.trustWorkspace", "title": "Elysia: Trust Workspace", "category": "Elysia" },
+      { "command": "elysia.approveWorkspace", "title": "Elysia: Approve Exact Repository", "category": "Elysia" },
+      { "command": "elysia.revokeWorkspace", "title": "Elysia: Revoke Repository Approval", "category": "Elysia" },
       { "command": "elysia.clearSessions", "title": "Elysia: Clear Local Sessions", "category": "Elysia" }
     ],
     "viewsContainers": {
@@ -84,6 +88,8 @@
         { "command": "elysia.newSession" },
         { "command": "elysia.refreshConnection" },
         { "command": "elysia.trustWorkspace" },
+        { "command": "elysia.approveWorkspace" },
+        { "command": "elysia.revokeWorkspace" },
         { "command": "elysia.clearSessions" }
       ],
       "view/title": [
@@ -108,8 +114,9 @@
     "check": "npm run compile",
     "test:unit": "npm run build:extension && node --test tests/*.test.mjs",
     "watch": "tsc -watch -p ./tsconfig.json",
-    "package": "vsce package",
-    "vscode:package": "vsce package"
+    "vscode:prepublish": "npm run compile",
+    "package": "vsce package --no-dependencies",
+    "vscode:package": "vsce package --no-dependencies"
   },
   "dependencies": {
     "react": "^19.0.0",

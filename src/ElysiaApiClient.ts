@@ -2,6 +2,7 @@ import * as http from "node:http";
 import * as https from "node:https";
 import * as vscode from "vscode";
 import { buildLoopbackUrl } from "./localUrlPolicy";
+import { LocalCredentialProvider } from "./LocalCredentialProvider";
 import type {
   CodingBridgeStatus,
   ArchiveContainerPreview,
@@ -36,12 +37,18 @@ import type {
   TtsVoice,
   VideoForgeJob,
   VideoForgePlan,
-  RepoInspectPreview
+  RepoInspectPreview,
+  RepoApprovalStatus,
+  CodingGitPreview,
+  CommandCatalog,
+  DeveloperProfileStatus
 } from "./types";
 
 type Envelope<T> = {
   status?: string;
   request_id?: string;
+  api_version?: string;
+  contract_version?: string;
   data?: T;
   errors?: string[];
   detail?: unknown;
@@ -49,7 +56,7 @@ type Envelope<T> = {
 
 type CodingStatusData = { coding_bridge?: CodingBridgeStatus };
 type SessionData = { session?: { session_id: string } };
-type ChatData = { coding_chat?: { assistant_text: string; plan?: string[]; refused_capabilities?: string[]; patch_proposal?: CodingPatchProposal } };
+type ChatData = { coding_chat?: { assistant_text: string; plan?: string[]; refused_capabilities?: string[]; patch_proposal?: CodingPatchProposal; context_receipt?: CodingChatReply["contextReceipt"] } };
 type RepoPreviewData = { repo_preview?: RepoInspectPreview };
 type FilePreviewData = { file_preview?: FileReadPreview };
 type DocumentPreviewData = { document?: FileReadPreview };
@@ -96,6 +103,20 @@ type OperationApprovalData = { operation_approval?: CodingOperationApproval };
 type OperationAuditData = { operation_audits?: CodingOperationAudit[] };
 type FileOperationPlanData = { file_operation_plan?: CodingFileOperationPlan };
 type FileOperationResultData = { file_operation_result?: CodingFileOperationResult };
+type DeveloperProfileData = { developer_profile?: DeveloperProfileStatus };
+type RepoApprovalData = { repo_approval?: RepoApprovalStatus };
+type RepoApprovalPlan = { status: string; plan_id?: string; plan_hash?: string; workspace_label: string; workspace_root_hash: string; expires_at_utc?: string; consequences: string[]; blocked_reason?: string; raw_path_exposed: false; warnings: string[] };
+type RepoApprovalPlanData = { repo_approval_plan?: RepoApprovalPlan };
+type RepoApprovalResult = { status: string; workspace_label?: string; workspace_root_hash?: string; approved: boolean; revoked: boolean; operation_id?: string; audit_written: boolean; blocked_reason?: string; raw_path_exposed: false; warnings: string[] };
+type RepoApprovalResultData = { repo_approval_result?: RepoApprovalResult };
+type GitPreviewData = { git_preview?: CodingGitPreview };
+type CommandCatalogData = { command_catalog?: CommandCatalog };
+type TaskPlan = { status: string; task_id?: string; task_hash?: string; objective: string; workspace_root_hash?: string; allowed_files: string[]; allowed_tool_ids: string[]; max_steps: number; max_minutes: number; current_step: number; expires_at_utc?: string; plan_steps: string[]; autonomous_loop_allowed: false; background_execution_allowed: false; mutation_allowed: false; command_execution_allowed: false; human_approval_required: true; stop_available: true; blocked_reason?: string; warnings: string[] };
+type TaskApproval = { status: string; task_id: string; task_hash?: string; task_token?: string; expires_at_utc?: string; next_step_requires_operator: true; blocked_reason?: string; warnings: string[] };
+type TaskCheckpoint = { status: string; task_id: string; current_step: number; max_steps: number; step_label?: string; receipt_id?: string; execution_performed: false; mutation_performed: false; command_performed: false; continuation_scheduled: false; stopped: boolean; blocked_reason?: string; warnings: string[] };
+type TaskPlanData = { task_plan?: TaskPlan };
+type TaskApprovalData = { task_approval?: TaskApproval };
+type TaskCheckpointData = { task_checkpoint?: TaskCheckpoint };
 type LocalRequestInit = {
   method: "GET" | "POST";
   body?: string;
@@ -108,6 +129,14 @@ type LocalResponse = {
 };
 
 export class ElysiaApiClient {
+  public static readonly expectedContractVersion = "vscode-coding-agent-contract-0.1";
+  private readonly credentials = new LocalCredentialProvider();
+  private lastRequestIdValue: string | undefined;
+  private lastContractVersionValue: string | undefined;
+
+  public get lastRequestId(): string | undefined { return this.lastRequestIdValue; }
+  public get lastContractVersion(): string | undefined { return this.lastContractVersionValue; }
+
   public get apiUrl(): string {
     return vscode.workspace.getConfiguration("elysia").get<string>("apiUrl", "http://127.0.0.1:8000");
   }
@@ -115,12 +144,77 @@ export class ElysiaApiClient {
   public async getStatus(): Promise<ElysiaConnectionStatus> {
     const apiUrl = this.apiUrl.replace(/\/$/, "");
     try {
-      const data = await this.getCodingStatus();
-      const contract = data?.contract_version ? ` (${data.contract_version})` : "";
-      return { state: "connected", apiUrl, summary: `Local Elysia coding bridge reachable${contract}.`, checkedAt: new Date().toISOString() };
+      const [data, developerProfile] = await Promise.all([this.getCodingStatus(), this.getDeveloperProfile()]);
+      const authStatus = this.credentials.publicStatus().status;
+      const contractVersion = data.contract_version;
+      if (contractVersion !== ElysiaApiClient.expectedContractVersion) {
+        return { state: "version_mismatch", apiUrl, summary: `Elysia coding contract ${contractVersion} does not match ${ElysiaApiClient.expectedContractVersion}.`, checkedAt: new Date().toISOString(), authStatus, apiVersion: developerProfile.api_version, contractVersion, expectedContractVersion: ElysiaApiClient.expectedContractVersion, developerProfileStatus: developerProfile.status, lastRequestId: this.lastRequestId };
+      }
+      if (developerProfile.local_auth.required_for_mutations && authStatus !== "available") {
+        return { state: "authentication_required", apiUrl, summary: "Elysia is reachable, but the private local client credential is unavailable or unsafe. Start Elysia through its governed launcher.", checkedAt: new Date().toISOString(), authStatus, apiVersion: developerProfile.api_version, contractVersion, expectedContractVersion: ElysiaApiClient.expectedContractVersion, developerProfileStatus: developerProfile.status, lastRequestId: this.lastRequestId };
+      }
+      const state = developerProfile.active ? "connected" : developerProfile.profile_readiness === "blocked" ? "profile_unavailable" : "degraded";
+      const summary = developerProfile.active
+        ? `Local authenticated Elysia coding bridge reachable (${contractVersion}).`
+        : `Elysia is reachable; Developer profile is ${developerProfile.profile_readiness}.`;
+      return { state, apiUrl, summary, checkedAt: new Date().toISOString(), authStatus, apiVersion: developerProfile.api_version, contractVersion, expectedContractVersion: ElysiaApiClient.expectedContractVersion, developerProfileStatus: developerProfile.status, lastRequestId: this.lastRequestId };
     } catch (error) {
-      return { state: "unavailable", apiUrl, summary: error instanceof Error ? error.message : "Local Elysia API unavailable.", checkedAt: new Date().toISOString() };
+      const summary = error instanceof Error ? error.message : "Local Elysia API unavailable.";
+      const authStatus = this.credentials.publicStatus().status;
+      return { state: /auth|credential/i.test(summary) ? "authentication_required" : "unavailable", apiUrl, summary, checkedAt: new Date().toISOString(), authStatus, expectedContractVersion: ElysiaApiClient.expectedContractVersion, lastRequestId: this.lastRequestId };
     }
+  }
+
+  public async getDeveloperProfile(): Promise<DeveloperProfileStatus> {
+    const envelope = await this.request<DeveloperProfileData>("/coding/developer-profile", { method: "GET" });
+    if (!envelope.data?.developer_profile) throw new Error("Local Elysia did not return Developer profile truth.");
+    return envelope.data.developer_profile;
+  }
+
+  public async getRepoApprovalStatus(workspaceRoot: string): Promise<RepoApprovalStatus> {
+    const envelope = await this.request<RepoApprovalData>("/coding/repo/approval-status", { method: "POST", body: JSON.stringify({ workspace_root: workspaceRoot }) });
+    if (!envelope.data?.repo_approval) throw new Error("Local Elysia did not return repository approval truth.");
+    const raw = envelope.data.repo_approval as RepoApprovalStatus & { workspace_label?: string; workspace_root_hash?: string; blocked_reason?: string; approval_source?: string };
+    return {
+      status: raw.status,
+      workspaceLabel: raw.workspace_label ?? raw.workspaceLabel,
+      workspaceRootHash: raw.workspace_root_hash ?? raw.workspaceRootHash,
+      approved: raw.approved,
+      revoked: raw.revoked,
+      blockedReason: raw.blocked_reason ?? raw.blockedReason,
+      approvalSource: raw.approval_source ?? raw.approvalSource,
+      rawPathExposed: false
+    };
+  }
+
+  public async planRepoApproval(workspaceRoot: string): Promise<RepoApprovalPlan> {
+    const envelope = await this.request<RepoApprovalPlanData>("/coding/repo/approval-plan", { method: "POST", body: JSON.stringify({ workspace_root: workspaceRoot }) });
+    if (!envelope.data?.repo_approval_plan) throw new Error("Local Elysia did not return a repository approval plan.");
+    return envelope.data.repo_approval_plan;
+  }
+
+  public async applyRepoApproval(planId: string, planHash: string): Promise<RepoApprovalResult> {
+    const envelope = await this.request<RepoApprovalResultData>("/coding/repo/approval-apply", { method: "POST", body: JSON.stringify({ plan_id: planId, plan_hash: planHash, operator_approved: true, confirmation_phrase: "Approve exact repository" }) });
+    if (!envelope.data?.repo_approval_result) throw new Error("Local Elysia did not return a repository approval result.");
+    return envelope.data.repo_approval_result;
+  }
+
+  public async revokeRepoApproval(workspaceRoot: string): Promise<RepoApprovalResult> {
+    const envelope = await this.request<RepoApprovalResultData>("/coding/repo/revoke", { method: "POST", body: JSON.stringify({ workspace_root: workspaceRoot, operator_approved: true, confirmation_phrase: "Revoke repository approval" }) });
+    if (!envelope.data?.repo_approval_result) throw new Error("Local Elysia did not return a repository revocation result.");
+    return envelope.data.repo_approval_result;
+  }
+
+  public async getGitPreview(workspaceRoot: string): Promise<CodingGitPreview> {
+    const envelope = await this.request<GitPreviewData>("/coding/git/preview", { method: "POST", body: JSON.stringify({ workspace_root: workspaceRoot }) });
+    if (!envelope.data?.git_preview) throw new Error("Local Elysia did not return Git truth.");
+    return envelope.data.git_preview;
+  }
+
+  public async getCommandCatalog(): Promise<CommandCatalog> {
+    const envelope = await this.request<CommandCatalogData>("/coding/command/catalog", { method: "GET" });
+    if (!envelope.data?.command_catalog) throw new Error("Local Elysia did not return the bounded command catalog.");
+    return envelope.data.command_catalog;
   }
 
   public async getCodingStatus(): Promise<CodingBridgeStatus> {
@@ -157,6 +251,7 @@ export class ElysiaApiClient {
       source_contents_included: boolean;
       approval_granted: boolean;
     };
+    selected_context?: Array<{ relative_path: string; context_kind: "scm_metadata"; scm_status?: string; staged: boolean }>;
   }): Promise<CodingChatReply> {
     const envelope = await this.request<ChatData>("/coding/chat", {
       method: "POST",
@@ -168,7 +263,7 @@ export class ElysiaApiClient {
     }
     const plan = result.plan?.length ? `\n\nPlan:\n${result.plan.map((item) => `- ${item}`).join("\n")}` : "";
     const refused = result.refused_capabilities?.length ? `\n\nDisabled here: ${result.refused_capabilities.join(", ")}.` : "";
-    return { assistantText: `${result.assistant_text}${plan}${refused}`, patchProposal: result.patch_proposal };
+    return { assistantText: `${result.assistant_text}${plan}${refused}`, patchProposal: result.patch_proposal, requestId: envelope.request_id, contextReceipt: result.context_receipt };
   }
 
   public async inspectRepoPreview(request: { workspace_root: string; session_id?: string; max_depth?: number; max_entries?: number }): Promise<RepoInspectPreview> {
@@ -978,6 +1073,30 @@ export class ElysiaApiClient {
     return this.withEnvelopeTruth(envelope.data.command_run, envelope);
   }
 
+  public async planCodingTask(request: { session_id?: string; objective: string; workspace_label?: string; workspace_root: string; allowed_files: string[]; max_steps: number; max_minutes: number }): Promise<TaskPlan> {
+    const envelope = await this.request<TaskPlanData>("/coding/task/plan", { method: "POST", body: JSON.stringify(request) });
+    if (!envelope.data?.task_plan) throw new Error("Local Elysia did not return a bounded task plan.");
+    return envelope.data.task_plan;
+  }
+
+  public async approveCodingTask(taskId: string, taskHash: string): Promise<TaskApproval> {
+    const envelope = await this.request<TaskApprovalData>("/coding/task/approve", { method: "POST", body: JSON.stringify({ task_id: taskId, task_hash: taskHash, operator_approved: true, confirmation_phrase: "Approve bounded Developer Lab plan" }) });
+    if (!envelope.data?.task_approval) throw new Error("Local Elysia did not return a bounded task approval.");
+    return envelope.data.task_approval;
+  }
+
+  public async runNextCodingTaskCheckpoint(taskId: string, taskToken: string): Promise<TaskCheckpoint> {
+    const envelope = await this.request<TaskCheckpointData>("/coding/task/next", { method: "POST", body: JSON.stringify({ task_id: taskId, task_token: taskToken, operator_approved: true }) });
+    if (!envelope.data?.task_checkpoint) throw new Error("Local Elysia did not return a task checkpoint receipt.");
+    return envelope.data.task_checkpoint;
+  }
+
+  public async stopCodingTask(taskId: string): Promise<TaskCheckpoint> {
+    const envelope = await this.request<TaskCheckpointData>("/coding/task/stop", { method: "POST", body: JSON.stringify({ task_id: taskId, reason: "codev_operator_stop" }) });
+    if (!envelope.data?.task_checkpoint) throw new Error("Local Elysia did not return task stop truth.");
+    return envelope.data.task_checkpoint;
+  }
+
   private withEnvelopeTruth<T extends object>(result: T, envelope: Envelope<unknown>): T {
     return envelope.request_id ? { ...result, request_id: envelope.request_id } : result;
   }
@@ -996,9 +1115,13 @@ export class ElysiaApiClient {
       const validationDetail = Array.isArray(envelope.detail)
         ? envelope.detail.map((item) => typeof item === "object" && item !== null && "msg" in item ? String((item as { msg: unknown }).msg) : JSON.stringify(item)).join("; ")
         : typeof envelope.detail === "string" ? envelope.detail : "";
-      const detail = envelope.errors?.join("; ") || validationDetail || `Local Elysia responded with ${response.status}.`;
+      const detail = response.status === 401
+        ? "Local Elysia authentication is required. Start Elysia through its governed launcher and verify the private XDG credential state."
+        : envelope.errors?.join("; ") || validationDetail || `Local Elysia responded with ${response.status}.`;
       throw new Error(detail);
     }
+    this.lastRequestIdValue = envelope.request_id;
+    this.lastContractVersionValue = envelope.contract_version;
     return envelope;
   }
 
@@ -1143,16 +1266,23 @@ export class ElysiaApiClient {
     const body = init.body ?? "";
     const method = init.method;
 
+    const credential = init.method === "POST" ? this.credentials.read() : undefined;
+    const headers: Record<string, string | number> = {
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+      "Content-Length": Buffer.byteLength(body),
+      "X-Elysia-Client": "codev-vscode"
+    };
+    if (credential?.status === "available" && credential.credential) {
+      headers.Authorization = `Bearer ${credential.credential}`;
+    }
+
     return new Promise((resolve, reject) => {
       const request = client.request(
         target,
         {
           method,
-          headers: {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "Content-Length": Buffer.byteLength(body)
-          },
+          headers,
           timeout: 5000
         },
         (response) => {

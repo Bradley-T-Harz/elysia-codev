@@ -1,0 +1,13 @@
+.github/**
+.vscode/**
+.gitignore
+src/**
+tests/**
+webview/**
+scripts/**
+tsconfig.json
+package-lock.json
+node_modules/**
+out/**/*.map
+out/webview/**
+*.vsix

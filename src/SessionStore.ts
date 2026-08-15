@@ -1,8 +1,23 @@
 import * as vscode from "vscode";
-import type { ApprovalMode, ElysiaMessage, ElysiaSession } from "./types";
+import type { ApprovalMode, ElysiaMessage, ElysiaSession, IdeContextSettings } from "./types";
 
 const SESSION_KEY = "elysia.sessions.v0";
 const MESSAGE_KEY = "elysia.messages.v0";
+const CONTEXT_KEY = "elysia.context-preferences.v1";
+const ACTIVE_SESSION_KEY = "elysia.active-session.v1";
+const LAST_RECEIPT_KEY = "elysia.last-receipt.v1";
+
+const DEFAULT_CONTEXT: IdeContextSettings = {
+  workspaceMetadata: true,
+  activeFileMetadata: true,
+  approvedFilePreview: true,
+  diagnosticsSummary: false,
+  selectedChangedFiles: []
+};
+
+function safeRelativePath(value: string): boolean {
+  return Boolean(value) && !value.startsWith("/") && !value.startsWith("\\") && !/^[A-Za-z]:[\\/]/.test(value) && !value.split(/[\\/]/).includes("..");
+}
 
 export class SessionStore {
   public constructor(private readonly context: vscode.ExtensionContext) {}
@@ -15,6 +30,42 @@ export class SessionStore {
     if (!sessionId) return [];
     const all = this.context.workspaceState.get<Record<string, ElysiaMessage[]>>(MESSAGE_KEY, {});
     return all[sessionId] ?? [];
+  }
+
+  public getContextPreferences(): IdeContextSettings {
+    const stored = this.context.workspaceState.get<Partial<IdeContextSettings>>(CONTEXT_KEY, {});
+    return {
+      workspaceMetadata: stored.workspaceMetadata !== false,
+      activeFileMetadata: stored.activeFileMetadata !== false,
+      approvedFilePreview: stored.approvedFilePreview !== false,
+      diagnosticsSummary: stored.diagnosticsSummary === true,
+      selectedChangedFiles: Array.isArray(stored.selectedChangedFiles)
+        ? stored.selectedChangedFiles.filter((item): item is string => typeof item === "string" && safeRelativePath(item)).slice(0, 20)
+        : []
+    };
+  }
+
+  public async setContextPreferences(settings: IdeContextSettings): Promise<void> {
+    await this.context.workspaceState.update(CONTEXT_KEY, {
+      ...settings,
+      selectedChangedFiles: settings.selectedChangedFiles.filter(safeRelativePath).slice(0, 20)
+    });
+  }
+
+  public getActiveSessionId(): string | null {
+    return this.context.workspaceState.get<string | null>(ACTIVE_SESSION_KEY, null);
+  }
+
+  public async setActiveSessionId(sessionId: string | null): Promise<void> {
+    await this.context.workspaceState.update(ACTIVE_SESSION_KEY, sessionId);
+  }
+
+  public getLastReceipt(): { requestId?: string; operationId?: string } {
+    return this.context.workspaceState.get<{ requestId?: string; operationId?: string }>(LAST_RECEIPT_KEY, {});
+  }
+
+  public async setLastReceipt(receipt: { requestId?: string; operationId?: string }): Promise<void> {
+    await this.context.workspaceState.update(LAST_RECEIPT_KEY, receipt);
   }
 
   public async newSession(workspaceLabel: string, approvalMode: ApprovalMode, backendSessionId?: string): Promise<ElysiaSession> {
@@ -59,5 +110,8 @@ export class SessionStore {
   public async clear(): Promise<void> {
     await this.context.workspaceState.update(SESSION_KEY, []);
     await this.context.workspaceState.update(MESSAGE_KEY, {});
+    await this.context.workspaceState.update(CONTEXT_KEY, DEFAULT_CONTEXT);
+    await this.context.workspaceState.update(ACTIVE_SESSION_KEY, null);
+    await this.context.workspaceState.update(LAST_RECEIPT_KEY, {});
   }
 }

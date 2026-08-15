@@ -16,6 +16,7 @@ export function activate(context: vscode.ExtensionContext): void {
     const approvals = new ApprovalController();
     const workspaceTrust = new WorkspaceTrust(approvals);
     const diffs = new FileDiffProvider();
+    diffs.register(context);
     provider = new ElysiaSidebarProvider(context, api, sessions, approvals, workspaceTrust, diffs);
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
@@ -30,6 +31,9 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
       vscode.workspace.onDidChangeWorkspaceFolders(() => void provider.refresh()),
       vscode.workspace.onDidGrantWorkspaceTrust(() => void provider.refresh()),
+      vscode.workspace.onDidChangeConfiguration((event) => {
+        if (event.affectsConfiguration("elysia")) void provider.refresh();
+      }),
       vscode.window.onDidChangeActiveTextEditor(() => void provider.refreshLocalState())
     );
   } catch (error) {
