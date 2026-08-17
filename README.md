@@ -138,6 +138,10 @@ npm run compile
 code /path/to/elysia-codev
 ```
 
+Within the Elysia multi-repository coordination workspace, the canonical
+relative checkout location is `Add-ons/Official_Addons/elysia-codev/`. Codev
+remains an independent Git repository at that location.
+
 Then press `F5` in VS Code and open the **Elysia** Activity Bar icon in the Extension Development Host.
 
 ## Package a VSIX
