@@ -116,7 +116,8 @@
     "watch": "tsc -watch -p ./tsconfig.json",
     "vscode:prepublish": "npm run compile",
     "package": "vsce package --no-dependencies",
-    "vscode:package": "vsce package --no-dependencies"
+    "vscode:package": "vsce package --no-dependencies",
+    "verify:package": "node scripts/verify-vsix-hygiene.mjs"
   },
   "dependencies": {
     "react": "^19.0.0",

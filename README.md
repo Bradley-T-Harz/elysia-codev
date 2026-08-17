@@ -2,6 +2,8 @@
 
 Elysia Codev is a first-party official Elysia add-on for developers. It provides a local-first coding-room shell inside VS Code while keeping Elysia core clean.
 
+Release status: Developer-profile candidate, version `0.1.0`, channel `v1-finalization`. It is not yet a public Marketplace install claim. The reproducible VSIX boundary is documented in `docs/public-package-hygiene.md`, and final publication remains a Pass 10 decision.
+
 This extension is not Elysia core and does not require Marketplace sign-in. It connects to the authenticated local Elysia API bridge on `http://127.0.0.1:8000` by default. Mutating requests use the private XDG credential inside the extension host; the credential is never sent to the webview or displayed.
 
 ## What Works Now
