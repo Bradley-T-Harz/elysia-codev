@@ -3,11 +3,9 @@ import type { WebviewState } from "../types";
 
 type Props = {
   workMode: WebviewState["workMode"];
-  onConnectForge: () => void;
-  onSendContextToForge: () => void;
 };
 
-export default function WorkModePanel({ workMode, onConnectForge, onSendContextToForge }: Props) {
+export default function WorkModePanel({ workMode }: Props) {
   return (
     <section className="panel">
       <div className="panel-head">
@@ -15,17 +13,10 @@ export default function WorkModePanel({ workMode, onConnectForge, onSendContextT
         <span className="pill">local first</span>
       </div>
       <dl className="facts facts--single">
-        <div><dt>Current</dt><dd>{workMode.mode === "local" ? "Work locally" : "Developer Forge"}</dd></div>
-        <div><dt>Developer Forge</dt><dd>{workMode.forgeStatus.replaceAll("_", " ")}</dd></div>
+        <div><dt>Current</dt><dd>{workMode.mode === "local" ? "Work locally" : "Unavailable"}</dd></div>
+        <div><dt>External context transfer</dt><dd>{workMode.selectedContextSendAllowed ? "explicitly enabled" : "disabled"}</dd></div>
       </dl>
-      <p className="muted">Developer Forge is a future private individual developer account, not a public community hub.</p>
-      <div className="button-row">
-        <button className="ghost" type="button" disabled>Work locally</button>
-        <button className="ghost" type="button" onClick={onConnectForge}>Connect Developer Forge</button>
-        <button className="ghost" type="button" disabled={!workMode.selectedContextSendAllowed} onClick={onSendContextToForge}>
-          Send selected context to Forge
-        </button>
-      </div>
+      <p className="muted">Codev v0.1 operates through the authenticated local Elysia bridge. It has no cloud-upload or external-context action.</p>
       {workMode.notes.length ? <p className="muted">{workMode.notes.join(" ")}</p> : null}
     </section>
   );

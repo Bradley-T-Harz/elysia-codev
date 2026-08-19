@@ -6,12 +6,11 @@ type Props = {
   onChange: (settings: WebviewState["ideContext"]) => void;
 };
 
-type BooleanContextKey = "workspaceMetadata" | "activeFileMetadata" | "approvedFilePreview" | "diagnosticsSummary";
-const labels: Array<{ key: BooleanContextKey; label: string; note: string; disabled?: boolean }> = [
+type BooleanContextKey = "workspaceMetadata" | "activeFileMetadata" | "approvedFilePreview";
+const labels: Array<{ key: BooleanContextKey; label: string; note: string }> = [
   { key: "workspaceMetadata", label: "Workspace metadata", note: "Folder label, trust, bounded repo preview metadata." },
   { key: "activeFileMetadata", label: "Active file metadata", note: "File name, language, dirty state, local scheme." },
-  { key: "approvedFilePreview", label: "Approved file previews", note: "Only after explicit Read approved preview approval." },
-  { key: "diagnosticsSummary", label: "Diagnostics summary", note: "Placeholder until a diagnostics contract exists.", disabled: true }
+  { key: "approvedFilePreview", label: "Approved file previews", note: "Only after explicit Read approved preview approval." }
 ];
 
 export default function IdeContextPanel({ context, onChange }: Props) {
@@ -32,7 +31,6 @@ export default function IdeContextPanel({ context, onChange }: Props) {
             <input
               type="checkbox"
               checked={context[item.key]}
-              disabled={item.disabled}
               onChange={() => toggle(item.key)}
             />
             <span>

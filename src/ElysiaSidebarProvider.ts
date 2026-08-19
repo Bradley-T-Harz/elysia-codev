@@ -56,8 +56,8 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     selectedContextSendAllowed: false,
     notes: [
       "Work locally is the default and requires no Marketplace or Forge account.",
-      "Developer Forge is a future private individual developer account path, not a public community hub.",
-      "No selected context is sent outward in this build."
+      "External context transfer is disabled.",
+      "No selected context leaves the authenticated local bridge."
     ]
   };
   private ideContext: IdeContextSettings = {
@@ -75,7 +75,7 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     notes: [
       "Plan mode is available through chat and the approval selector.",
       "Developer Lab uses one explicitly approved, receipt-backed checkpoint at a time.",
-      "Full Operator Mode is not enabled."
+      "Arbitrary shell, hidden continuation, and broad repository authority are unavailable."
     ]
   };
 
@@ -267,20 +267,6 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     }
     if (message.type === "revokeWorkspaceRepo") {
       await this.revokeWorkspaceRepo();
-      return;
-    }
-    if (message.type === "connectDeveloperForge") {
-      await this.connectDeveloperForgePlaceholder();
-      return;
-    }
-    if (message.type === "sendSelectedContextToForge") {
-      this.codingError = "Sending selected context to Developer Forge is not enabled yet. No context left this machine.";
-      this.lastAction = "Developer Forge send blocked.";
-      await this.postState();
-      return;
-    }
-    if (message.type === "requestFullOperatorMode") {
-      await this.requestFullOperatorModePlaceholder();
       return;
     }
     if (message.type === "startPlanMode") {
@@ -2764,47 +2750,6 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
       this.lastAction = "Coding bridge refresh failed.";
     }
     this.busyAction = undefined;
-    await this.postState();
-  }
-
-  private async connectDeveloperForgePlaceholder(): Promise<void> {
-    const approval = await vscode.window.showInformationMessage(
-      "Developer Forge is planned as a private individual developer account. This build will not upload code, secrets, paths, or selected context.",
-      { modal: true },
-      "Acknowledge"
-    );
-    if (approval === "Acknowledge") {
-      this.workMode = {
-        ...this.workMode,
-        mode: "local",
-        forgeConnected: false,
-        forgeStatus: "placeholder",
-        selectedContextSendAllowed: false
-      };
-      this.lastAction = "Developer Forge is not enabled yet; Codev stayed local.";
-      this.codingError = undefined;
-    }
-    await this.postState();
-  }
-
-  private async requestFullOperatorModePlaceholder(): Promise<void> {
-    const confirmation = await vscode.window.showInputBox({
-      prompt: "Full Operator Mode is not enabled. To acknowledge the blocked future authority, type: FULL OPERATOR NOT ENABLED",
-      placeHolder: "FULL OPERATOR NOT ENABLED",
-      ignoreFocusOut: true
-    });
-    if (confirmation === "FULL OPERATOR NOT ENABLED") {
-      await vscode.window.showWarningMessage(
-        "Full Operator Mode remains disabled. Future enablement would still be governed by Elysia core policy, blocked paths, approval gates, and audit logs.",
-        { modal: true }
-      );
-      this.goalWorkflow = { ...this.goalWorkflow, status: "preview_only", currentGoal: "Full Operator Mode requested but not enabled." };
-      this.lastAction = "Full Operator Mode remains disabled.";
-      this.codingError = undefined;
-    } else if (confirmation) {
-      this.codingError = "Full Operator Mode acknowledgement did not match. Nothing changed.";
-      this.lastAction = "Full Operator Mode request cancelled.";
-    }
     await this.postState();
   }
 

@@ -2,8 +2,8 @@ import * as React from "react";
 import { useState } from "react";
 import type { WebviewState } from "../types";
 
-type Props = { goal: WebviewState["goalWorkflow"]; onPlanMode: () => void; onPlanGoal: (objective: string, maxSteps: number, maxMinutes: number) => void; onApproveGoal: () => void; onPursueGoal: () => void; onStop: () => void; onFullOperator: () => void };
-export default function GoalWorkflowPanel({ goal, onPlanMode, onPlanGoal, onApproveGoal, onPursueGoal, onStop, onFullOperator }: Props) {
+type Props = { goal: WebviewState["goalWorkflow"]; onPlanMode: () => void; onPlanGoal: (objective: string, maxSteps: number, maxMinutes: number) => void; onApproveGoal: () => void; onPursueGoal: () => void; onStop: () => void };
+export default function GoalWorkflowPanel({ goal, onPlanMode, onPlanGoal, onApproveGoal, onPursueGoal, onStop }: Props) {
   const [objective, setObjective] = useState("");
   const [maxSteps, setMaxSteps] = useState(4);
   const [maxMinutes, setMaxMinutes] = useState(15);
@@ -20,7 +20,6 @@ export default function GoalWorkflowPanel({ goal, onPlanMode, onPlanGoal, onAppr
         <button className="ghost" type="button" disabled={goal.status !== "approval_required"} onClick={onApproveGoal}>Approve plan</button>
         <button className="ghost" type="button" disabled={!goal.pursueGoalEnabled} onClick={onPursueGoal}>Run next checkpoint</button>
         <button className="ghost" type="button" disabled={!goal.taskId} onClick={onStop}>Stop / revoke</button>
-        <button className="ghost" type="button" disabled onClick={onFullOperator}>Full Operator unavailable</button>
       </div>
       {goal.notes.length ? <ul className="muted">{goal.notes.map((note, index) => <li key={`${index}:${note}`}>{note}</li>)}</ul> : null}
     </section>

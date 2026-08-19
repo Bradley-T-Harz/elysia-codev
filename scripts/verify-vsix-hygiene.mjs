@@ -33,7 +33,7 @@ const forbiddenEntries = entries.filter((entry) => {
     normalized.includes("/node_modules/") ||
     normalized.startsWith("extension/src/") ||
     normalized.startsWith("extension/tests/") ||
-    normalized.startsWith("extension/webview/") ||
+    (normalized.startsWith("extension/webview/") && normalized !== "extension/webview/styles.css") ||
     normalized.startsWith("extension/scripts/") ||
     normalized.endsWith(".map") ||
     normalized.endsWith(".ts") ||
@@ -43,7 +43,13 @@ const forbiddenEntries = entries.filter((entry) => {
   );
 });
 
-const requiredEntries = ["extension/package.json", "extension/LICENSE.txt"];
+const requiredEntries = [
+  "extension/package.json",
+  "extension/LICENSE.txt",
+  "extension/out/src/extension.js",
+  "extension/dist/webview.js",
+  "extension/webview/styles.css",
+];
 const missingRequired = requiredEntries.filter((entry) => !entries.includes(entry));
 
 const textEntries = entries.filter(

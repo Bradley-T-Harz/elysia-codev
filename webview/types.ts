@@ -505,7 +505,7 @@ export type WebviewState = {
   workMode: {
     mode: WorkMode;
     forgeConnected: boolean;
-    forgeStatus: "not_connected" | "placeholder" | "disabled";
+    forgeStatus: "not_connected" | "disabled";
     selectedContextSendAllowed: boolean;
     notes: string[];
   };

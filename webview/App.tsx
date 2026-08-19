@@ -123,8 +123,6 @@ export default function App({ vscode }: AppProps) {
           <ApprovalBar mode={state.approvalMode} capabilities={state.approvalModeCapabilities} onChange={setApprovalMode} />
           <WorkModePanel
             workMode={state.workMode}
-            onConnectForge={() => vscode.postMessage({ type: "connectDeveloperForge" })}
-            onSendContextToForge={() => vscode.postMessage({ type: "sendSelectedContextToForge" })}
           />
           <IdeContextPanel
             context={state.ideContext}
@@ -137,7 +135,6 @@ export default function App({ vscode }: AppProps) {
             onApproveGoal={() => vscode.postMessage({ type: "approveGoal" })}
             onPursueGoal={() => vscode.postMessage({ type: "pursueGoal" })}
             onStop={() => vscode.postMessage({ type: "stopGoal" })}
-            onFullOperator={() => vscode.postMessage({ type: "requestFullOperatorMode" })}
           />
           <CodingBridgePanel coding={state.coding} workspace={state.workspace} onApproveRepo={() => vscode.postMessage({ type: "approveWorkspaceRepo" })} onRevokeRepo={() => vscode.postMessage({ type: "revokeWorkspaceRepo" })} onInspectRepo={() => vscode.postMessage({ type: "inspectRepoPreview" })} onRefresh={() => vscode.postMessage({ type: "refreshStatus" })} />
           <ActiveFilePanel

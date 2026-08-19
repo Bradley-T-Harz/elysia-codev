@@ -76,7 +76,7 @@ export type WorkMode = "local" | "developer_forge";
 export type WorkModeState = {
   mode: WorkMode;
   forgeConnected: boolean;
-  forgeStatus: "not_connected" | "placeholder" | "disabled";
+  forgeStatus: "not_connected" | "disabled";
   selectedContextSendAllowed: boolean;
   notes: string[];
 };
@@ -1204,9 +1204,6 @@ export type WebviewToExtensionMessage =
   | { type: "toggleChangedFileContext"; path: string }
   | { type: "approveWorkspaceRepo" }
   | { type: "revokeWorkspaceRepo" }
-  | { type: "connectDeveloperForge" }
-  | { type: "sendSelectedContextToForge" }
-  | { type: "requestFullOperatorMode" }
   | { type: "startPlanMode" }
   | { type: "planGoal"; objective: string; maxSteps: number; maxMinutes: number }
   | { type: "approveGoal" }

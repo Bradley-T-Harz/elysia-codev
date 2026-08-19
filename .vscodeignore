@@ -4,6 +4,7 @@
 src/**
 tests/**
 webview/**
+!webview/styles.css
 scripts/**
 tsconfig.json
 package-lock.json

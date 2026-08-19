@@ -80,3 +80,24 @@ test("webview shows real SCM, native review, bounded catalog, and no arbitrary c
   assert.doesNotMatch(settings, /workspace\.workspaceRoot\b/);
   assert.match(settings, /workspaceRootHash/);
 });
+
+test("release webview exposes no active placeholder or future-authority controls", () => {
+  const app = source("webview/App.tsx");
+  const workMode = source("webview/components/WorkModePanel.tsx");
+  const context = source("webview/components/IdeContextPanel.tsx");
+  const goal = source("webview/components/GoalWorkflowPanel.tsx");
+  const provider = source("src/ElysiaSidebarProvider.ts");
+  const rendered = [app, workMode, context, goal, provider].join("\n");
+  assert.doesNotMatch(rendered, /coming soon|Connect Developer Forge|Send selected context to Forge|Diagnostics summary|Full Operator unavailable/i);
+  assert.doesNotMatch(rendered, /connectDeveloperForgePlaceholder|requestFullOperatorModePlaceholder/);
+  assert.match(workMode, /External context transfer/);
+  assert.match(workMode, /disabled/);
+});
+
+test("VSIX packaging keeps the release webview stylesheet", () => {
+  const ignore = source(".vscodeignore");
+  const verifier = source("scripts/verify-vsix-hygiene.mjs");
+  assert.match(ignore, /!webview\/styles\.css/);
+  assert.match(verifier, /extension\/webview\/styles\.css/);
+  assert.match(verifier, /extension\/dist\/webview\.js/);
+});
