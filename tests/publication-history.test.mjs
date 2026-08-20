@@ -23,3 +23,9 @@ test("Codev publication contract keeps private repos and product features protec
   assert.match(contract, /repair, harden, and test/u);
   assert.match(contract, /does not authorize publication/u);
 });
+
+test("history verifier recognizes the approved GitHub noreply metadata boundary", () => {
+  const verifier = readFileSync(path.join(root, "scripts/verify-publication-history.mjs"), "utf8");
+  assert.match(verifier, /@users\.noreply\.github\.com/u);
+  assert.match(verifier, /privateAuthorEmail/u);
+});

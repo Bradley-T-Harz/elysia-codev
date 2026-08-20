@@ -79,6 +79,12 @@ function inspectText(text, relative, findingScope, object) {
   }
 }
 
+function privateAuthorEmail(email) {
+  const lowered = email.toLowerCase();
+  if (lowered.endsWith("@users.noreply.github.com")) return false;
+  return lowered.endsWith(".edu") || markers.some((marker) => lowered.includes(marker.toLowerCase()));
+}
+
 if (scope === "tree" || scope === "all") {
   const files = git(["ls-files", "-z"]).toString("utf8").split("\0").filter(Boolean);
   for (const relative of files) {
@@ -123,12 +129,8 @@ if (scope === "history" || scope === "all") {
     .split("\0");
   for (let index = 0; index + 2 < identities.length; index += 3) {
     const [commit, authorEmail, committerEmail] = identities.slice(index, index + 3);
-    if (
-      [authorEmail, committerEmail].some(
-        (email) => email.toLowerCase().endsWith(".edu") || markers.some((marker) => email.includes(marker)),
-      )
-    ) {
-      findings.push({ scope: "history", category: "private_author_email", object: commit });
+    if ([authorEmail, committerEmail].some((email) => privateAuthorEmail(email))) {
+      findings.push({ scope: "history", category: "private_author_email", object: commit.trim() });
     }
   }
   const messages = git(["log", "--all", "--format=%H%x00%B%x00"]).toString("utf8").split("\0");
