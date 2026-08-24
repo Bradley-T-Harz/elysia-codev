@@ -46,6 +46,13 @@ const forbiddenEntries = entries.filter((entry) => {
 const requiredEntries = [
   "extension/package.json",
   "extension/LICENSE.txt",
+  "extension/LICENSING.md",
+  "extension/NOTICE",
+  "extension/THIRD_PARTY_NOTICES.txt",
+  "extension/ASSET_NOTICES.md",
+  "extension/TRADEMARKS.md",
+  "extension/LICENSES/Apache-2.0.txt",
+  "extension/LICENSES/LicenseRef-EcoSyneva-Branding.txt",
   "extension/out/src/extension.js",
   "extension/dist/webview.js",
   "extension/webview/styles.css",

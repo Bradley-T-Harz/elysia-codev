@@ -1,0 +1,16 @@
+version = 1
+SPDX-PackageName = "Elysia Codev"
+SPDX-PackageSupplier = "Organization: EcoSyneva Commons LLC"
+SPDX-PackageDownloadLocation = "NOASSERTION"
+
+[[annotations]]
+path = ["**"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 EcoSyneva Commons LLC"
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = ["media/**"]
+precedence = "override"
+SPDX-FileCopyrightText = "2026 EcoSyneva Commons LLC"
+SPDX-License-Identifier = "LicenseRef-EcoSyneva-Branding"

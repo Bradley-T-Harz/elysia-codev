@@ -1,0 +1,2030 @@
+THIRD-PARTY SOFTWARE NOTICES
+============================
+
+Dependency universe: CODEV_VSIX
+Generated from the exact npm package-lock.json used by this source tree.
+This inventory does not modify or supersede any upstream license.
+For runtime/bundled components, locally installed upstream license or
+notice files are reproduced below when supplied by the package. Generic
+canonical license texts are also shipped in the adjacent LICENSES directory.
+
+Dual-license choices used by this distribution:
+- jszip: MIT (not GPL-3.0-or-later)
+- packages declaring Apache-2.0 OR MIT: Apache-2.0 or MIT as applicable
+- packages declaring MIT OR another permissive license: MIT
+
+@azu/format-text 1.0.2
+  License: BSD-3-Clause
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@azu/format-text
+  Resolved source: https://registry.npmjs.org/@azu/format-text/-/format-text-1.0.2.tgz
+
+@azu/style-format 1.0.1
+  License: WTFPL
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@azu/style-format
+  Resolved source: https://registry.npmjs.org/@azu/style-format/-/style-format-1.0.1.tgz
+
+@azure/abort-controller 2.2.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@azure/abort-controller
+  Resolved source: https://registry.npmjs.org/@azure/abort-controller/-/abort-controller-2.2.0.tgz
+
+@azure/core-auth 1.11.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@azure/core-auth
+  Resolved source: https://registry.npmjs.org/@azure/core-auth/-/core-auth-1.11.0.tgz
+
+@azure/core-client 1.11.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@azure/core-client
+  Resolved source: https://registry.npmjs.org/@azure/core-client/-/core-client-1.11.0.tgz
+
+@azure/core-process 1.0.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@azure/core-process
+  Resolved source: https://registry.npmjs.org/@azure/core-process/-/core-process-1.0.0.tgz
+
+@azure/core-rest-pipeline 1.25.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@azure/core-rest-pipeline
+  Resolved source: https://registry.npmjs.org/@azure/core-rest-pipeline/-/core-rest-pipeline-1.25.0.tgz
+
+@azure/core-tracing 1.4.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@azure/core-tracing
+  Resolved source: https://registry.npmjs.org/@azure/core-tracing/-/core-tracing-1.4.0.tgz
+
+@azure/core-util 1.14.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@azure/core-util
+  Resolved source: https://registry.npmjs.org/@azure/core-util/-/core-util-1.14.0.tgz
+
+@azure/identity 4.13.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@azure/identity
+  Resolved source: https://registry.npmjs.org/@azure/identity/-/identity-4.13.2.tgz
+
+@azure/logger 1.4.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@azure/logger
+  Resolved source: https://registry.npmjs.org/@azure/logger/-/logger-1.4.0.tgz
+
+@azure/msal-browser 5.19.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@azure/msal-browser
+  Resolved source: https://registry.npmjs.org/@azure/msal-browser/-/msal-browser-5.19.0.tgz
+
+@azure/msal-common 16.13.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@azure/msal-common
+  Resolved source: https://registry.npmjs.org/@azure/msal-common/-/msal-common-16.13.0.tgz
+
+@azure/msal-node 5.6.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@azure/msal-node
+  Resolved source: https://registry.npmjs.org/@azure/msal-node/-/msal-node-5.6.0.tgz
+
+@babel/code-frame 7.29.7
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@babel/code-frame
+  Resolved source: https://registry.npmjs.org/@babel/code-frame/-/code-frame-7.29.7.tgz
+
+@babel/helper-validator-identifier 7.29.7
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@babel/helper-validator-identifier
+  Resolved source: https://registry.npmjs.org/@babel/helper-validator-identifier/-/helper-validator-identifier-7.29.7.tgz
+
+@esbuild/aix-ppc64 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/aix-ppc64
+  Resolved source: https://registry.npmjs.org/@esbuild/aix-ppc64/-/aix-ppc64-0.28.2.tgz
+
+@esbuild/android-arm 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/android-arm
+  Resolved source: https://registry.npmjs.org/@esbuild/android-arm/-/android-arm-0.28.2.tgz
+
+@esbuild/android-arm64 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/android-arm64
+  Resolved source: https://registry.npmjs.org/@esbuild/android-arm64/-/android-arm64-0.28.2.tgz
+
+@esbuild/android-x64 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/android-x64
+  Resolved source: https://registry.npmjs.org/@esbuild/android-x64/-/android-x64-0.28.2.tgz
+
+@esbuild/darwin-arm64 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/darwin-arm64
+  Resolved source: https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.28.2.tgz
+
+@esbuild/darwin-x64 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/darwin-x64
+  Resolved source: https://registry.npmjs.org/@esbuild/darwin-x64/-/darwin-x64-0.28.2.tgz
+
+@esbuild/freebsd-arm64 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/freebsd-arm64
+  Resolved source: https://registry.npmjs.org/@esbuild/freebsd-arm64/-/freebsd-arm64-0.28.2.tgz
+
+@esbuild/freebsd-x64 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/freebsd-x64
+  Resolved source: https://registry.npmjs.org/@esbuild/freebsd-x64/-/freebsd-x64-0.28.2.tgz
+
+@esbuild/linux-arm 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/linux-arm
+  Resolved source: https://registry.npmjs.org/@esbuild/linux-arm/-/linux-arm-0.28.2.tgz
+
+@esbuild/linux-arm64 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/linux-arm64
+  Resolved source: https://registry.npmjs.org/@esbuild/linux-arm64/-/linux-arm64-0.28.2.tgz
+
+@esbuild/linux-ia32 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/linux-ia32
+  Resolved source: https://registry.npmjs.org/@esbuild/linux-ia32/-/linux-ia32-0.28.2.tgz
+
+@esbuild/linux-loong64 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/linux-loong64
+  Resolved source: https://registry.npmjs.org/@esbuild/linux-loong64/-/linux-loong64-0.28.2.tgz
+
+@esbuild/linux-mips64el 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/linux-mips64el
+  Resolved source: https://registry.npmjs.org/@esbuild/linux-mips64el/-/linux-mips64el-0.28.2.tgz
+
+@esbuild/linux-ppc64 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/linux-ppc64
+  Resolved source: https://registry.npmjs.org/@esbuild/linux-ppc64/-/linux-ppc64-0.28.2.tgz
+
+@esbuild/linux-riscv64 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/linux-riscv64
+  Resolved source: https://registry.npmjs.org/@esbuild/linux-riscv64/-/linux-riscv64-0.28.2.tgz
+
+@esbuild/linux-s390x 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/linux-s390x
+  Resolved source: https://registry.npmjs.org/@esbuild/linux-s390x/-/linux-s390x-0.28.2.tgz
+
+@esbuild/linux-x64 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/linux-x64
+  Resolved source: https://registry.npmjs.org/@esbuild/linux-x64/-/linux-x64-0.28.2.tgz
+
+@esbuild/netbsd-arm64 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/netbsd-arm64
+  Resolved source: https://registry.npmjs.org/@esbuild/netbsd-arm64/-/netbsd-arm64-0.28.2.tgz
+
+@esbuild/netbsd-x64 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/netbsd-x64
+  Resolved source: https://registry.npmjs.org/@esbuild/netbsd-x64/-/netbsd-x64-0.28.2.tgz
+
+@esbuild/openbsd-arm64 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/openbsd-arm64
+  Resolved source: https://registry.npmjs.org/@esbuild/openbsd-arm64/-/openbsd-arm64-0.28.2.tgz
+
+@esbuild/openbsd-x64 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/openbsd-x64
+  Resolved source: https://registry.npmjs.org/@esbuild/openbsd-x64/-/openbsd-x64-0.28.2.tgz
+
+@esbuild/openharmony-arm64 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/openharmony-arm64
+  Resolved source: https://registry.npmjs.org/@esbuild/openharmony-arm64/-/openharmony-arm64-0.28.2.tgz
+
+@esbuild/sunos-x64 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/sunos-x64
+  Resolved source: https://registry.npmjs.org/@esbuild/sunos-x64/-/sunos-x64-0.28.2.tgz
+
+@esbuild/win32-arm64 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/win32-arm64
+  Resolved source: https://registry.npmjs.org/@esbuild/win32-arm64/-/win32-arm64-0.28.2.tgz
+
+@esbuild/win32-ia32 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/win32-ia32
+  Resolved source: https://registry.npmjs.org/@esbuild/win32-ia32/-/win32-ia32-0.28.2.tgz
+
+@esbuild/win32-x64 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@esbuild/win32-x64
+  Resolved source: https://registry.npmjs.org/@esbuild/win32-x64/-/win32-x64-0.28.2.tgz
+
+@nodelib/fs.scandir 2.1.5
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@nodelib/fs.scandir
+  Resolved source: https://registry.npmjs.org/@nodelib/fs.scandir/-/fs.scandir-2.1.5.tgz
+
+@nodelib/fs.stat 2.0.5
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@nodelib/fs.stat
+  Resolved source: https://registry.npmjs.org/@nodelib/fs.stat/-/fs.stat-2.0.5.tgz
+
+@nodelib/fs.walk 1.2.8
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@nodelib/fs.walk
+  Resolved source: https://registry.npmjs.org/@nodelib/fs.walk/-/fs.walk-1.2.8.tgz
+
+@secretlint/config-creator 10.2.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@secretlint/config-creator
+  Resolved source: https://registry.npmjs.org/@secretlint/config-creator/-/config-creator-10.2.2.tgz
+
+@secretlint/config-loader 10.2.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@secretlint/config-loader
+  Resolved source: https://registry.npmjs.org/@secretlint/config-loader/-/config-loader-10.2.2.tgz
+
+@secretlint/core 10.2.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@secretlint/core
+  Resolved source: https://registry.npmjs.org/@secretlint/core/-/core-10.2.2.tgz
+
+@secretlint/formatter 10.2.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@secretlint/formatter
+  Resolved source: https://registry.npmjs.org/@secretlint/formatter/-/formatter-10.2.2.tgz
+
+@secretlint/node 10.2.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@secretlint/node
+  Resolved source: https://registry.npmjs.org/@secretlint/node/-/node-10.2.2.tgz
+
+@secretlint/profiler 10.2.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@secretlint/profiler
+  Resolved source: https://registry.npmjs.org/@secretlint/profiler/-/profiler-10.2.2.tgz
+
+@secretlint/resolver 10.2.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@secretlint/resolver
+  Resolved source: https://registry.npmjs.org/@secretlint/resolver/-/resolver-10.2.2.tgz
+
+@secretlint/secretlint-formatter-sarif 10.2.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@secretlint/secretlint-formatter-sarif
+  Resolved source: https://registry.npmjs.org/@secretlint/secretlint-formatter-sarif/-/secretlint-formatter-sarif-10.2.2.tgz
+
+@secretlint/secretlint-rule-no-dotenv 10.2.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@secretlint/secretlint-rule-no-dotenv
+  Resolved source: https://registry.npmjs.org/@secretlint/secretlint-rule-no-dotenv/-/secretlint-rule-no-dotenv-10.2.2.tgz
+
+@secretlint/secretlint-rule-preset-recommend 10.2.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@secretlint/secretlint-rule-preset-recommend
+  Resolved source: https://registry.npmjs.org/@secretlint/secretlint-rule-preset-recommend/-/secretlint-rule-preset-recommend-10.2.2.tgz
+
+@secretlint/source-creator 10.2.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@secretlint/source-creator
+  Resolved source: https://registry.npmjs.org/@secretlint/source-creator/-/source-creator-10.2.2.tgz
+
+@secretlint/types 10.2.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@secretlint/types
+  Resolved source: https://registry.npmjs.org/@secretlint/types/-/types-10.2.2.tgz
+
+@sindresorhus/merge-streams 2.3.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@sindresorhus/merge-streams
+  Resolved source: https://registry.npmjs.org/@sindresorhus/merge-streams/-/merge-streams-2.3.0.tgz
+
+@textlint/ast-node-types 15.8.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@textlint/ast-node-types
+  Resolved source: https://registry.npmjs.org/@textlint/ast-node-types/-/ast-node-types-15.8.0.tgz
+
+@textlint/linter-formatter 15.8.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@textlint/linter-formatter
+  Resolved source: https://registry.npmjs.org/@textlint/linter-formatter/-/linter-formatter-15.8.0.tgz
+
+@textlint/module-interop 15.8.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@textlint/module-interop
+  Resolved source: https://registry.npmjs.org/@textlint/module-interop/-/module-interop-15.8.0.tgz
+
+@textlint/resolver 15.8.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@textlint/resolver
+  Resolved source: https://registry.npmjs.org/@textlint/resolver/-/resolver-15.8.0.tgz
+
+@textlint/types 15.8.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@textlint/types
+  Resolved source: https://registry.npmjs.org/@textlint/types/-/types-15.8.0.tgz
+
+@types/node 22.20.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@types/node
+  Resolved source: https://registry.npmjs.org/@types/node/-/node-22.20.1.tgz
+
+@types/normalize-package-data 2.4.4
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@types/normalize-package-data
+  Resolved source: https://registry.npmjs.org/@types/normalize-package-data/-/normalize-package-data-2.4.4.tgz
+
+@types/react 19.2.18
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@types/react
+  Resolved source: https://registry.npmjs.org/@types/react/-/react-19.2.18.tgz
+
+@types/react-dom 19.2.5
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@types/react-dom
+  Resolved source: https://registry.npmjs.org/@types/react-dom/-/react-dom-19.2.5.tgz
+
+@types/sarif 2.1.7
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@types/sarif
+  Resolved source: https://registry.npmjs.org/@types/sarif/-/sarif-2.1.7.tgz
+
+@types/vscode 1.134.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@types/vscode
+  Resolved source: https://registry.npmjs.org/@types/vscode/-/vscode-1.134.0.tgz
+
+@typespec/ts-http-runtime 0.3.8
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@typespec/ts-http-runtime
+  Resolved source: https://registry.npmjs.org/@typespec/ts-http-runtime/-/ts-http-runtime-0.3.8.tgz
+
+@vscode/vsce 3.9.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@vscode/vsce
+  Resolved source: https://registry.npmjs.org/@vscode/vsce/-/vsce-3.9.2.tgz
+
+@vscode/vsce-sign 2.1.0
+  License: SEE LICENSE IN LICENSE.txt
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@vscode/vsce-sign
+  Resolved source: https://registry.npmjs.org/@vscode/vsce-sign/-/vsce-sign-2.1.0.tgz
+
+@vscode/vsce-sign-alpine-arm64 2.0.6
+  License: SEE LICENSE IN LICENSE.txt
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@vscode/vsce-sign-alpine-arm64
+  Resolved source: https://registry.npmjs.org/@vscode/vsce-sign-alpine-arm64/-/vsce-sign-alpine-arm64-2.0.6.tgz
+
+@vscode/vsce-sign-alpine-x64 2.0.6
+  License: SEE LICENSE IN LICENSE.txt
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@vscode/vsce-sign-alpine-x64
+  Resolved source: https://registry.npmjs.org/@vscode/vsce-sign-alpine-x64/-/vsce-sign-alpine-x64-2.0.6.tgz
+
+@vscode/vsce-sign-darwin-arm64 2.0.6
+  License: SEE LICENSE IN LICENSE.txt
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@vscode/vsce-sign-darwin-arm64
+  Resolved source: https://registry.npmjs.org/@vscode/vsce-sign-darwin-arm64/-/vsce-sign-darwin-arm64-2.0.6.tgz
+
+@vscode/vsce-sign-darwin-x64 2.0.6
+  License: SEE LICENSE IN LICENSE.txt
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@vscode/vsce-sign-darwin-x64
+  Resolved source: https://registry.npmjs.org/@vscode/vsce-sign-darwin-x64/-/vsce-sign-darwin-x64-2.0.6.tgz
+
+@vscode/vsce-sign-linux-arm 2.0.6
+  License: SEE LICENSE IN LICENSE.txt
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@vscode/vsce-sign-linux-arm
+  Resolved source: https://registry.npmjs.org/@vscode/vsce-sign-linux-arm/-/vsce-sign-linux-arm-2.0.6.tgz
+
+@vscode/vsce-sign-linux-arm64 2.0.6
+  License: SEE LICENSE IN LICENSE.txt
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@vscode/vsce-sign-linux-arm64
+  Resolved source: https://registry.npmjs.org/@vscode/vsce-sign-linux-arm64/-/vsce-sign-linux-arm64-2.0.6.tgz
+
+@vscode/vsce-sign-linux-x64 2.0.6
+  License: SEE LICENSE IN LICENSE.txt
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@vscode/vsce-sign-linux-x64
+  Resolved source: https://registry.npmjs.org/@vscode/vsce-sign-linux-x64/-/vsce-sign-linux-x64-2.0.6.tgz
+
+@vscode/vsce-sign-win32-arm64 2.0.6
+  License: SEE LICENSE IN LICENSE.txt
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@vscode/vsce-sign-win32-arm64
+  Resolved source: https://registry.npmjs.org/@vscode/vsce-sign-win32-arm64/-/vsce-sign-win32-arm64-2.0.6.tgz
+
+@vscode/vsce-sign-win32-x64 2.0.6
+  License: SEE LICENSE IN LICENSE.txt
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@vscode/vsce-sign-win32-x64
+  Resolved source: https://registry.npmjs.org/@vscode/vsce-sign-win32-x64/-/vsce-sign-win32-x64-2.0.6.tgz
+
+agent-base 7.1.4
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/agent-base
+  Resolved source: https://registry.npmjs.org/agent-base/-/agent-base-7.1.4.tgz
+
+ajv 8.20.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/ajv
+  Resolved source: https://registry.npmjs.org/ajv/-/ajv-8.20.0.tgz
+
+ansi-escapes 7.3.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/ansi-escapes
+  Resolved source: https://registry.npmjs.org/ansi-escapes/-/ansi-escapes-7.3.0.tgz
+
+ansi-regex 5.0.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/table/node_modules/ansi-regex
+  Resolved source: https://registry.npmjs.org/ansi-regex/-/ansi-regex-5.0.1.tgz
+
+ansi-regex 6.3.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/ansi-regex
+  Resolved source: https://registry.npmjs.org/ansi-regex/-/ansi-regex-6.3.0.tgz
+
+ansi-styles 4.3.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/ansi-styles
+  Resolved source: https://registry.npmjs.org/ansi-styles/-/ansi-styles-4.3.0.tgz
+
+argparse 2.0.1
+  License: Python-2.0
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/argparse
+  Resolved source: https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz
+
+astral-regex 2.0.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/astral-regex
+  Resolved source: https://registry.npmjs.org/astral-regex/-/astral-regex-2.0.0.tgz
+
+asynckit 0.4.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/asynckit
+  Resolved source: https://registry.npmjs.org/asynckit/-/asynckit-0.4.0.tgz
+
+azure-devops-node-api 12.5.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/azure-devops-node-api
+  Resolved source: https://registry.npmjs.org/azure-devops-node-api/-/azure-devops-node-api-12.5.0.tgz
+
+balanced-match 4.0.4
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/balanced-match
+  Resolved source: https://registry.npmjs.org/balanced-match/-/balanced-match-4.0.4.tgz
+
+base64-js 1.5.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/base64-js
+  Resolved source: https://registry.npmjs.org/base64-js/-/base64-js-1.5.1.tgz
+
+binaryextensions 6.11.0
+  License: Artistic-2.0
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/binaryextensions
+  Resolved source: https://registry.npmjs.org/binaryextensions/-/binaryextensions-6.11.0.tgz
+
+bl 4.1.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/bl
+  Resolved source: https://registry.npmjs.org/bl/-/bl-4.1.0.tgz
+
+boolbase 1.0.0
+  License: ISC
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/boolbase
+  Resolved source: https://registry.npmjs.org/boolbase/-/boolbase-1.0.0.tgz
+
+boundary 2.0.0
+  License: BSD-2-Clause
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/boundary
+  Resolved source: https://registry.npmjs.org/boundary/-/boundary-2.0.0.tgz
+
+brace-expansion 5.0.9
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/brace-expansion
+  Resolved source: https://registry.npmjs.org/brace-expansion/-/brace-expansion-5.0.9.tgz
+
+braces 3.0.3
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/braces
+  Resolved source: https://registry.npmjs.org/braces/-/braces-3.0.3.tgz
+
+buffer 5.7.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/buffer
+  Resolved source: https://registry.npmjs.org/buffer/-/buffer-5.7.1.tgz
+
+buffer-crc32 0.2.13
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/buffer-crc32
+  Resolved source: https://registry.npmjs.org/buffer-crc32/-/buffer-crc32-0.2.13.tgz
+
+buffer-equal-constant-time 1.0.1
+  License: BSD-3-Clause
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/buffer-equal-constant-time
+  Resolved source: https://registry.npmjs.org/buffer-equal-constant-time/-/buffer-equal-constant-time-1.0.1.tgz
+
+bundle-name 4.1.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/bundle-name
+  Resolved source: https://registry.npmjs.org/bundle-name/-/bundle-name-4.1.0.tgz
+
+call-bind-apply-helpers 1.0.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/call-bind-apply-helpers
+  Resolved source: https://registry.npmjs.org/call-bind-apply-helpers/-/call-bind-apply-helpers-1.0.2.tgz
+
+call-bound 1.0.4
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/call-bound
+  Resolved source: https://registry.npmjs.org/call-bound/-/call-bound-1.0.4.tgz
+
+chalk 4.1.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/chalk
+  Resolved source: https://registry.npmjs.org/chalk/-/chalk-4.1.2.tgz
+
+chalk 5.6.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@secretlint/formatter/node_modules/chalk
+  Resolved source: https://registry.npmjs.org/chalk/-/chalk-5.6.2.tgz
+
+cheerio 1.2.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/cheerio
+  Resolved source: https://registry.npmjs.org/cheerio/-/cheerio-1.2.0.tgz
+
+cheerio-select 2.1.0
+  License: BSD-2-Clause
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/cheerio-select
+  Resolved source: https://registry.npmjs.org/cheerio-select/-/cheerio-select-2.1.0.tgz
+
+chownr 1.1.4
+  License: ISC
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/chownr
+  Resolved source: https://registry.npmjs.org/chownr/-/chownr-1.1.4.tgz
+
+cockatiel 3.2.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/cockatiel
+  Resolved source: https://registry.npmjs.org/cockatiel/-/cockatiel-3.2.1.tgz
+
+color-convert 2.0.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/color-convert
+  Resolved source: https://registry.npmjs.org/color-convert/-/color-convert-2.0.1.tgz
+
+color-name 1.1.4
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/color-name
+  Resolved source: https://registry.npmjs.org/color-name/-/color-name-1.1.4.tgz
+
+combined-stream 1.0.8
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/combined-stream
+  Resolved source: https://registry.npmjs.org/combined-stream/-/combined-stream-1.0.8.tgz
+
+commander 12.1.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/commander
+  Resolved source: https://registry.npmjs.org/commander/-/commander-12.1.0.tgz
+
+css-select 5.2.2
+  License: BSD-2-Clause
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/css-select
+  Resolved source: https://registry.npmjs.org/css-select/-/css-select-5.2.2.tgz
+
+css-what 6.2.2
+  License: BSD-2-Clause
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/css-what
+  Resolved source: https://registry.npmjs.org/css-what/-/css-what-6.2.2.tgz
+
+csstype 3.2.3
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/csstype
+  Resolved source: https://registry.npmjs.org/csstype/-/csstype-3.2.3.tgz
+
+debug 4.4.3
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/debug
+  Resolved source: https://registry.npmjs.org/debug/-/debug-4.4.3.tgz
+
+decompress-response 6.0.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/decompress-response
+  Resolved source: https://registry.npmjs.org/decompress-response/-/decompress-response-6.0.0.tgz
+
+deep-extend 0.6.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/deep-extend
+  Resolved source: https://registry.npmjs.org/deep-extend/-/deep-extend-0.6.0.tgz
+
+default-browser 5.5.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/default-browser
+  Resolved source: https://registry.npmjs.org/default-browser/-/default-browser-5.5.1.tgz
+
+default-browser-id 5.0.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/default-browser-id
+  Resolved source: https://registry.npmjs.org/default-browser-id/-/default-browser-id-5.0.1.tgz
+
+define-lazy-prop 3.0.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/define-lazy-prop
+  Resolved source: https://registry.npmjs.org/define-lazy-prop/-/define-lazy-prop-3.0.0.tgz
+
+delayed-stream 1.0.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/delayed-stream
+  Resolved source: https://registry.npmjs.org/delayed-stream/-/delayed-stream-1.0.0.tgz
+
+detect-libc 2.1.2
+  License: Apache-2.0
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/detect-libc
+  Resolved source: https://registry.npmjs.org/detect-libc/-/detect-libc-2.1.2.tgz
+
+dom-serializer 2.0.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/dom-serializer
+  Resolved source: https://registry.npmjs.org/dom-serializer/-/dom-serializer-2.0.0.tgz
+
+domelementtype 2.3.0
+  License: BSD-2-Clause
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/domelementtype
+  Resolved source: https://registry.npmjs.org/domelementtype/-/domelementtype-2.3.0.tgz
+
+domhandler 5.0.3
+  License: BSD-2-Clause
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/domhandler
+  Resolved source: https://registry.npmjs.org/domhandler/-/domhandler-5.0.3.tgz
+
+domutils 3.2.2
+  License: BSD-2-Clause
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/domutils
+  Resolved source: https://registry.npmjs.org/domutils/-/domutils-3.2.2.tgz
+
+dunder-proto 1.0.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/dunder-proto
+  Resolved source: https://registry.npmjs.org/dunder-proto/-/dunder-proto-1.0.1.tgz
+
+ecdsa-sig-formatter 1.0.11
+  License: Apache-2.0
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/ecdsa-sig-formatter
+  Resolved source: https://registry.npmjs.org/ecdsa-sig-formatter/-/ecdsa-sig-formatter-1.0.11.tgz
+
+editions 6.22.0
+  License: Artistic-2.0
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/editions
+  Resolved source: https://registry.npmjs.org/editions/-/editions-6.22.0.tgz
+
+emoji-regex 8.0.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/emoji-regex
+  Resolved source: https://registry.npmjs.org/emoji-regex/-/emoji-regex-8.0.0.tgz
+
+encoding-sniffer 0.2.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/encoding-sniffer
+  Resolved source: https://registry.npmjs.org/encoding-sniffer/-/encoding-sniffer-0.2.1.tgz
+
+end-of-stream 1.4.5
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/end-of-stream
+  Resolved source: https://registry.npmjs.org/end-of-stream/-/end-of-stream-1.4.5.tgz
+
+entities 4.5.0
+  License: BSD-2-Clause
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/entities
+  Resolved source: https://registry.npmjs.org/entities/-/entities-4.5.0.tgz
+
+entities 6.0.1
+  License: BSD-2-Clause
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/parse5/node_modules/entities
+  Resolved source: https://registry.npmjs.org/entities/-/entities-6.0.1.tgz
+
+entities 7.0.1
+  License: BSD-2-Clause
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/htmlparser2/node_modules/entities
+  Resolved source: https://registry.npmjs.org/entities/-/entities-7.0.1.tgz
+
+environment 1.1.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/environment
+  Resolved source: https://registry.npmjs.org/environment/-/environment-1.1.0.tgz
+
+es-define-property 1.0.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/es-define-property
+  Resolved source: https://registry.npmjs.org/es-define-property/-/es-define-property-1.0.1.tgz
+
+es-errors 1.3.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/es-errors
+  Resolved source: https://registry.npmjs.org/es-errors/-/es-errors-1.3.0.tgz
+
+es-object-atoms 1.1.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/es-object-atoms
+  Resolved source: https://registry.npmjs.org/es-object-atoms/-/es-object-atoms-1.1.2.tgz
+
+es-set-tostringtag 2.1.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/es-set-tostringtag
+  Resolved source: https://registry.npmjs.org/es-set-tostringtag/-/es-set-tostringtag-2.1.0.tgz
+
+esbuild 0.28.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/esbuild
+  Resolved source: https://registry.npmjs.org/esbuild/-/esbuild-0.28.2.tgz
+
+expand-template 2.0.3
+  License: (MIT OR WTFPL)
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/expand-template
+  Resolved source: https://registry.npmjs.org/expand-template/-/expand-template-2.0.3.tgz
+
+fast-deep-equal 3.1.3
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/fast-deep-equal
+  Resolved source: https://registry.npmjs.org/fast-deep-equal/-/fast-deep-equal-3.1.3.tgz
+
+fast-glob 3.3.3
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/fast-glob
+  Resolved source: https://registry.npmjs.org/fast-glob/-/fast-glob-3.3.3.tgz
+
+fast-uri 3.1.6
+  License: BSD-3-Clause
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/fast-uri
+  Resolved source: https://registry.npmjs.org/fast-uri/-/fast-uri-3.1.6.tgz
+
+fastq 1.20.1
+  License: ISC
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/fastq
+  Resolved source: https://registry.npmjs.org/fastq/-/fastq-1.20.1.tgz
+
+fill-range 7.1.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/fill-range
+  Resolved source: https://registry.npmjs.org/fill-range/-/fill-range-7.1.1.tgz
+
+form-data 4.0.6
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/form-data
+  Resolved source: https://registry.npmjs.org/form-data/-/form-data-4.0.6.tgz
+
+fs-constants 1.0.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/fs-constants
+  Resolved source: https://registry.npmjs.org/fs-constants/-/fs-constants-1.0.0.tgz
+
+fs-extra 11.4.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/fs-extra
+  Resolved source: https://registry.npmjs.org/fs-extra/-/fs-extra-11.4.0.tgz
+
+function-bind 1.1.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/function-bind
+  Resolved source: https://registry.npmjs.org/function-bind/-/function-bind-1.1.2.tgz
+
+get-intrinsic 1.3.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/get-intrinsic
+  Resolved source: https://registry.npmjs.org/get-intrinsic/-/get-intrinsic-1.3.0.tgz
+
+get-proto 1.0.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/get-proto
+  Resolved source: https://registry.npmjs.org/get-proto/-/get-proto-1.0.1.tgz
+
+github-from-package 0.0.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/github-from-package
+  Resolved source: https://registry.npmjs.org/github-from-package/-/github-from-package-0.0.0.tgz
+
+glob 13.0.6
+  License: BlueOak-1.0.0
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/glob
+  Resolved source: https://registry.npmjs.org/glob/-/glob-13.0.6.tgz
+
+glob-parent 5.1.2
+  License: ISC
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/glob-parent
+  Resolved source: https://registry.npmjs.org/glob-parent/-/glob-parent-5.1.2.tgz
+
+globby 14.1.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/globby
+  Resolved source: https://registry.npmjs.org/globby/-/globby-14.1.0.tgz
+
+gopd 1.2.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/gopd
+  Resolved source: https://registry.npmjs.org/gopd/-/gopd-1.2.0.tgz
+
+graceful-fs 4.2.11
+  License: ISC
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/graceful-fs
+  Resolved source: https://registry.npmjs.org/graceful-fs/-/graceful-fs-4.2.11.tgz
+
+has-flag 4.0.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/has-flag
+  Resolved source: https://registry.npmjs.org/has-flag/-/has-flag-4.0.0.tgz
+
+has-symbols 1.1.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/has-symbols
+  Resolved source: https://registry.npmjs.org/has-symbols/-/has-symbols-1.1.0.tgz
+
+has-tostringtag 1.0.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/has-tostringtag
+  Resolved source: https://registry.npmjs.org/has-tostringtag/-/has-tostringtag-1.0.2.tgz
+
+hasown 2.0.4
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/hasown
+  Resolved source: https://registry.npmjs.org/hasown/-/hasown-2.0.4.tgz
+
+hosted-git-info 4.1.0
+  License: ISC
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/hosted-git-info
+  Resolved source: https://registry.npmjs.org/hosted-git-info/-/hosted-git-info-4.1.0.tgz
+
+hosted-git-info 7.0.2
+  License: ISC
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/normalize-package-data/node_modules/hosted-git-info
+  Resolved source: https://registry.npmjs.org/hosted-git-info/-/hosted-git-info-7.0.2.tgz
+
+htmlparser2 10.1.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/htmlparser2
+  Resolved source: https://registry.npmjs.org/htmlparser2/-/htmlparser2-10.1.0.tgz
+
+http-proxy-agent 7.0.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/http-proxy-agent
+  Resolved source: https://registry.npmjs.org/http-proxy-agent/-/http-proxy-agent-7.0.2.tgz
+
+https-proxy-agent 7.0.6
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/https-proxy-agent
+  Resolved source: https://registry.npmjs.org/https-proxy-agent/-/https-proxy-agent-7.0.6.tgz
+
+iconv-lite 0.6.3
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/iconv-lite
+  Resolved source: https://registry.npmjs.org/iconv-lite/-/iconv-lite-0.6.3.tgz
+
+ieee754 1.2.1
+  License: BSD-3-Clause
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/ieee754
+  Resolved source: https://registry.npmjs.org/ieee754/-/ieee754-1.2.1.tgz
+
+ignore 7.0.6
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/ignore
+  Resolved source: https://registry.npmjs.org/ignore/-/ignore-7.0.6.tgz
+
+index-to-position 1.2.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/index-to-position
+  Resolved source: https://registry.npmjs.org/index-to-position/-/index-to-position-1.2.0.tgz
+
+inherits 2.0.4
+  License: ISC
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/inherits
+  Resolved source: https://registry.npmjs.org/inherits/-/inherits-2.0.4.tgz
+
+ini 1.3.8
+  License: ISC
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/ini
+  Resolved source: https://registry.npmjs.org/ini/-/ini-1.3.8.tgz
+
+is-docker 3.0.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/is-docker
+  Resolved source: https://registry.npmjs.org/is-docker/-/is-docker-3.0.0.tgz
+
+is-extglob 2.1.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/is-extglob
+  Resolved source: https://registry.npmjs.org/is-extglob/-/is-extglob-2.1.1.tgz
+
+is-fullwidth-code-point 3.0.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/is-fullwidth-code-point
+  Resolved source: https://registry.npmjs.org/is-fullwidth-code-point/-/is-fullwidth-code-point-3.0.0.tgz
+
+is-glob 4.0.3
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/is-glob
+  Resolved source: https://registry.npmjs.org/is-glob/-/is-glob-4.0.3.tgz
+
+is-inside-container 1.0.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/is-inside-container
+  Resolved source: https://registry.npmjs.org/is-inside-container/-/is-inside-container-1.0.0.tgz
+
+is-number 7.0.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/is-number
+  Resolved source: https://registry.npmjs.org/is-number/-/is-number-7.0.0.tgz
+
+is-wsl 3.1.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/is-wsl
+  Resolved source: https://registry.npmjs.org/is-wsl/-/is-wsl-3.1.1.tgz
+
+istextorbinary 9.5.0
+  License: Artistic-2.0
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/istextorbinary
+  Resolved source: https://registry.npmjs.org/istextorbinary/-/istextorbinary-9.5.0.tgz
+
+js-tokens 4.0.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/js-tokens
+  Resolved source: https://registry.npmjs.org/js-tokens/-/js-tokens-4.0.0.tgz
+
+js-yaml 4.3.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/js-yaml
+  Resolved source: https://registry.npmjs.org/js-yaml/-/js-yaml-4.3.1.tgz
+
+json-schema-traverse 1.0.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/json-schema-traverse
+  Resolved source: https://registry.npmjs.org/json-schema-traverse/-/json-schema-traverse-1.0.0.tgz
+
+json5 2.2.3
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/json5
+  Resolved source: https://registry.npmjs.org/json5/-/json5-2.2.3.tgz
+
+jsonc-parser 3.3.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/jsonc-parser
+  Resolved source: https://registry.npmjs.org/jsonc-parser/-/jsonc-parser-3.3.1.tgz
+
+jsonfile 6.2.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/jsonfile
+  Resolved source: https://registry.npmjs.org/jsonfile/-/jsonfile-6.2.1.tgz
+
+jsonwebtoken 9.0.3
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/jsonwebtoken
+  Resolved source: https://registry.npmjs.org/jsonwebtoken/-/jsonwebtoken-9.0.3.tgz
+
+jwa 2.0.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/jwa
+  Resolved source: https://registry.npmjs.org/jwa/-/jwa-2.0.1.tgz
+
+jws 4.0.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/jws
+  Resolved source: https://registry.npmjs.org/jws/-/jws-4.0.1.tgz
+
+keytar 7.9.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/keytar
+  Resolved source: https://registry.npmjs.org/keytar/-/keytar-7.9.0.tgz
+
+leven 3.1.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/leven
+  Resolved source: https://registry.npmjs.org/leven/-/leven-3.1.0.tgz
+
+linkify-it 5.0.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/linkify-it
+  Resolved source: https://registry.npmjs.org/linkify-it/-/linkify-it-5.0.2.tgz
+
+lodash 4.18.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/lodash
+  Resolved source: https://registry.npmjs.org/lodash/-/lodash-4.18.1.tgz
+
+lodash.includes 4.3.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/lodash.includes
+  Resolved source: https://registry.npmjs.org/lodash.includes/-/lodash.includes-4.3.0.tgz
+
+lodash.isboolean 3.0.3
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/lodash.isboolean
+  Resolved source: https://registry.npmjs.org/lodash.isboolean/-/lodash.isboolean-3.0.3.tgz
+
+lodash.isinteger 4.0.4
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/lodash.isinteger
+  Resolved source: https://registry.npmjs.org/lodash.isinteger/-/lodash.isinteger-4.0.4.tgz
+
+lodash.isnumber 3.0.3
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/lodash.isnumber
+  Resolved source: https://registry.npmjs.org/lodash.isnumber/-/lodash.isnumber-3.0.3.tgz
+
+lodash.isplainobject 4.0.6
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/lodash.isplainobject
+  Resolved source: https://registry.npmjs.org/lodash.isplainobject/-/lodash.isplainobject-4.0.6.tgz
+
+lodash.isstring 4.0.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/lodash.isstring
+  Resolved source: https://registry.npmjs.org/lodash.isstring/-/lodash.isstring-4.0.1.tgz
+
+lodash.once 4.1.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/lodash.once
+  Resolved source: https://registry.npmjs.org/lodash.once/-/lodash.once-4.1.1.tgz
+
+lodash.truncate 4.4.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/lodash.truncate
+  Resolved source: https://registry.npmjs.org/lodash.truncate/-/lodash.truncate-4.4.2.tgz
+
+lru-cache 10.4.3
+  License: ISC
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/normalize-package-data/node_modules/lru-cache
+  Resolved source: https://registry.npmjs.org/lru-cache/-/lru-cache-10.4.3.tgz
+
+lru-cache 11.5.2
+  License: BlueOak-1.0.0
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/path-scurry/node_modules/lru-cache
+  Resolved source: https://registry.npmjs.org/lru-cache/-/lru-cache-11.5.2.tgz
+
+lru-cache 6.0.0
+  License: ISC
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/lru-cache
+  Resolved source: https://registry.npmjs.org/lru-cache/-/lru-cache-6.0.0.tgz
+
+markdown-it 14.3.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/markdown-it
+  Resolved source: https://registry.npmjs.org/markdown-it/-/markdown-it-14.3.0.tgz
+
+math-intrinsics 1.1.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/math-intrinsics
+  Resolved source: https://registry.npmjs.org/math-intrinsics/-/math-intrinsics-1.1.0.tgz
+
+mdurl 2.1.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/mdurl
+  Resolved source: https://registry.npmjs.org/mdurl/-/mdurl-2.1.0.tgz
+
+merge2 1.4.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/merge2
+  Resolved source: https://registry.npmjs.org/merge2/-/merge2-1.4.1.tgz
+
+micromatch 4.0.8
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/micromatch
+  Resolved source: https://registry.npmjs.org/micromatch/-/micromatch-4.0.8.tgz
+
+mime 1.6.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/mime
+  Resolved source: https://registry.npmjs.org/mime/-/mime-1.6.0.tgz
+
+mime-db 1.52.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/mime-db
+  Resolved source: https://registry.npmjs.org/mime-db/-/mime-db-1.52.0.tgz
+
+mime-types 2.1.35
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/mime-types
+  Resolved source: https://registry.npmjs.org/mime-types/-/mime-types-2.1.35.tgz
+
+mimic-response 3.1.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/mimic-response
+  Resolved source: https://registry.npmjs.org/mimic-response/-/mimic-response-3.1.0.tgz
+
+minimatch 10.2.6
+  License: BlueOak-1.0.0
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/minimatch
+  Resolved source: https://registry.npmjs.org/minimatch/-/minimatch-10.2.6.tgz
+
+minimist 1.2.8
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/minimist
+  Resolved source: https://registry.npmjs.org/minimist/-/minimist-1.2.8.tgz
+
+minipass 7.1.3
+  License: BlueOak-1.0.0
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/minipass
+  Resolved source: https://registry.npmjs.org/minipass/-/minipass-7.1.3.tgz
+
+mkdirp-classic 0.5.3
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/mkdirp-classic
+  Resolved source: https://registry.npmjs.org/mkdirp-classic/-/mkdirp-classic-0.5.3.tgz
+
+ms 2.1.3
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/ms
+  Resolved source: https://registry.npmjs.org/ms/-/ms-2.1.3.tgz
+
+mute-stream 0.0.8
+  License: ISC
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/mute-stream
+  Resolved source: https://registry.npmjs.org/mute-stream/-/mute-stream-0.0.8.tgz
+
+napi-build-utils 2.0.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/napi-build-utils
+  Resolved source: https://registry.npmjs.org/napi-build-utils/-/napi-build-utils-2.0.0.tgz
+
+node-abi 3.94.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/node-abi
+  Resolved source: https://registry.npmjs.org/node-abi/-/node-abi-3.94.0.tgz
+
+node-addon-api 4.3.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/node-addon-api
+  Resolved source: https://registry.npmjs.org/node-addon-api/-/node-addon-api-4.3.0.tgz
+
+node-sarif-builder 3.4.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/node-sarif-builder
+  Resolved source: https://registry.npmjs.org/node-sarif-builder/-/node-sarif-builder-3.4.0.tgz
+
+normalize-package-data 6.0.2
+  License: BSD-2-Clause
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/normalize-package-data
+  Resolved source: https://registry.npmjs.org/normalize-package-data/-/normalize-package-data-6.0.2.tgz
+
+nth-check 2.1.1
+  License: BSD-2-Clause
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/nth-check
+  Resolved source: https://registry.npmjs.org/nth-check/-/nth-check-2.1.1.tgz
+
+object-inspect 1.13.4
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/object-inspect
+  Resolved source: https://registry.npmjs.org/object-inspect/-/object-inspect-1.13.4.tgz
+
+once 1.4.0
+  License: ISC
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/once
+  Resolved source: https://registry.npmjs.org/once/-/once-1.4.0.tgz
+
+open 10.2.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/open
+  Resolved source: https://registry.npmjs.org/open/-/open-10.2.0.tgz
+
+p-map 7.0.6
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/p-map
+  Resolved source: https://registry.npmjs.org/p-map/-/p-map-7.0.6.tgz
+
+parse-json 8.3.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/parse-json
+  Resolved source: https://registry.npmjs.org/parse-json/-/parse-json-8.3.0.tgz
+
+parse-semver 1.1.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/parse-semver
+  Resolved source: https://registry.npmjs.org/parse-semver/-/parse-semver-1.1.1.tgz
+
+parse5 7.3.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/parse5
+  Resolved source: https://registry.npmjs.org/parse5/-/parse5-7.3.0.tgz
+
+parse5-htmlparser2-tree-adapter 7.1.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/parse5-htmlparser2-tree-adapter
+  Resolved source: https://registry.npmjs.org/parse5-htmlparser2-tree-adapter/-/parse5-htmlparser2-tree-adapter-7.1.0.tgz
+
+parse5-parser-stream 7.1.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/parse5-parser-stream
+  Resolved source: https://registry.npmjs.org/parse5-parser-stream/-/parse5-parser-stream-7.1.2.tgz
+
+path-scurry 2.0.2
+  License: BlueOak-1.0.0
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/path-scurry
+  Resolved source: https://registry.npmjs.org/path-scurry/-/path-scurry-2.0.2.tgz
+
+path-type 6.0.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/path-type
+  Resolved source: https://registry.npmjs.org/path-type/-/path-type-6.0.0.tgz
+
+pend 1.2.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/pend
+  Resolved source: https://registry.npmjs.org/pend/-/pend-1.2.0.tgz
+
+picocolors 1.1.1
+  License: ISC
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/picocolors
+  Resolved source: https://registry.npmjs.org/picocolors/-/picocolors-1.1.1.tgz
+
+picomatch 2.3.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/picomatch
+  Resolved source: https://registry.npmjs.org/picomatch/-/picomatch-2.3.2.tgz
+
+pluralize 2.0.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/@textlint/linter-formatter/node_modules/pluralize
+  Resolved source: https://registry.npmjs.org/pluralize/-/pluralize-2.0.0.tgz
+
+pluralize 8.0.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/pluralize
+  Resolved source: https://registry.npmjs.org/pluralize/-/pluralize-8.0.0.tgz
+
+prebuild-install 7.1.3
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/prebuild-install
+  Resolved source: https://registry.npmjs.org/prebuild-install/-/prebuild-install-7.1.3.tgz
+
+pump 3.0.4
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/pump
+  Resolved source: https://registry.npmjs.org/pump/-/pump-3.0.4.tgz
+
+punycode.js 2.3.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/punycode.js
+  Resolved source: https://registry.npmjs.org/punycode.js/-/punycode.js-2.3.1.tgz
+
+qs 6.15.3
+  License: BSD-3-Clause
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/qs
+  Resolved source: https://registry.npmjs.org/qs/-/qs-6.15.3.tgz
+
+queue-microtask 1.2.3
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/queue-microtask
+  Resolved source: https://registry.npmjs.org/queue-microtask/-/queue-microtask-1.2.3.tgz
+
+rc 1.2.8
+  License: (BSD-2-Clause OR MIT OR Apache-2.0)
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/rc
+  Resolved source: https://registry.npmjs.org/rc/-/rc-1.2.8.tgz
+
+rc-config-loader 4.1.4
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/rc-config-loader
+  Resolved source: https://registry.npmjs.org/rc-config-loader/-/rc-config-loader-4.1.4.tgz
+
+react 19.2.8
+  License: MIT
+  Relationship: production_runtime_or_build_output
+  Package-lock path: node_modules/react
+  Resolved source: https://registry.npmjs.org/react/-/react-19.2.8.tgz
+
+  --- BEGIN UPSTREAM LICENSE ---
+  MIT License
+
+  Copyright (c) Meta Platforms, Inc. and affiliates.
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+  --- END UPSTREAM LICENSE ---
+
+react-dom 19.2.8
+  License: MIT
+  Relationship: production_runtime_or_build_output
+  Package-lock path: node_modules/react-dom
+  Resolved source: https://registry.npmjs.org/react-dom/-/react-dom-19.2.8.tgz
+
+  --- BEGIN UPSTREAM LICENSE ---
+  MIT License
+
+  Copyright (c) Meta Platforms, Inc. and affiliates.
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+  --- END UPSTREAM LICENSE ---
+
+read 1.0.7
+  License: ISC
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/read
+  Resolved source: https://registry.npmjs.org/read/-/read-1.0.7.tgz
+
+read-pkg 9.0.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/read-pkg
+  Resolved source: https://registry.npmjs.org/read-pkg/-/read-pkg-9.0.1.tgz
+
+readable-stream 3.6.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/readable-stream
+  Resolved source: https://registry.npmjs.org/readable-stream/-/readable-stream-3.6.2.tgz
+
+require-from-string 2.0.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/require-from-string
+  Resolved source: https://registry.npmjs.org/require-from-string/-/require-from-string-2.0.2.tgz
+
+reusify 1.1.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/reusify
+  Resolved source: https://registry.npmjs.org/reusify/-/reusify-1.1.0.tgz
+
+run-applescript 7.1.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/run-applescript
+  Resolved source: https://registry.npmjs.org/run-applescript/-/run-applescript-7.1.0.tgz
+
+run-parallel 1.2.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/run-parallel
+  Resolved source: https://registry.npmjs.org/run-parallel/-/run-parallel-1.2.0.tgz
+
+safe-buffer 5.2.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/safe-buffer
+  Resolved source: https://registry.npmjs.org/safe-buffer/-/safe-buffer-5.2.1.tgz
+
+safer-buffer 2.1.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/safer-buffer
+  Resolved source: https://registry.npmjs.org/safer-buffer/-/safer-buffer-2.1.2.tgz
+
+sax 1.6.1
+  License: BlueOak-1.0.0
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/sax
+  Resolved source: https://registry.npmjs.org/sax/-/sax-1.6.1.tgz
+
+scheduler 0.27.0
+  License: MIT
+  Relationship: production_runtime_or_build_output
+  Package-lock path: node_modules/scheduler
+  Resolved source: https://registry.npmjs.org/scheduler/-/scheduler-0.27.0.tgz
+
+  --- BEGIN UPSTREAM LICENSE ---
+  MIT License
+
+  Copyright (c) Meta Platforms, Inc. and affiliates.
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+  --- END UPSTREAM LICENSE ---
+
+secretlint 10.2.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/secretlint
+  Resolved source: https://registry.npmjs.org/secretlint/-/secretlint-10.2.2.tgz
+
+semver 5.7.2
+  License: ISC
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/parse-semver/node_modules/semver
+  Resolved source: https://registry.npmjs.org/semver/-/semver-5.7.2.tgz
+
+semver 7.8.5
+  License: ISC
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/semver
+  Resolved source: https://registry.npmjs.org/semver/-/semver-7.8.5.tgz
+
+side-channel 1.1.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/side-channel
+  Resolved source: https://registry.npmjs.org/side-channel/-/side-channel-1.1.1.tgz
+
+side-channel-list 1.0.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/side-channel-list
+  Resolved source: https://registry.npmjs.org/side-channel-list/-/side-channel-list-1.0.1.tgz
+
+side-channel-map 1.0.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/side-channel-map
+  Resolved source: https://registry.npmjs.org/side-channel-map/-/side-channel-map-1.0.1.tgz
+
+side-channel-weakmap 1.0.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/side-channel-weakmap
+  Resolved source: https://registry.npmjs.org/side-channel-weakmap/-/side-channel-weakmap-1.0.2.tgz
+
+simple-concat 1.0.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/simple-concat
+  Resolved source: https://registry.npmjs.org/simple-concat/-/simple-concat-1.0.1.tgz
+
+simple-get 4.0.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/simple-get
+  Resolved source: https://registry.npmjs.org/simple-get/-/simple-get-4.0.1.tgz
+
+slash 5.1.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/slash
+  Resolved source: https://registry.npmjs.org/slash/-/slash-5.1.0.tgz
+
+slice-ansi 4.0.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/slice-ansi
+  Resolved source: https://registry.npmjs.org/slice-ansi/-/slice-ansi-4.0.0.tgz
+
+spdx-correct 3.2.0
+  License: Apache-2.0
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/spdx-correct
+  Resolved source: https://registry.npmjs.org/spdx-correct/-/spdx-correct-3.2.0.tgz
+
+spdx-exceptions 2.5.0
+  License: CC-BY-3.0
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/spdx-exceptions
+  Resolved source: https://registry.npmjs.org/spdx-exceptions/-/spdx-exceptions-2.5.0.tgz
+
+spdx-expression-parse 3.0.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/spdx-expression-parse
+  Resolved source: https://registry.npmjs.org/spdx-expression-parse/-/spdx-expression-parse-3.0.1.tgz
+
+spdx-license-ids 3.0.23
+  License: CC0-1.0
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/spdx-license-ids
+  Resolved source: https://registry.npmjs.org/spdx-license-ids/-/spdx-license-ids-3.0.23.tgz
+
+string-width 4.2.3
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/string-width
+  Resolved source: https://registry.npmjs.org/string-width/-/string-width-4.2.3.tgz
+
+string_decoder 1.3.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/string_decoder
+  Resolved source: https://registry.npmjs.org/string_decoder/-/string_decoder-1.3.0.tgz
+
+strip-ansi 6.0.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/table/node_modules/strip-ansi
+  Resolved source: https://registry.npmjs.org/strip-ansi/-/strip-ansi-6.0.1.tgz
+
+strip-ansi 7.2.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/strip-ansi
+  Resolved source: https://registry.npmjs.org/strip-ansi/-/strip-ansi-7.2.0.tgz
+
+strip-json-comments 2.0.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/strip-json-comments
+  Resolved source: https://registry.npmjs.org/strip-json-comments/-/strip-json-comments-2.0.1.tgz
+
+structured-source 4.0.0
+  License: BSD-2-Clause
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/structured-source
+  Resolved source: https://registry.npmjs.org/structured-source/-/structured-source-4.0.0.tgz
+
+supports-color 7.2.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/supports-color
+  Resolved source: https://registry.npmjs.org/supports-color/-/supports-color-7.2.0.tgz
+
+supports-hyperlinks 3.2.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/supports-hyperlinks
+  Resolved source: https://registry.npmjs.org/supports-hyperlinks/-/supports-hyperlinks-3.2.0.tgz
+
+table 6.9.0
+  License: BSD-3-Clause
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/table
+  Resolved source: https://registry.npmjs.org/table/-/table-6.9.0.tgz
+
+tar-fs 2.1.5
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/tar-fs
+  Resolved source: https://registry.npmjs.org/tar-fs/-/tar-fs-2.1.5.tgz
+
+tar-stream 2.2.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/tar-stream
+  Resolved source: https://registry.npmjs.org/tar-stream/-/tar-stream-2.2.0.tgz
+
+terminal-link 4.0.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/terminal-link
+  Resolved source: https://registry.npmjs.org/terminal-link/-/terminal-link-4.0.0.tgz
+
+text-table 0.2.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/text-table
+  Resolved source: https://registry.npmjs.org/text-table/-/text-table-0.2.0.tgz
+
+textextensions 6.11.0
+  License: Artistic-2.0
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/textextensions
+  Resolved source: https://registry.npmjs.org/textextensions/-/textextensions-6.11.0.tgz
+
+tmp 0.2.7
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/tmp
+  Resolved source: https://registry.npmjs.org/tmp/-/tmp-0.2.7.tgz
+
+to-regex-range 5.0.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/to-regex-range
+  Resolved source: https://registry.npmjs.org/to-regex-range/-/to-regex-range-5.0.1.tgz
+
+tslib 2.8.1
+  License: 0BSD
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/tslib
+  Resolved source: https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz
+
+tunnel 0.0.6
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/tunnel
+  Resolved source: https://registry.npmjs.org/tunnel/-/tunnel-0.0.6.tgz
+
+tunnel-agent 0.6.0
+  License: Apache-2.0
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/tunnel-agent
+  Resolved source: https://registry.npmjs.org/tunnel-agent/-/tunnel-agent-0.6.0.tgz
+
+type-fest 4.41.0
+  License: (MIT OR CC0-1.0)
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/type-fest
+  Resolved source: https://registry.npmjs.org/type-fest/-/type-fest-4.41.0.tgz
+
+typed-rest-client 1.8.11
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/typed-rest-client
+  Resolved source: https://registry.npmjs.org/typed-rest-client/-/typed-rest-client-1.8.11.tgz
+
+typescript 5.9.3
+  License: Apache-2.0
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/typescript
+  Resolved source: https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz
+
+uc.micro 2.1.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/uc.micro
+  Resolved source: https://registry.npmjs.org/uc.micro/-/uc.micro-2.1.0.tgz
+
+underscore 1.13.8
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/underscore
+  Resolved source: https://registry.npmjs.org/underscore/-/underscore-1.13.8.tgz
+
+undici 7.29.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/undici
+  Resolved source: https://registry.npmjs.org/undici/-/undici-7.29.0.tgz
+
+undici-types 6.21.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/undici-types
+  Resolved source: https://registry.npmjs.org/undici-types/-/undici-types-6.21.0.tgz
+
+unicorn-magic 0.1.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/read-pkg/node_modules/unicorn-magic
+  Resolved source: https://registry.npmjs.org/unicorn-magic/-/unicorn-magic-0.1.0.tgz
+
+unicorn-magic 0.3.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/unicorn-magic
+  Resolved source: https://registry.npmjs.org/unicorn-magic/-/unicorn-magic-0.3.0.tgz
+
+universalify 2.0.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/universalify
+  Resolved source: https://registry.npmjs.org/universalify/-/universalify-2.0.1.tgz
+
+url-join 4.0.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/url-join
+  Resolved source: https://registry.npmjs.org/url-join/-/url-join-4.0.1.tgz
+
+util-deprecate 1.0.2
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/util-deprecate
+  Resolved source: https://registry.npmjs.org/util-deprecate/-/util-deprecate-1.0.2.tgz
+
+validate-npm-package-license 3.0.4
+  License: Apache-2.0
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/validate-npm-package-license
+  Resolved source: https://registry.npmjs.org/validate-npm-package-license/-/validate-npm-package-license-3.0.4.tgz
+
+version-range 4.15.0
+  License: Artistic-2.0
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/version-range
+  Resolved source: https://registry.npmjs.org/version-range/-/version-range-4.15.0.tgz
+
+whatwg-encoding 3.1.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/whatwg-encoding
+  Resolved source: https://registry.npmjs.org/whatwg-encoding/-/whatwg-encoding-3.1.1.tgz
+
+whatwg-mimetype 4.0.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/whatwg-mimetype
+  Resolved source: https://registry.npmjs.org/whatwg-mimetype/-/whatwg-mimetype-4.0.0.tgz
+
+wrappy 1.0.2
+  License: ISC
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/wrappy
+  Resolved source: https://registry.npmjs.org/wrappy/-/wrappy-1.0.2.tgz
+
+wsl-utils 0.1.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/wsl-utils
+  Resolved source: https://registry.npmjs.org/wsl-utils/-/wsl-utils-0.1.0.tgz
+
+xml2js 0.5.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/xml2js
+  Resolved source: https://registry.npmjs.org/xml2js/-/xml2js-0.5.0.tgz
+
+xmlbuilder 11.0.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/xmlbuilder
+  Resolved source: https://registry.npmjs.org/xmlbuilder/-/xmlbuilder-11.0.1.tgz
+
+yallist 4.0.0
+  License: ISC
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/yallist
+  Resolved source: https://registry.npmjs.org/yallist/-/yallist-4.0.0.tgz
+
+yauzl 3.4.0
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/yauzl
+  Resolved source: https://registry.npmjs.org/yauzl/-/yauzl-3.4.0.tgz
+
+yazl 2.5.1
+  License: MIT
+  Relationship: development_or_test_only
+  Package-lock path: node_modules/yazl
+  Resolved source: https://registry.npmjs.org/yazl/-/yazl-2.5.1.tgz
