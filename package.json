@@ -117,8 +117,9 @@
   "scripts": {
     "clean": "node scripts/clean.mjs",
     "build:extension": "tsc -p ./tsconfig.json",
-    "build:webview": "esbuild webview/main.tsx --bundle --format=iife --outfile=dist/webview.js --loader:.tsx=tsx --loader:.ts=ts --platform=browser",
-    "compile": "npm run clean && npm run build:extension && npm run build:webview",
+    "build:webview": "esbuild webview/main.tsx --bundle --minify --legal-comments=eof --format=iife --outfile=dist/webview.js --loader:.tsx=tsx --loader:.ts=ts --platform=browser",
+    "test:bundle-budget": "node scripts/verify-bundle-budget.mjs",
+    "compile": "npm run clean && npm run build:extension && npm run build:webview && npm run test:bundle-budget",
     "check": "npm run compile",
     "test:unit": "npm run build:extension && node --test tests/*.test.mjs",
     "watch": "tsc -watch -p ./tsconfig.json",
