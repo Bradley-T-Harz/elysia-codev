@@ -31,3 +31,13 @@ test("history verifier recognizes the approved GitHub noreply metadata boundary"
   assert.match(verifier, /canonicalPublicReferences/u);
   assert.match(verifier, /CANONICAL_REPOSITORY/u);
 });
+
+test("canonical VSIX packaging normalizes exact bytes before hygiene verification", () => {
+  const packageScript = readFileSync(path.join(root, "scripts/package-vsix.sh"), "utf8");
+  assert.match(packageScript, /normalize_vsix\.py/u);
+  assert.match(packageScript, /verify:package/u);
+  const normalizer = readFileSync(path.join(root, "scripts/normalize_vsix.py"), "utf8");
+  assert.match(normalizer, /FIXED_TIMESTAMP/u);
+  assert.match(normalizer, /sorted\(names\)/u);
+  assert.match(normalizer, /compresslevel=9/u);
+});

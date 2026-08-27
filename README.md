@@ -157,7 +157,7 @@ Or:
 ./scripts/package-vsix.sh
 ```
 
-The package script uses already installed dependencies and never installs or downloads packages. Packaging a local VSIX does not install or publish the extension. Public VS Code Marketplace publishing is a separate future process.
+The package script uses already installed dependencies, never installs or downloads packages, normalizes ZIP metadata for deterministic bytes, and runs the package-hygiene verifier. Packaging a local VSIX does not install or publish the extension. Public VS Code Marketplace publishing is a separate future process.
 
 ## Settings
 

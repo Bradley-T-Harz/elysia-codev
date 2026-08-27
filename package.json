@@ -131,8 +131,8 @@
     "test:unit": "npm run build:extension && node --test tests/*.test.mjs",
     "watch": "tsc -watch -p ./tsconfig.json",
     "vscode:prepublish": "npm run compile",
-    "package": "vsce package --no-dependencies",
-    "vscode:package": "vsce package --no-dependencies",
+    "package": "bash scripts/package-vsix.sh",
+    "vscode:package": "bash scripts/package-vsix.sh",
     "verify:package": "node scripts/verify-vsix-hygiene.mjs",
     "verify:history": "node scripts/verify-publication-history.mjs"
   },
