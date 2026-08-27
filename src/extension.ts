@@ -43,5 +43,5 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 export function deactivate(): void {
-  // No background workers, shell processes, or network loops to stop in v0.1.0.
+  // No background workers, shell processes, or network loops to stop in v1.0.0.
 }

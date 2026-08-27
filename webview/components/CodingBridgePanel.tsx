@@ -24,7 +24,7 @@ export default function CodingBridgePanel({ coding, workspace, onApproveRepo, on
       {coding.lastError ? <p className="error-note">{coding.lastError}</p> : null}
       {coding.lastAction ? <p className="success-note">{coding.lastAction}</p> : null}
       <dl className="facts">
-        <div><dt>Official add-on</dt><dd>{coding.developerProfile?.official_addon ? "yes · v1-finalization" : "unknown"}</dd></div>
+        <div><dt>Official add-on</dt><dd>{coding.developerProfile?.official_addon ? "yes · v1.0.0 candidate" : "unknown"}</dd></div>
         <div><dt>Developer profile</dt><dd>{coding.developerProfile?.profile_readiness ?? "unknown"}</dd></div>
         <div><dt>Codev package</dt><dd>{coding.developerProfile?.codev_install.state ?? "unknown"}</dd></div>
         <div><dt>Repo approval</dt><dd>{coding.repoApproval.status}</dd></div>

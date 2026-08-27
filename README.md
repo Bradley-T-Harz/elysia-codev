@@ -2,7 +2,7 @@
 
 Elysia Codev is a first-party official Elysia add-on for developers. It provides a local-first coding-room shell inside VS Code while keeping Elysia core clean.
 
-Release status: Developer-profile candidate, version `0.1.0`, channel `v1-finalization`. It is not yet a public Marketplace install claim. The reproducible VSIX boundary is documented in `docs/public-package-hygiene.md`, and final publication remains a Pass 10 decision.
+Release status: frozen-version Developer-profile candidate, version `1.0.0`, stable release channel. It is not yet a public Marketplace install claim. The reproducible VSIX boundary is documented in `docs/public-package-hygiene.md`, and final publication remains subject to the exact Pass 10D authorization sequence.
 
 This extension is not Elysia core and does not require Marketplace sign-in. It connects to the authenticated local Elysia API bridge on `http://127.0.0.1:8000` by default. Mutating requests use the private XDG credential inside the extension host; the credential is never sent to the webview or displayed.
 
@@ -165,9 +165,8 @@ The package script uses already installed dependencies and never installs or dow
 - `elysia.approvalMode`: default approval posture. Default `plan_only`.
 - `elysia.workspaceTrustMode`: enforced trust posture: VS Code trust plus exact Elysia approval, forced read-only, or blocked.
 
-## Next proof / roadmap
+## Qualification and publication boundary
 
-1. Run Extension Host proof for trusted/untrusted, authenticated/unauthenticated, restart/reload, exact repository approval, native diff, patch apply, bounded checks, Developer Lab stop/revoke, and audit visibility against disposable workspaces.
-2. Replace the bounded deterministic chat bridge with a real governed general local coding reasoner and reviewed patch-generation path.
-3. Add automated extension-host/API client coverage without weakening current approval boundaries.
-4. Marketplace packaging remains a separate official add-on release task.
+The clean-profile Extension Host, packaged Elysia connection, repository approval/revocation, native diff, patch apply, bounded checks, restart/reload, uninstall/reinstall, and refusal paths have been qualified in the Pass 10D evidence program. Pass 10D V freezes the exact `1.0.0` bytes; Pass 10D VI must attack those same bytes before the release owner can authorize publication.
+
+The bounded local coding contract remains intentional: Codev does not acquire shell, package-install, Git push, arbitrary network, broad-ingestion, or hidden-continuation authority. Future reasoning or Marketplace expansion remains separately governed and is not silently represented as part of this candidate.

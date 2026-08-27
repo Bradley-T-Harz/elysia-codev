@@ -33,6 +33,9 @@ const markers = [
   ["Custos", "Naturae"].join(""),
   ["MAIN", "_Projects"].join(""),
 ];
+const canonicalPublicReferences = [
+  "https://github.com/Bradley-T-Harz/elysia-codev",
+];
 const privateMarkerFile = process.env.ELYSIA_PUBLICATION_PRIVATE_MARKERS_FILE;
 if (privateMarkerFile) {
   for (const line of readFileSync(privateMarkerFile, "utf8").split(/\r?\n/u)) {
@@ -68,13 +71,17 @@ function fixture(relative) {
 }
 
 function inspectText(text, relative, findingScope, object) {
-  if (markers.some((marker) => text.includes(marker))) {
+  const privateScanText = canonicalPublicReferences.reduce(
+    (value, reference) => value.replaceAll(reference, "https://github.com/CANONICAL_OWNER/CANONICAL_REPOSITORY"),
+    text,
+  );
+  if (markers.some((marker) => privateScanText.includes(marker))) {
     findings.push({ scope: findingScope, category: "private_marker", object, path: relative });
   }
-  if (!fixture(relative) && machinePatterns.some((pattern) => pattern.test(text))) {
+  if (!fixture(relative) && machinePatterns.some((pattern) => pattern.test(privateScanText))) {
     findings.push({ scope: findingScope, category: "absolute_machine_path", object, path: relative });
   }
-  if (!fixture(relative) && secretPatterns.some((pattern) => pattern.test(text))) {
+  if (!fixture(relative) && secretPatterns.some((pattern) => pattern.test(privateScanText))) {
     findings.push({ scope: findingScope, category: "credential_signature", object, path: relative });
   }
 }
@@ -116,12 +123,10 @@ if (scope === "history" || scope === "all") {
     if (![0, 1].includes(result.status)) throw new Error("Git history marker scan failed closed.");
     for (const hit of result.stdout.split(/\r?\n/u).filter(Boolean)) {
       const separator = hit.indexOf(":");
-      findings.push({
-        scope: "history",
-        category: "private_marker",
-        object: hit.slice(0, separator),
-        path: hit.slice(separator + 1),
-      });
+      const object = hit.slice(0, separator);
+      const relative = hit.slice(separator + 1);
+      const historicalText = git(["show", `${object}:${relative}`]).toString("utf8");
+      inspectText(historicalText, relative, "history", object);
     }
   }
   const identities = git(["log", "--all", "--format=%H%x00%ae%x00%ce%x00"])
@@ -135,7 +140,11 @@ if (scope === "history" || scope === "all") {
   }
   const messages = git(["log", "--all", "--format=%H%x00%B%x00"]).toString("utf8").split("\0");
   for (let index = 0; index + 1 < messages.length; index += 2) {
-    if (markers.some((marker) => messages[index + 1].includes(marker))) {
+    const message = canonicalPublicReferences.reduce(
+      (value, reference) => value.replaceAll(reference, "CANONICAL_REPOSITORY"),
+      messages[index + 1],
+    );
+    if (markers.some((marker) => message.includes(marker))) {
       findings.push({ scope: "history", category: "private_commit_message", object: messages[index] });
     }
   }

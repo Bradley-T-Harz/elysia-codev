@@ -28,4 +28,6 @@ test("history verifier recognizes the approved GitHub noreply metadata boundary"
   const verifier = readFileSync(path.join(root, "scripts/verify-publication-history.mjs"), "utf8");
   assert.match(verifier, /@users\.noreply\.github\.com/u);
   assert.match(verifier, /privateAuthorEmail/u);
+  assert.match(verifier, /canonicalPublicReferences/u);
+  assert.match(verifier, /CANONICAL_REPOSITORY/u);
 });

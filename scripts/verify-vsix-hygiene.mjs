@@ -51,6 +51,7 @@ const requiredEntries = [
   "extension/THIRD_PARTY_NOTICES.txt",
   "extension/ASSET_NOTICES.md",
   "extension/TRADEMARKS.md",
+  "extension/compatibility-manifest.json",
   "extension/LICENSES/Apache-2.0.txt",
   "extension/LICENSES/LicenseRef-EcoSyneva-Branding.txt",
   "extension/out/src/extension.js",

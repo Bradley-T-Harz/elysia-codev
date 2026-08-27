@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "product": "Elysia Codev",
+  "extension_id": "ecosyneva-commons.elysia-codev",
+  "version": "1.0.0",
+  "release_channel": "stable",
+  "qualification_state": "pass_10d_v_candidate",
+  "elysia_version": "1.0.0",
+  "local_api_version": "1.0.0",
+  "coding_contract_version": "vscode-coding-agent-contract-0.1",
+  "repository": "https://github.com/Bradley-T-Harz/elysia-codev",
+  "issues": "https://github.com/Bradley-T-Harz/elysia-codev/issues",
+  "public_marketplace_install_available": false,
+  "publication_authorized": false,
+  "authority_boundaries": {
+    "arbitrary_shell": false,
+    "package_installation": false,
+    "git_push": false,
+    "arbitrary_network": false,
+    "broad_repository_ingestion": false,
+    "hidden_continuation": false
+  }
+}

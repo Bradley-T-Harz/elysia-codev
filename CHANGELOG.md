@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0
+
+- Freezes the exact v1 Developer-profile extension identity and real canonical repository metadata for Pass 10D release-candidate construction.
+- Preserves the qualified local-only bridge, exact repository trust, proposal/diff/apply, bounded checks, governed file and specialist inspection paths, restart/reload behavior, and clean-profile install lifecycle.
+- Retains the constitutional refusal of hidden shell, package installation, Git push, arbitrary network, broad repository ingestion, cloud upload, and unbounded continuation.
+- Adds a machine-readable compatibility manifest to the inspected VSIX payload. Publication remains unavailable until the release owner authorizes the later release gate.
+
 ## 0.1.0
 
 - Official v1-finalization local Developer-profile add-on foundation.

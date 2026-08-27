@@ -1,6 +1,6 @@
 # Marketplace Manifest Notes
 
-Elysia Codev is the official v1-finalization local Developer-profile add-on candidate. Public Marketplace installation remains unavailable.
+Elysia Codev is the official `1.0.0` local Developer-profile add-on candidate. Public Marketplace installation remains unavailable.
 
 Truth fields should include:
 
