@@ -10,4 +10,4 @@
 
 Do not run `npm install` or dependency-mutating commands as part of routine verification unless dependency changes are intentional.
 
-See `docs/public-package-hygiene.md` for the public boundary and pre-publication state.
+See `docs/public-package-hygiene.md` for the public package boundary and external publication-state rule.

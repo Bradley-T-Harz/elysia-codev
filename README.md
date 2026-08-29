@@ -2,7 +2,7 @@
 
 Elysia Codev is a first-party official Elysia add-on for developers. It provides a local-first coding-room shell inside VS Code while keeping Elysia core clean.
 
-Release status: frozen-version Developer-profile candidate, version `1.0.0`, stable release channel. It is not yet a public Marketplace install claim. The reproducible VSIX boundary is documented in `docs/public-package-hygiene.md`, and final publication remains subject to the exact Pass 10D authorization sequence.
+Release status: qualified Developer-profile release, version `1.0.0`, stable channel. Canonical availability is established by the Elysia Ecobotics Marketplace and GitHub release surfaces rather than a mutable flag embedded in the VSIX. The reproducible package boundary is documented in `docs/public-package-hygiene.md`.
 
 This extension is not Elysia core and does not require Marketplace sign-in. It connects to the authenticated local Elysia API bridge on `http://127.0.0.1:8000` by default. Mutating requests use the private XDG credential inside the extension host; the credential is never sent to the webview or displayed.
 
@@ -167,6 +167,6 @@ The package script uses already installed dependencies, never installs or downlo
 
 ## Qualification and publication boundary
 
-The clean-profile Extension Host, packaged Elysia connection, repository approval/revocation, native diff, patch apply, bounded checks, restart/reload, uninstall/reinstall, and refusal paths have been qualified in the Pass 10D evidence program. Pass 10D V freezes the exact `1.0.0` bytes; Pass 10D VI must attack those same bytes before the release owner can authorize publication.
+The clean-profile Extension Host, packaged Elysia connection, repository approval/revocation, native diff, patch apply, bounded checks, restart/reload, uninstall/reinstall, and refusal paths passed the Pass 10D exact-byte qualification program. The published `1.0.0` package is bound to its release checksums and signatures; availability is reported by the canonical external release surfaces.
 
-The bounded local coding contract remains intentional: Codev does not acquire shell, package-install, Git push, arbitrary network, broad-ingestion, or hidden-continuation authority. Future reasoning or Marketplace expansion remains separately governed and is not silently represented as part of this candidate.
+The bounded local coding contract remains intentional: Codev does not acquire shell, package-install, Git push, arbitrary network, broad-ingestion, or hidden-continuation authority. Future reasoning or Marketplace expansion remains separately governed and is not silently represented as part of this release.

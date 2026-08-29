@@ -1,6 +1,6 @@
 # Marketplace Manifest Notes
 
-Elysia Codev is the official `1.0.0` local Developer-profile add-on candidate. Public Marketplace installation remains unavailable.
+Elysia Codev is the official `1.0.0` local Developer-profile add-on. Public distribution is supported through the Elysia Ecobotics Marketplace; the extension itself remains local-first and does not require a Marketplace account. Live availability is authoritative only at the canonical external release surface, not in immutable VSIX metadata.
 
 Truth fields should include:
 
@@ -9,5 +9,6 @@ Truth fields should include:
 - local-only bridge
 - no source-code upload
 - reviewed local VSIX installation is explicit, dry-run-first, user-local, and receipt-backed
-- no in-app or website installation control
-- public install, publish, push, arbitrary shell, and add-on execution remain unavailable
+- no Elysia-desktop in-app installation control
+- no publish, push, arbitrary shell, or ungoverned add-on execution authority
+- canonical public distribution: `https://elysiaecobotics.com/marketplace/browse`
