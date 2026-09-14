@@ -22,4 +22,11 @@ Elysia Codev is a VS Code doorway into Elysia core. It is not the coding brain a
 
 ## Reporting Security Issues
 
-Report suspected leaks, unsafe authority expansion, or broken approval boundaries before using Codev on private repositories.
+Report suspected leaks, unsafe authority expansion, or broken approval boundaries privately through the current security contact at <https://elysiaecobotics.com/.well-known/security.txt> before using Codev on private repositories.
+
+Do not place vulnerability details, local bridge credentials, source code,
+private repository information, personal data, signing material, or production
+secrets in a public issue. Include the affected Codev and Elysia versions,
+bounded reproduction steps, and impact; use synthetic content and remove
+absolute paths or identifying details. No response-time or bounty promise is
+made here.
