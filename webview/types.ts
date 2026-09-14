@@ -1,5 +1,6 @@
 export type ApprovalMode = "read_only" | "plan_only" | "path_preview" | "apply_with_approval" | "test_with_approval";
-export type ConnectionState = "unknown" | "connected" | "unavailable" | "authentication_required" | "version_mismatch" | "profile_unavailable" | "degraded";
+import type { ConnectionState } from "../src/types";
+export type { ConnectionState } from "../src/types";
 export type WorkMode = "local" | "developer_forge";
 
 export type UiSession = {

@@ -3,6 +3,8 @@ import * as https from "node:https";
 import * as vscode from "vscode";
 import { buildLoopbackUrl } from "./localUrlPolicy";
 import { LocalCredentialProvider } from "./LocalCredentialProvider";
+import { ensureInstalledRuntime, openRuntimeSocket } from "./RuntimeDiscovery";
+import type { Installation } from "./codevContracts";
 import type {
   CodingBridgeStatus,
   ArchiveContainerPreview,
@@ -132,18 +134,35 @@ export class ElysiaApiClient {
   public static readonly expectedContractVersion = "vscode-coding-agent-contract-0.1";
   private readonly credentials = new LocalCredentialProvider();
   private lastRequestIdValue: string | undefined;
+  private installedTransport = false;
   private lastContractVersionValue: string | undefined;
 
   public get lastRequestId(): string | undefined { return this.lastRequestIdValue; }
   public get lastContractVersion(): string | undefined { return this.lastContractVersionValue; }
 
   public get apiUrl(): string {
-    return vscode.workspace.getConfiguration("elysia").get<string>("apiUrl", "http://127.0.0.1:8000");
+    if (this.installedTransport) return "unix://elysia-local-runtime";
+    // Legacy development overrides are user/machine configuration only.
+    // A repository cannot redirect a native credential to its own listener.
+    return vscode.workspace.getConfiguration("elysia").inspect<string>("apiUrl")?.globalValue?.trim() || "";
   }
 
   public async getStatus(): Promise<ElysiaConnectionStatus> {
-    const apiUrl = this.apiUrl.replace(/\/$/, "");
+    let apiUrl = this.apiUrl.replace(/\/$/, "");
     try {
+      this.installedTransport = await ensureInstalledRuntime();
+      apiUrl = this.apiUrl;
+      if (!this.installedTransport && !apiUrl) {
+        return { state: "not_installed", apiUrl: "No installed runtime", summary: "Install Codev Core to use this adapter. VS Code workspace trust does not install Core.", checkedAt: new Date().toISOString() };
+      }
+      if (this.installedTransport) {
+        const envelope = await this.request<{ codev_installation: Installation }>("/codev/installation", { method: "GET" });
+        const installation = envelope.data?.codev_installation;
+        if (!installation || envelope.contract_version !== "codev-client-1") throw new Error("Installed Codev capability contract is unavailable.");
+        if (!installation.installed) return { state: "not_installed", apiUrl, summary: installation.note, installation, checkedAt: new Date().toISOString() };
+        if (installation.state === "incompatible") return { state: "version_mismatch", apiUrl, summary: installation.note, installation, checkedAt: new Date().toISOString() };
+        if (!installation.usable) return { state: installation.session_state === "approval_needed" ? "authentication_required" : "degraded", apiUrl, summary: installation.note, installation, checkedAt: new Date().toISOString() };
+      }
       const [data, developerProfile] = await Promise.all([this.getCodingStatus(), this.getDeveloperProfile()]);
       const authStatus = this.credentials.publicStatus().status;
       const contractVersion = data.contract_version;
@@ -1258,7 +1277,7 @@ export class ElysiaApiClient {
   }
 
   private buildLocalUrl(path: string): URL {
-    return buildLoopbackUrl(this.apiUrl, path);
+    return buildLoopbackUrl(this.installedTransport ? "http://127.0.0.1" : this.apiUrl, path);
   }
 
   private async localHttpRequest(target: URL, init: LocalRequestInit): Promise<LocalResponse> {
@@ -1277,20 +1296,32 @@ export class ElysiaApiClient {
       headers.Authorization = `Bearer ${credential.credential}`;
     }
 
-    return new Promise((resolve, reject) => {
+    const socket = this.installedTransport ? openRuntimeSocket() : null;
+    let closed = false;
+    const closeSocket = () => { if (!closed) { closed = true; socket?.close(); } };
+    const timeout = init.method === "POST" && ["/coding/chat", "/codev/chat"].includes(target.pathname) ? 240000 : 15000;
+    return new Promise<LocalResponse>((resolve, reject) => {
       const request = client.request(
         target,
         {
           method,
           headers,
-          timeout: 5000
+          ...(socket ? { socketPath: socket.socketPath } : {}),
+          timeout
         },
         (response) => {
           const chunks: Buffer[] = [];
+          let size = 0;
           response.on("data", (chunk: Buffer | string) => {
-            chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+            const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+            size += buffer.length;
+            if (size > 8 * 1024 * 1024) { request.destroy(new Error("Codev response exceeds the native transport limit.")); return; }
+            chunks.push(buffer);
           });
+          response.on("aborted", () => { closeSocket(); reject(new Error("Codev response was interrupted.")); });
+          response.on("error", () => { closeSocket(); reject(new Error("Codev response failed.")); });
           response.on("end", () => {
+            closeSocket();
             const status = response.statusCode ?? 0;
             resolve({
               ok: status >= 200 && status < 300,
@@ -1302,10 +1333,11 @@ export class ElysiaApiClient {
       );
 
       request.on("timeout", () => {
-        request.destroy(new Error(`${method} ${target.toString()} timed out after 5000ms.`));
+        request.destroy(new Error(`${method} ${target.toString()} timed out after ${timeout}ms.`));
       });
 
       request.on("error", (error: NodeJS.ErrnoException) => {
+        closeSocket();
         const code = error.code ? ` ${error.code}` : "";
         reject(new Error(`${method} ${target.toString()} failed${code}: ${error.message}`));
       });
@@ -1314,6 +1346,6 @@ export class ElysiaApiClient {
         request.write(body);
       }
       request.end();
-    });
+    }).finally(closeSocket);
   }
 }

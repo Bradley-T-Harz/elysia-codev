@@ -110,6 +110,15 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     await this.refreshCodingStatus();
   }
 
+  private connectionRefresh: Promise<void> | null = null;
+  public async refreshConnection(): Promise<void> {
+    if (!this.connectionRefresh) this.connectionRefresh = (async () => {
+      this.connectionStatus = await this.api.getStatus();
+      await this.postState();
+    })().finally(() => { this.connectionRefresh = null; });
+    await this.connectionRefresh;
+  }
+
   public async refreshLocalState(): Promise<void> {
     await this.postState();
   }
@@ -2712,8 +2721,11 @@ export class ElysiaSidebarProvider implements vscode.WebviewViewProvider {
     this.lastAction = "Refreshing coding bridge...";
     await this.postState();
     try {
-      [this.connectionStatus, this.codingBridge, this.developerProfile, this.commandCatalog] = await Promise.all([
-        this.api.getStatus(),
+      this.connectionStatus = await this.api.getStatus();
+      if (["not_installed", "unavailable", "authentication_required"].includes(this.connectionStatus.state)) {
+        throw new Error(this.connectionStatus.summary);
+      }
+      [this.codingBridge, this.developerProfile, this.commandCatalog] = await Promise.all([
         this.api.getCodingStatus(),
         this.api.getDeveloperProfile(),
         this.api.getCommandCatalog()
