@@ -2,7 +2,7 @@
   "name": "elysia-codev",
   "displayName": "Elysia Codev",
   "description": "Official local-first Elysia Developer-profile companion for governed repo truth, patch review, exact mutation, bounded checks, and receipt-backed planning.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "publisher": "ecosyneva-commons",
   "license": "Apache-2.0",
   "private": true,

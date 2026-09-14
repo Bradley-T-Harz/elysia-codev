@@ -7,7 +7,7 @@ import * as http from "node:http";
 import { execFile } from "node:child_process";
 import { resolveLocalCredentialPath } from "./LocalCredentialProvider";
 
-import { CORE_CONTRACT, RUNTIME_CONTRACT } from "./codevContracts";
+import { CODEV_PRODUCT_VERSION, CORE_CONTRACT, RUNTIME_CONTRACT } from "./codevContracts";
 export { CORE_CONTRACT, RUNTIME_CONTRACT };
 const digestCache = new Map<string, string>();
 
@@ -87,8 +87,8 @@ export function installedCore(environment = process.env, home = os.homedir()): s
     finally { fs.closeSync(fd); }
     const after = protectedFile(manifest, owner);
     if (metadata.ino !== after.ino || metadata.mtimeMs !== after.mtimeMs || metadata.ctimeMs !== after.ctimeMs) throw new Error("Codev Core manifest changed during verification.");
-    if (value.product !== "codev-core" || value.version !== "1.0.0" || value.contract !== CORE_CONTRACT || value.runtime_contract !== RUNTIME_CONTRACT || value.architecture !== "amd64") {
-      throw new Error("Installed Codev Core is incompatible with this adapter.");
+    if (value.product !== "codev-core" || value.version !== CODEV_PRODUCT_VERSION || value.contract !== CORE_CONTRACT || value.runtime_contract !== RUNTIME_CONTRACT || value.architecture !== "amd64") {
+      throw new Error(`Install Codev Core ${CODEV_PRODUCT_VERSION} to match this adapter. Workspace trust does not install Core.`);
     }
     const executable = path.join(root, "codev-core");
     fs.accessSync(executable, fs.constants.X_OK);
@@ -126,8 +126,8 @@ async function runtimeResponds(expectedDigest?: string): Promise<boolean> {
       response.on("error", () => finish(false));
       response.on("end", () => {
         try {
-          const identity = JSON.parse(raw) as { contract: string; uid: number; pid: number; transport: string; executable_sha256?: string };
-          finish(response.statusCode === 200 && identity.contract === RUNTIME_CONTRACT && identity.uid === process.getuid?.() && identity.pid > 1 && identity.transport === "unix" && (!expectedDigest || identity.executable_sha256 === expectedDigest));
+          const identity = JSON.parse(raw) as { contract: string; product_version: string; uid: number; pid: number; transport: string; executable_sha256?: string };
+          finish(response.statusCode === 200 && identity.contract === RUNTIME_CONTRACT && identity.product_version === CODEV_PRODUCT_VERSION && identity.uid === process.getuid?.() && identity.pid > 1 && identity.transport === "unix" && (!expectedDigest || identity.executable_sha256 === expectedDigest));
         } catch { finish(false); }
       });
     });

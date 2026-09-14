@@ -16,7 +16,7 @@ test('Codev Core installation is independent of VS Code profiles and workspace t
   mkdirSync(payload, { recursive: true, mode: 0o700 });
   const executable = join(payload, 'codev-core');
   writeFileSync(executable, 'identity-only fixture, never executed', { mode: 0o700 });
-  const manifest = { product: 'codev-core', version: '1.0.0', contract: CORE_CONTRACT, runtime_contract: RUNTIME_CONTRACT,
+  const manifest = { product: 'codev-core', version: '1.1.0', contract: CORE_CONTRACT, runtime_contract: RUNTIME_CONTRACT,
     architecture: 'amd64', core_sha256: createHash('sha256').update(readFileSync(executable)).digest('hex'), adapter_sha256: 'a'.repeat(64) };
   const manifestPath = join(payload, 'runtime.json');
   writeFileSync(manifestPath, JSON.stringify(manifest), { mode: 0o600 });
@@ -24,6 +24,9 @@ test('Codev Core installation is independent of VS Code profiles and workspace t
   try {
     const env = { XDG_DATA_HOME: data };
     assert.equal(installedCore(env, join(root, 'user with spaces')), join(data, 'codev/current/usr/lib/codev/codev-core'));
+    writeFileSync(manifestPath, JSON.stringify({ ...manifest, version: '1.0.0' }));
+    assert.throws(() => installedCore(env, root), /Install Codev Core 1\.1\.0/);
+    writeFileSync(manifestPath, JSON.stringify(manifest));
     // No extension installation, profile directory, repository or editor executable exists.
     chmodSync(manifestPath, 0o666);
     assert.throws(() => installedCore(env, root), /permissions/);
@@ -31,7 +34,7 @@ test('Codev Core installation is independent of VS Code profiles and workspace t
     writeFileSync(executable, 'damaged Core');
     assert.throws(() => installedCore(env, root), /integrity/);
     writeFileSync(manifestPath, JSON.stringify({ ...manifest, version: '2.0.0' }));
-    assert.throws(() => installedCore(env, root), /incompatible/);
+    assert.throws(() => installedCore(env, root), /Install Codev Core 1\.1\.0/);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 

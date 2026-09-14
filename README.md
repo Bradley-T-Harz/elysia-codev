@@ -1,8 +1,12 @@
+# Codev 1.1.0 release candidate
+
+Use Codev Core 1.1.0 with this adapter and Elysia 1.1.0. Core installation is independent of VS Code and workspace trust. Final artifact installation qualification and signing are pending; the original public 1.0.0 release remains available unchanged. See [release notes](RELEASE_NOTES_v1.1.0.md).
+
 # Elysia Codev
 
 Elysia Codev is the official VS Code client for the independently installed Codev Core. Elysia's workroom and explicitly paired website surfaces use the same governed local subsystem. VS Code is optional and does not define whether Codev is installed.
 
-Release status: qualified Developer-profile release, version `1.0.0`, stable channel. Canonical availability is established by the Elysia Ecobotics Marketplace and GitHub release surfaces rather than a mutable flag embedded in the VSIX. The reproducible package boundary is documented in `docs/public-package-hygiene.md`.
+Release target: coordinated version `1.1.0`; final artifact qualification is pending. Canonical availability is established by the Elysia Ecobotics Marketplace and GitHub release surfaces rather than a mutable flag embedded in the VSIX. The reproducible package boundary is documented in `docs/public-package-hygiene.md`.
 
 The extension does not require Marketplace sign-in. It discovers the verified Codev Core package and its private user-owned Unix runtime automatically. There is no default TCP port or workspace-supplied endpoint. Mutating requests retain the private XDG API credential inside the extension host; the credential is never sent to the webview or displayed. Local account state, connection readiness, workspace trust and exact repository authority remain separate.
 
@@ -17,7 +21,7 @@ codev codev-adapter --editor code --profile "My development profile"
 
 For a user installation whose launcher is not yet in the current shell's PATH, use `$HOME/.local/bin/codev`. Elysia and the adapter also find that package without relying on PATH. Open **Elysia: Open Coding Room**. It can connect with **No workspace**. Trust Workspace and Approve Exact Repository are required only for their respective workspace operations; neither is required for installation detection. The adapter refreshes readiness automatically and on window focus.
 
-The canonical manifest is `/usr/lib/codev/runtime.json` or `${XDG_DATA_HOME:-$HOME/.local/share}/codev/current/usr/lib/codev/runtime.json`. It binds product v1.0.0, Core/runtime contracts and executable SHA-256. The shared private runtime uses `$XDG_RUNTIME_DIR/elysia`, falling back to `${XDG_STATE_HOME:-$HOME/.local/state}/elysia/runtime`. Unsafe ownership, permissions, package hashes or incompatible contracts fail closed. This correction qualifies amd64 Debian 13 and Ubuntu 24.04; other platforms are not implicitly supported by this artifact.
+The canonical manifest is `/usr/lib/codev/runtime.json` or `${XDG_DATA_HOME:-$HOME/.local/share}/codev/current/usr/lib/codev/runtime.json`. It binds product v1.1.0, Core/runtime contracts and executable SHA-256. The shared private runtime uses `$XDG_RUNTIME_DIR/elysia`, falling back to `${XDG_STATE_HOME:-$HOME/.local/state}/elysia/runtime`. Unsafe ownership, permissions, package hashes or incompatible contracts fail closed. The prior implementation was qualified on amd64 Debian 13 and Ubuntu 24.04; final 1.1.0 artifact qualification remains pending and other platforms are not implicitly supported by this artifact.
 
 Core removal makes the client report absence; it does not delete local editor sessions or repositories. Core reinstall invalidates old installation-bound authority. The optional machine-scoped `elysia.apiUrl` setting is reserved for explicitly configured legacy development endpoints when Core is absent. It cannot override an installed Core, and repository settings cannot select it.
 

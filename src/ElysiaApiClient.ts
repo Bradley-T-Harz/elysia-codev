@@ -4,7 +4,7 @@ import * as vscode from "vscode";
 import { buildLoopbackUrl } from "./localUrlPolicy";
 import { LocalCredentialProvider } from "./LocalCredentialProvider";
 import { ensureInstalledRuntime, openRuntimeSocket } from "./RuntimeDiscovery";
-import type { Installation } from "./codevContracts";
+import { CODEV_PRODUCT_VERSION, type Installation } from "./codevContracts";
 import type {
   CodingBridgeStatus,
   ArchiveContainerPreview,
@@ -160,7 +160,7 @@ export class ElysiaApiClient {
         const installation = envelope.data?.codev_installation;
         if (!installation || envelope.contract_version !== "codev-client-1") throw new Error("Installed Codev capability contract is unavailable.");
         if (!installation.installed) return { state: "not_installed", apiUrl, summary: installation.note, installation, checkedAt: new Date().toISOString() };
-        if (installation.state === "incompatible") return { state: "version_mismatch", apiUrl, summary: installation.note, installation, checkedAt: new Date().toISOString() };
+        if (installation.state === "incompatible" || installation.version !== CODEV_PRODUCT_VERSION) return { state: "version_mismatch", apiUrl, summary: `Install Elysia and Codev Core ${CODEV_PRODUCT_VERSION} to match this adapter.`, installation, checkedAt: new Date().toISOString() };
         if (!installation.usable) return { state: installation.session_state === "approval_needed" ? "authentication_required" : "degraded", apiUrl, summary: installation.note, installation, checkedAt: new Date().toISOString() };
       }
       const [data, developerProfile] = await Promise.all([this.getCodingStatus(), this.getDeveloperProfile()]);
