@@ -6,7 +6,7 @@ if [[ "${1:-}" == "--out" ]]; then
   OUTPUT_PATH="$2"
 else
   [[ $# -le 1 ]] || { printf '%s\n' 'Usage: scripts/package-vsix.sh [OUTPUT_PATH | --out OUTPUT_PATH]' >&2; exit 2; }
-  OUTPUT_PATH="${1:-elysia-codev-1.0.0.vsix}"
+  OUTPUT_PATH="${1:-elysia-codev-1.1.0.vsix}"
 fi
 
 npm run compile

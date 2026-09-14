@@ -92,7 +92,7 @@ export default function App({ vscode }: AppProps) {
           <h1>Elysia Coding Room</h1>
         </div>
         <div className={`connection connection--${state.connection.state}`}>
-          <span className="icon-dot" /> {state.connection.state}
+          <span className="icon-dot" /> {state.connection.state.replaceAll("_", " ")}
         </div>
       </header>
 

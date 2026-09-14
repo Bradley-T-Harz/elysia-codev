@@ -1,10 +1,29 @@
+# Codev 1.1.0 release candidate
+
+Use Codev Core 1.1.0 with this adapter and Elysia 1.1.0. Core installation is independent of VS Code and workspace trust. Final artifact installation qualification and signing are pending; the original public 1.0.0 release remains available unchanged. See [release notes](RELEASE_NOTES_v1.1.0.md).
+
 # Elysia Codev
 
-Elysia Codev is a first-party official Elysia add-on for developers. It provides a local-first coding-room shell inside VS Code while keeping Elysia core clean.
+Elysia Codev is the official VS Code client for the independently installed Codev Core. Elysia's workroom and explicitly paired website surfaces use the same governed local subsystem. VS Code is optional and does not define whether Codev is installed.
 
-Release status: qualified Developer-profile release, version `1.0.0`, stable channel. Canonical availability is established by the Elysia Ecobotics Marketplace and GitHub release surfaces rather than a mutable flag embedded in the VSIX. The reproducible package boundary is documented in `docs/public-package-hygiene.md`.
+Release target: coordinated version `1.1.0`; final artifact qualification is pending. Canonical availability is established by the Elysia Ecobotics Marketplace and GitHub release surfaces rather than a mutable flag embedded in the VSIX. The reproducible package boundary is documented in `docs/public-package-hygiene.md`.
 
-This extension is not Elysia core and does not require Marketplace sign-in. It connects to the authenticated local Elysia API bridge on `http://127.0.0.1:8000` by default. Mutating requests use the private XDG credential inside the extension host; the credential is never sent to the webview or displayed.
+The extension does not require Marketplace sign-in. It discovers the verified Codev Core package and its private user-owned Unix runtime automatically. There is no default TCP port or workspace-supplied endpoint. Mutating requests retain the private XDG API credential inside the extension host; the credential is never sent to the webview or displayed. Local account state, connection readiness, workspace trust and exact repository authority remain separate.
+
+## Installed product workflow
+
+Install the reviewed Codev Core Debian artifact with the system installer, or use the user installer supplied beside it. Core includes the matching adapter for later installation; no checkout or developer Python environment is required. With the selected editor installed, run:
+
+```bash
+codev codev-adapter --editor code
+codev codev-adapter --editor code --profile "My development profile"
+```
+
+For a user installation whose launcher is not yet in the current shell's PATH, use `$HOME/.local/bin/codev`. Elysia and the adapter also find that package without relying on PATH. Open **Elysia: Open Coding Room**. It can connect with **No workspace**. Trust Workspace and Approve Exact Repository are required only for their respective workspace operations; neither is required for installation detection. The adapter refreshes readiness automatically and on window focus.
+
+The canonical manifest is `/usr/lib/codev/runtime.json` or `${XDG_DATA_HOME:-$HOME/.local/share}/codev/current/usr/lib/codev/runtime.json`. It binds product v1.1.0, Core/runtime contracts and executable SHA-256. The shared private runtime uses `$XDG_RUNTIME_DIR/elysia`, falling back to `${XDG_STATE_HOME:-$HOME/.local/state}/elysia/runtime`. Unsafe ownership, permissions, package hashes or incompatible contracts fail closed. The prior implementation was qualified on amd64 Debian 13 and Ubuntu 24.04; final 1.1.0 artifact qualification remains pending and other platforms are not implicitly supported by this artifact.
+
+Core removal makes the client report absence; it does not delete local editor sessions or repositories. Core reinstall invalidates old installation-bound authority. The optional machine-scoped `elysia.apiUrl` setting is reserved for explicitly configured legacy development endpoints when Core is absent. It cannot override an installed Core, and repository settings cannot select it.
 
 ## What Works Now
 
@@ -161,7 +180,7 @@ The package script uses already installed dependencies, never installs or downlo
 
 ## Settings
 
-- `elysia.apiUrl`: local API URL. Default `http://127.0.0.1:8000`.
+- `elysia.apiUrl`: optional machine-scoped legacy development URL; empty by default. Installed Core always uses verified private runtime discovery.
 - `elysia.approvalMode`: default approval posture. Default `plan_only`.
 - `elysia.workspaceTrustMode`: enforced trust posture: VS Code trust plus exact Elysia approval, forced read-only, or blocked.
 

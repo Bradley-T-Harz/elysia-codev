@@ -25,6 +25,12 @@ export function activate(context: vscode.ExtensionContext): void {
   }
 
   registerCommands(context, provider);
+  // Installation and service discovery never depend on a repository or its
+  // trust state. This refresh only reads local capability truth.
+  void provider.refreshConnection();
+  const connectionTimer = setInterval(() => { if (vscode.window.state.focused) void provider.refreshConnection(); }, 5000);
+  context.subscriptions.push({ dispose: () => clearInterval(connectionTimer) });
+  context.subscriptions.push(vscode.window.onDidChangeWindowState(state => { if (state.focused) void provider.refreshConnection(); }));
 
   try {
     context.subscriptions.push(vscode.window.registerWebviewViewProvider("elysia.codingRoom", provider));
@@ -43,5 +49,5 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 export function deactivate(): void {
-  // No background workers, shell processes, or network loops to stop in v1.0.0.
+  // Disposables stop client refreshes; the installed Core owns its lifecycle.
 }

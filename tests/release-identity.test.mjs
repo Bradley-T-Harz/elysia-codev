@@ -11,10 +11,10 @@ test("Codev immutable release identity is qualified without embedding mutable pu
     readFileSync(path.join(root, "compatibility-manifest.json"), "utf8"),
   );
 
-  assert.equal(manifest.version, "1.0.0");
+  assert.equal(manifest.version, "1.1.0");
   assert.equal(manifest.release_channel, "stable");
-  assert.equal(manifest.qualification_state, "pass_10d_vi_qualified");
-  assert.equal(manifest.artifact_role, "official_v1_release_payload");
+  assert.equal(manifest.qualification_state, "final_artifact_qualification_pending");
+  assert.equal(manifest.artifact_role, "coordinated_release_candidate");
   assert.equal(manifest.distribution.public_distribution_supported, true);
   assert.equal(
     manifest.distribution.canonical_marketplace_url,

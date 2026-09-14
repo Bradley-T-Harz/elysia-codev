@@ -1,5 +1,5 @@
 export type ApprovalMode = "read_only" | "plan_only" | "path_preview" | "apply_with_approval" | "test_with_approval";
-export type ConnectionState = "unknown" | "connected" | "unavailable" | "authentication_required" | "version_mismatch" | "profile_unavailable" | "degraded";
+export type ConnectionState = "not_installed" | "unknown" | "connected" | "unavailable" | "authentication_required" | "version_mismatch" | "profile_unavailable" | "degraded";
 export type WorkspaceTrustLevel = "no_workspace" | "restricted" | "read_only" | "trusted";
 export type WorkspaceTrustMode = "vscode_workspace_trust" | "read_only" | "blocked";
 export type SessionStatus = "planning" | "active" | "waiting_for_approval" | "complete" | "failed";
@@ -23,6 +23,7 @@ export type ElysiaMessage = {
 };
 
 export type ElysiaConnectionStatus = {
+  installation?: import("./codevContracts").Installation;
   state: ConnectionState;
   apiUrl: string;
   summary: string;
