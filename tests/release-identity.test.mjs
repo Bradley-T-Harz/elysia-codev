@@ -13,8 +13,8 @@ test("Codev immutable release identity is qualified without embedding mutable pu
 
   assert.equal(manifest.version, "1.1.0");
   assert.equal(manifest.release_channel, "stable");
-  assert.equal(manifest.qualification_state, "final_artifact_qualification_pending");
-  assert.equal(manifest.artifact_role, "coordinated_release_candidate");
+  assert.equal(manifest.qualification_state, "external_signed_release_evidence");
+  assert.equal(manifest.artifact_role, "coordinated_release_payload");
   assert.equal(manifest.distribution.public_distribution_supported, true);
   assert.equal(
     manifest.distribution.canonical_marketplace_url,
